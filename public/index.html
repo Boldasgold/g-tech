@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="G-TECH Serviços Automotivos em Paranaguá - PR. Especialista Giovane Ribeiro (Ex-Chefe de Oficina Renault). Diagnóstico Automotivo Avançado, Injeção Eletrônica, Elétrica, Redes de Multiplexagem e Manutenção.">
+    <meta property="og:title" content="G-TECH | Serviços Automotivos & Diagnóstico Avançado em Paranaguá - PR">
+    <meta property="og:description" content="Diagnóstico automotivo de precisão, elétrica, injeção eletrônica avançada e manutenção com padrão concessionária em Paranaguá - PR. Agende pelo WhatsApp (41) 9652-2715.">
+    <meta property="og:type" content="website">
+    <title>G-TECH | Serviços Automotivos & Diagnóstico Avançado</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="img/logo.jpg" type="image/jpeg">
+</head>
+<body class="reveal-active">
+
+    <!-- ========== LOGO LIQUID SWASH OVERLAY (/logo-liquid-swash) ========== -->
+    <div id="kineticLogoReveal" class="kinetic-reveal-overlay liquid-swash-mode" aria-label="Abertura Liquid Swash G-TECH Serviços Automotivos">
+        <!-- Filtros SVG para efeito Fluido / Liquid Swash real -->
+        <svg class="liquid-svg-defs" aria-hidden="true">
+            <defs>
+                <filter id="liquidRippleFilter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feTurbulence id="liquidTurbulence" type="fractalNoise" baseFrequency="0.018 0.025" numOctaves="2" result="noise" seed="3" />
+                    <feDisplacementMap id="liquidDisplacement" in="SourceGraphic" in2="noise" scale="48" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+                <filter id="gooeySwashFilter">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+                    <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8" result="goo" />
+                    <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+                </filter>
+                <linearGradient id="swashBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00c6ff" />
+                    <stop offset="50%" stop-color="#0072ff" />
+                    <stop offset="100%" stop-color="#002b7f" />
+                </linearGradient>
+                <linearGradient id="swashGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#fff078" />
+                    <stop offset="50%" stop-color="#ffd000" />
+                    <stop offset="100%" stop-color="#ff8800" />
+                </linearGradient>
+            </defs>
+        </svg>
+
+        <!-- Canvas de ondas e jatos líquidos (Liquid Swash) -->
+        <canvas id="revealKineticCanvas" class="reveal-kinetic-canvas"></canvas>
+        <div class="reveal-blue-glow"></div>
+        <div class="reveal-gold-glow"></div>
+
+        <button id="btnSkipReveal" class="btn-skip-reveal" type="button" aria-label="Pular introdução">
+            <span>ENTRAR NO SITE</span>
+            <kbd>ESC</kbd>
+        </button>
+
+        <div class="reveal-content">
+            <div class="liquid-swash-stage">
+                <!-- Camadas orgânicas fluidas em movimento (Gooey Blobs & Swash Rings) -->
+                <div class="liquid-blob-layer">
+                    <div class="liquid-blob blob-blue-1"></div>
+                    <div class="liquid-blob blob-gold-1"></div>
+                    <div class="liquid-blob blob-blue-2"></div>
+                </div>
+
+                <!-- Arco de Ignição Digital ECU / RPM + Fitas Líquidas ao redor da logo -->
+                <svg class="liquid-swash-svg" viewBox="0 0 380 300" fill="none">
+                    <!-- Arco externo tracejado de telemetria -->
+                    <ellipse cx="190" cy="150" rx="175" ry="125" stroke="rgba(0, 198, 255, 0.25)" stroke-width="1.5" stroke-dasharray="8 6" />
+                    <!-- Arco de Ignição RPM que preenche de 0 a 100% -->
+                    <ellipse id="ecuGaugeArc" cx="190" cy="150" rx="166" ry="116" stroke="url(#swashGoldGrad)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="900" stroke-dashoffset="900" />
+                    <!-- Ondas Liquid Swash ao redor -->
+                    <path class="swash-ribbon swash-ribbon-blue" d="M 15,170 C 85,35 165,265 245,85 C 295,10 335,180 365,120" stroke="url(#swashBlueGrad)" stroke-width="7" stroke-linecap="round" />
+                    <path class="swash-ribbon swash-ribbon-gold" d="M 15,125 C 95,245 190,15 270,195 C 308,255 340,95 365,150" stroke="url(#swashGoldGrad)" stroke-width="5" stroke-linecap="round" />
+                </svg>
+
+                <!-- Logo G-TECH 100% Nítida em Alta Definição com Pulso de Ignição -->
+                <div class="reveal-logo-box liquid-logo-box" id="liquidLogoBox">
+                    <img src="img/logo.jpg" alt="G-TECH Serviços Automotivos" class="reveal-logo-img">
+                    <div class="liquid-gloss-wave"></div>
+                </div>
+            </div>
+
+            <div class="reveal-kinetic-words">
+                <span class="k-word">DIAGNÓSTICO</span>
+                <span class="k-dot">💧</span>
+                <span class="k-word">ELÉTRICA</span>
+                <span class="k-dot">⚡</span>
+                <span class="k-word">INJEÇÃO ELETRÔNICA</span>
+                <span class="k-dot">💧</span>
+                <span class="k-word">MANUTENÇÃO</span>
+                <span class="k-dot">⚡</span>
+                <span class="k-word gold">SOLUÇÃO</span>
+            </div>
+
+            <div class="reveal-ecu-loader">
+                <div class="ecu-loader-top">
+                    <span class="ecu-status-text" id="ecuStatusText">INICIALIZANDO FLUIDO DE DIAGNÓSTICO G-TECH...</span>
+                    <span class="ecu-pct" id="ecuPctText">0%</span>
+                </div>
+                <div class="ecu-bar-track liquid-bar-track">
+                    <div class="ecu-bar-fill liquid-bar-fill" id="ecuBarFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ondas líquidas inferiores (Liquid Wave Curtain) -->
+        <div class="liquid-bottom-waves" aria-hidden="true">
+            <svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
+                <defs>
+                    <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+                </defs>
+                <g class="liquid-parallax">
+                    <use href="#gentle-wave" x="48" y="0" fill="rgba(0, 198, 255, 0.18)" />
+                    <use href="#gentle-wave" x="48" y="3" fill="rgba(255, 208, 0, 0.14)" />
+                    <use href="#gentle-wave" x="48" y="5" fill="rgba(0, 114, 255, 0.25)" />
+                </g>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Background tecnológico automotivo -->
+    <canvas id="cyberCanvas"></canvas>
+    <div class="cyber-grid"></div>
+
+    <!-- ========== HEADER ========== -->
+    <header id="header">
+        <div class="header-top-line"></div>
+        <div class="container nav-wrapper">
+            <div class="header-left-group">
+                <div class="dots-menu-container">
+                    <button class="dots-menu-btn" id="menuToggle" type="button" aria-label="Abrir Menu de Funções" title="Abrir Menu">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </button>
+
+                    <nav class="nav-links" id="navLinks">
+                        <a href="#home" class="active"><span>⚡</span> AGENDAMENTO RÁPIDO</a>
+                        <a href="#historia"><span>🏆</span> NOSSA HISTÓRIA</a>
+                        <a href="#especialidades"><span>⚙️</span> TECNOLOGIA & SERVIÇOS</a>
+                        <a href="#como-funciona"><span>📋</span> COMO FUNCIONA</a>
+                        <a href="#contato"><span>📍</span> LOCALIZAÇÃO & CONTATO</a>
+                    </nav>
+                </div>
+
+                <a href="#home" class="logo">
+                    <img src="img/logo.jpg" alt="G-TECH Logo" class="header-logo-img">
+                    <div class="logo-text-wrap">
+                        <span class="logo-text"><span class="silver">G</span><span class="gold">-</span><span class="blue">TECH</span></span>
+                        <span class="logo-sub">SERVIÇOS AUTOMOTIVOS</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="header-actions">
+                <button type="button" id="btnReplayIntro" class="btn-replay-intro" title="Rever abertura cinemática">
+                    ⚡ INTRO
+                </button>
+                <a href="#home" class="btn-cta header-cta-desktop">AGENDAR AGORA</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========== HERO + AGENDAMENTO RÁPIDO ========== -->
+    <section class="hero" id="home">
+        <div class="hero-glow-blue"></div>
+        <div class="hero-glow-gold"></div>
+
+        <div class="container hero-grid">
+            <!-- Coluna Esquerda: Apresentação Forte -->
+            <div class="hero-content">
+                <div class="hero-brand-pill">
+                    <span class="pill-bolt">⚡</span>
+                    <span>DIAGNÓSTICO AUTOMOTIVO DE ALTA PRECISÃO • PARANAGUÁ - PR</span>
+                </div>
+
+                <div class="hero-keywords-bar">
+                    <span>DIAGNÓSTICO</span>
+                    <span class="sep">•</span>
+                    <span>ELÉTRICA</span>
+                    <span class="sep">•</span>
+                    <span>INJEÇÃO ELETRÔNICA</span>
+                    <span class="sep">•</span>
+                    <span>MANUTENÇÃO</span>
+                    <span class="sep">•</span>
+                    <span class="gold-word">SOLUÇÃO</span>
+                </div>
+
+                <h1 class="hero-title">
+                    Falha no veículo ou<br>
+                    <span class="highlight-blue">luz de injeção</span> acesa?<br>
+                    A <span class="highlight-silver">G</span><span class="highlight-gold">-</span><span class="highlight-blue">TECH</span> resolve.
+                </h1>
+
+                <p class="hero-desc">
+                    Chega de trocar peças no "achismo". Utilizamos scanner profissional, osciloscópio, metrologia e experiência de concessionária para encontrar a causa exata do problema do seu veículo. Faça seu <strong>Agendamento Rápido</strong> ao lado!
+                </p>
+
+                <!-- Selo Especialista Renault & Multimarcas -->
+                <div class="specialist-banner-tag">
+                    <span class="spec-star">★</span>
+                    <span><strong>Padrão Concessionária:</strong> Especialista Linha Renault & Multimarcas (Nacionais e Importados)</span>
+                </div>
+
+                <!-- Painel Interativo: Que luz acendeu no seu painel? -->
+                <div class="dashboard-lights-box">
+                    <div class="dash-lights-title">
+                        <span>🚨 QUE LUZ ACENDEU NO SEU PAINEL?</span>
+                        <small>Clique para adicionar ao agendamento →</small>
+                    </div>
+                    <div class="dash-lights-grid">
+                        <button type="button" class="dash-light-btn" data-alert="Luz de Injeção Eletrônica acesa no painel">
+                            <span class="dl-icon gold">🟡</span>
+                            <span class="dl-label">Injeção / Motor</span>
+                        </button>
+                        <button type="button" class="dash-light-btn" data-alert="Luz de Bateria / Alternador ou falha elétrica na partida">
+                            <span class="dl-icon red">🔋</span>
+                            <span class="dl-label">Bateria / Elétrica</span>
+                        </button>
+                        <button type="button" class="dash-light-btn" data-alert="Luz Multifunção (Chave de Boca) / Alerta Eletrônico no painel">
+                            <span class="dl-icon orange">🔧</span>
+                            <span class="dl-label">Multifunção</span>
+                        </button>
+                        <button type="button" class="dash-light-btn" data-alert="Luz de ABS / Freio / Controle de Estabilidade acesa">
+                            <span class="dl-icon gold">🛑</span>
+                            <span class="dl-label">ABS / Freios</span>
+                        </button>
+                        <button type="button" class="dash-light-btn" data-alert="Alerta de Temperatura / Aquecimento do motor">
+                            <span class="dl-icon blue">🌡️</span>
+                            <span class="dl-label">Temperatura</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="hero-authority-badges">
+                    <div class="auth-badge">
+                        <div class="auth-icon gold">⚙️</div>
+                        <div>
+                            <strong>+7 Anos de Experiência</strong>
+                            <span>Diagnóstico & Elétrica Avançada</span>
+                        </div>
+                    </div>
+                    <div class="auth-badge">
+                        <div class="auth-icon blue">🏆</div>
+                        <div>
+                            <strong>Ex-Chefe de Oficina Renault</strong>
+                            <span>Padrão Técnico de Concessionária</span>
+                        </div>
+                    </div>
+                    <div class="auth-badge">
+                        <div class="auth-icon gold">🎓</div>
+                        <div>
+                            <strong>Professor Talentos Brasil</strong>
+                            <span>Mecânica & Elétrica Automotiva</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Painel Interativo de Agendamento Rápido -->
+            <div class="hero-wizard-container">
+                <div class="diagnostic-wizard" id="diagnosticWizard">
+                    <!-- Barra de Progresso (3 Etapas: 1. Veículo -> 2. Agendamento -> 3. Resumo) -->
+                    <div class="wizard-header">
+                        <div class="wizard-top-tag">
+                            <span>⚡ AGENDAMENTO RÁPIDO ONLINE</span>
+                            <span class="tag-live">● ATENDIMENTO VIA WHATSAPP</span>
+                        </div>
+                        <div class="wizard-progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 33.33%;"></div>
+                        </div>
+                        <div class="wizard-steps-indicators">
+                            <span class="step-indicator active" id="indStep1">1. Veículo</span>
+                            <span class="step-indicator" id="indStep2">2. Agendamento</span>
+                            <span class="step-indicator" id="indStep3">3. Resumo</span>
+                        </div>
+                    </div>
+
+                    <!-- ETAPA 1: Dados do Veículo, Marca & Sintomas -->
+                    <div class="wizard-step active" id="step1">
+                        <h3 class="wizard-step-title" id="step1Title">Qual é o seu veículo e o que ele apresenta?</h3>
+                        <p class="wizard-step-subtitle">Selecione a marca do veículo, informe o modelo e descreva o problema ou revisão desejada.</p>
+
+                        <!-- Botões rápidos de Marca do Veículo -->
+                        <div class="form-group">
+                            <label>Marca do Veículo <span class="req">*</span></label>
+                            <div class="brand-quick-grid" id="brandQuickGrid">
+                                <button type="button" class="brand-chip-btn" data-brand="Renault">Renault</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Volkswagen">Volkswagen</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Chevrolet">Chevrolet</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Fiat">Fiat</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Ford">Ford</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Hyundai">Hyundai</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Toyota">Toyota</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Honda">Honda</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Jeep">Jeep</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Peugeot">Peugeot</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Citroën">Citroën</button>
+                                <button type="button" class="brand-chip-btn" data-brand="Nissan">Nissan</button>
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Montadora / Marca <span class="req">*</span></label>
+                                <select id="vehicleBrand" class="form-control">
+                                    <option value="" disabled selected>Selecione ou clique acima</option>
+                                    <option value="Renault">Renault</option>
+                                    <option value="Volkswagen">Volkswagen</option>
+                                    <option value="Chevrolet">Chevrolet (GM)</option>
+                                    <option value="Fiat">Fiat</option>
+                                    <option value="Ford">Ford</option>
+                                    <option value="Hyundai">Hyundai</option>
+                                    <option value="Toyota">Toyota</option>
+                                    <option value="Honda">Honda</option>
+                                    <option value="Jeep">Jeep</option>
+                                    <option value="Peugeot">Peugeot</option>
+                                    <option value="Citroën">Citroën</option>
+                                    <option value="Nissan">Nissan</option>
+                                    <option value="Mitsubishi">Mitsubishi</option>
+                                    <option value="BMW / Mercedes / Audi">BMW / Mercedes / Audi</option>
+                                    <option value="CAOA Chery / BYD / GWM">CAOA Chery / BYD / GWM</option>
+                                    <option value="Utilitário / Van / Caminhonete">Utilitário / Van / Caminhonete</option>
+                                    <option value="Outra Marca">Outra Marca...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Modelo e Ano <span class="req">*</span></label>
+                                <input type="text" id="vehicleModelYear" class="form-control" placeholder="Ex: Duster 2.0 2021 / Onix 1.0 Turbo...">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Descreva o que o veículo apresenta <span class="req">*</span></label>
+                            <textarea id="vehicleIssue" class="form-control" rows="3" placeholder="Descreva os sintomas do veículo ou o serviço que deseja realizar..."></textarea>
+                            <div class="error-msg">Descreva brevemente o sintoma ou serviço desejado.</div>
+                        </div>
+
+                        <div class="wizard-nav-btns">
+                            <button type="button" class="btn-wizard-next" id="btnGoToStep2" style="width: 100%;">Avançar para Agendamento →</button>
+                        </div>
+                    </div>
+
+                    <!-- ETAPA 2: Contato & Preferência de Horário -->
+                    <div class="wizard-step" id="step2">
+                        <h3 class="wizard-step-title">Seus Dados & Preferência de Horário</h3>
+                        <p class="wizard-step-subtitle">Informe seu contato para confirmarmos seu agendamento imediato pelo WhatsApp.</p>
+
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Seu Nome <span class="req">*</span></label>
+                                <input type="text" id="clientName" class="form-control" placeholder="Digite seu nome">
+                                <div class="error-msg">Informe seu nome.</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Seu WhatsApp <span class="req">*</span></label>
+                                <input type="tel" id="clientPhone" class="form-control" placeholder="(41) 99999-9999">
+                                <div class="error-msg">Informe um WhatsApp válido com DDD.</div>
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Melhor Período / Urgência <span class="req">*</span></label>
+                                <select id="schedulePeriod" class="form-control">
+                                    <option value="Manhã (08h às 12h)" selected>Manhã (08h às 12h)</option>
+                                    <option value="Tarde (13h30 às 18h)">Tarde (13h30 às 18h)</option>
+                                    <option value="URGENTE — Veículo em Pane / Parado">🚨 URGENTE — Veículo Parado / Pane</option>
+                                    <option value="Horário Flexível / Combinar pelo WhatsApp">Horário Flexível (Combinar no WhatsApp)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Situação do Veículo <span class="req">*</span></label>
+                                <select id="vehicleMobility" class="form-control">
+                                    <option value="Vou levar o veículo até a G-TECH" selected>Vou levar o veículo até a oficina</option>
+                                    <option value="Veículo não liga / Preciso de orientação ou guincho">Veículo não liga (Preciso de suporte)</option>
+                                    <option value="Quero tirar dúvidas e pré-orçamento">Quero tirar dúvidas antes de levar</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Placa do Veículo (Opcional)</label>
+                            <input type="text" id="vehiclePlate" class="form-control" placeholder="Ex: ABC-1D23 (opcional)" maxlength="8" style="text-transform: uppercase;">
+                        </div>
+
+                        <div class="wizard-nav-btns">
+                            <button type="button" class="btn-wizard-back" id="btnBackToStep1">← Voltar</button>
+                            <button type="button" class="btn-wizard-next" id="btnGoToStep3">Conferir Resumo →</button>
+                        </div>
+                    </div>
+
+                    <!-- ETAPA 3: Resumo & Envio para WhatsApp -->
+                    <div class="wizard-step" id="step3">
+                        <h3 class="wizard-step-title">Confirme seu Agendamento G-TECH</h3>
+                        <p class="wizard-step-subtitle" style="color: var(--gold);">Ao clicar em Confirmar, seu protocolo é gerado e abriremos o WhatsApp direto com Giovane Ribeiro.</p>
+
+                        <div class="summary-details-box" id="summaryDetailsBox">
+                            <!-- Preenchido via JS -->
+                        </div>
+
+                        <div class="wizard-nav-btns">
+                            <button type="button" class="btn-wizard-back" id="btnBackToStep2">← Editar</button>
+                            <button type="button" class="btn-wizard-submit" id="btnSubmitWizard">
+                                ⚡ CONFIRMAR AGENDAMENTO NO WHATSAPP
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== NOSSA HISTÓRIA & ESPECIALISTA (GIOVANE RIBEIRO) ========== -->
+    <section class="about-founder-section" id="historia">
+        <div class="container">
+            <div class="section-header-center">
+                <span class="section-tag">NOSSA HISTÓRIA & LIDERANÇA TÉCNICA</span>
+                <h2 class="section-title">
+                    QUEM ESTÁ À FRENTE DA <span class="silver">G</span><span class="gold">-</span><span class="blue">TECH</span>?
+                </h2>
+                <p class="section-subtitle">
+                    A G-TECH Serviços Automotivos nasceu em Paranaguá com uma missão clara: substituir o "achismo" e a troca desnecessária de peças pelo <strong>diagnóstico eletrônico científico, preciso e transparente</strong>.
+                </p>
+            </div>
+
+            <div class="founder-grid">
+                <!-- Coluna Foto Oficial (2ª Foto enviada) -->
+                <div class="founder-photo-col">
+                    <div class="founder-photo-frame">
+                        <div class="frame-corner tl"></div>
+                        <div class="frame-corner tr"></div>
+                        <div class="frame-corner bl"></div>
+                        <div class="frame-corner br"></div>
+                        <img src="img/giovane-ribeiro.jpg" alt="Giovane Ribeiro - Especialista G-TECH Diagnóstico Automotivo" class="founder-img">
+                        <div class="founder-floating-badge">
+                            <span class="badge-bolt">⚡</span>
+                            <div>
+                                <strong>GIOVANE RIBEIRO</strong>
+                                <span>Especialista em Diagnóstico & Elétrica Automotiva</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna História + Credenciais -->
+                <div class="founder-bio-col">
+                    <div class="founder-intro-label">QUEM SOU EU?</div>
+                    <h3 class="founder-name">GIOVANE <span class="blue">RIBEIRO</span></h3>
+                    <p class="founder-story-text">
+                        Com mais de <strong>7 anos de atuação intensiva na área automotiva</strong>, construí minha trajetória unindo o rigor técnico de concessionária ao domínio das tecnologias embarcadas mais modernas do mercado. Como <strong>Ex-Chefe de Oficina Renault</strong> e <strong>Professor de Mecânica e Elétrica Automotiva na Talentos Brasil</strong>, fundei a <strong>G-TECH Serviços Automotivos</strong> em Paranaguá para oferecer um atendimento onde cada diagnóstico é comprovado por dados, testes de bancada, scanner avançado e osciloscópio.
+                    </p>
+
+                    <div class="founder-credentials-list">
+                        <div class="cred-item">
+                            <div class="cred-hex">⚙️</div>
+                            <div class="cred-text">
+                                Profissional da área automotiva com mais de <strong class="gold">7 anos de experiência</strong> comprovada em oficina e laboratório técnico.
+                            </div>
+                        </div>
+
+                        <div class="cred-item">
+                            <div class="cred-hex">🚘</div>
+                            <div class="cred-text">
+                                Especialista em <strong class="blue">diagnóstico automotivo, elétrica, injeção eletrônica</strong> e manutenção mecânica de precisão.
+                            </div>
+                        </div>
+
+                        <div class="cred-item">
+                            <div class="cred-hex">🏆</div>
+                            <div class="cred-text">
+                                <strong class="gold">Ex-Chefe de Oficina Renault</strong> — trazendo metodologia, organização e padrão técnico oficial de montadora para o seu veículo.
+                            </div>
+                        </div>
+
+                        <div class="cred-item">
+                            <div class="cred-hex">🎓</div>
+                            <div class="cred-text">
+                                Formação especializada em <strong class="blue">Injeção Avançada, Elétrica Automotiva, Diagnósticos Avançados, Metrologia, Redes de Multiplexagem (CAN/LIN) e Tecnologia Embarcada</strong>.
+                            </div>
+                        </div>
+
+                        <div class="cred-item">
+                            <div class="cred-hex">👨‍🏫</div>
+                            <div class="cred-text">
+                                Atua como <strong class="gold">Professor na Talentos Brasil</strong> formando novos profissionais em Mecânica Automotiva e Elétrica Automotiva.
+                            </div>
+                        </div>
+
+                        <div class="cred-item">
+                            <div class="cred-hex">🤝</div>
+                            <div class="cred-text">
+                                Atendimento com foco absoluto em <strong class="gold">qualidade, confiança e solução precisa</strong> — você aprova o orçamento sabendo exatamente o que será feito.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="founder-cta-row">
+                        <a href="#home" class="btn-founder-schedule">⚡ AGENDAR COM GIOVANE RIBEIRO</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== TECNOLOGIA & ESPECIALIDADES AUTOMOTIVAS ========== -->
+    <section class="specialties-section" id="especialidades">
+        <div class="container">
+            <div class="section-header-center">
+                <span class="section-tag">TECNOLOGIA EMBARCADA & ENGENHARIA AUTOMOTIVA</span>
+                <h2 class="section-title">POR QUE A <span class="silver">G</span><span class="gold">-</span><span class="blue">TECH</span> É DIFERENTE?</h2>
+                <p class="section-subtitle">
+                    Carros modernos possuem dezenas de módulos eletrônicos interligados. Nós dominamos a eletrônica e a mecânica para entregar diagnósticos certeiros.
+                </p>
+            </div>
+
+            <div class="specialties-grid">
+                <div class="spec-card">
+                    <div class="spec-num">01</div>
+                    <h3>Diagnóstico por Osciloscópio & Scanner</h3>
+                    <p>Analisamos sinais elétricos em milissegundos, parâmetros de injeção em tempo real e códigos de falha para encontrar defeitos que scanners comuns não enxergam.</p>
+                </div>
+
+                <div class="spec-card">
+                    <div class="spec-num">02</div>
+                    <h3>Redes de Multiplexagem (CAN / LIN)</h3>
+                    <p>Especialista em comunicação entre módulos (ECU, BCM, ABS, Painel e Direção Elétrica), solucionando panes intermitentes e falhas de comunicação eletrônica.</p>
+                </div>
+
+                <div class="spec-card">
+                    <div class="spec-num">03</div>
+                    <h3>Metrologia & Mecânica Técnica</h3>
+                    <p>Medições de precisão, sincronismo de motor com ferramentas especiais, sistema de arrefecimento, freios e suspensão seguindo rigorosamente os manuais técnicos.</p>
+                </div>
+
+                <div class="spec-card">
+                    <div class="spec-num">04</div>
+                    <h3>Zero Troca de Peças no "Achismo"</h3>
+                    <p>Não fazemos você gastar dinheiro trocando peças boas até achar o defeito. Testamos e comprovamos a falha antes de qualquer substituição.</p>
+                </div>
+
+                <div class="spec-card">
+                    <div class="spec-num">05</div>
+                    <h3>Especialista Linha Francesa & Multimarcas</h3>
+                    <p>Com bagagem como Ex-Chefe de Oficina Renault, dominamos a fundo Renault, Peugeot e Citroën, além de nacionais e importados de todas as montadoras.</p>
+                </div>
+
+                <div class="spec-card">
+                    <div class="spec-num">06</div>
+                    <h3>Transparência Total via WhatsApp</h3>
+                    <p>Enviamos vídeos, fotos dos testes e explicação técnica clara direto no seu WhatsApp antes de executar qualquer serviço no seu veículo.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== COMO FUNCIONA NOSSO ATENDIMENTO ========== -->
+    <section class="how-section" id="como-funciona">
+        <div class="container">
+            <div class="section-header-center">
+                <span class="section-tag">PASSO A PASSO</span>
+                <h2 class="section-title">COMO FUNCIONA O ATENDIMENTO <span class="blue">G-TECH</span></h2>
+            </div>
+
+            <div class="how-steps-grid">
+                <div class="how-step-card">
+                    <div class="step-badge">1</div>
+                    <h4>Agendamento Rápido</h4>
+                    <p>Você seleciona o serviço no painel do site e agenda pelo WhatsApp sem fila e sem burocracia.</p>
+                </div>
+
+                <div class="how-step-card">
+                    <div class="step-badge">2</div>
+                    <h4>Diagnóstico Técnico</h4>
+                    <p>Realizamos leitura computadorizada, testes elétricos, análise de parâmetros e inspeção física detalhada.</p>
+                </div>
+
+                <div class="how-step-card">
+                    <div class="step-badge">3</div>
+                    <h4>Orçamento Transparente</h4>
+                    <p>Apresentamos o laudo claro do que seu carro realmente precisa e aguardamos sua aprovação.</p>
+                </div>
+
+                <div class="how-step-card">
+                    <div class="step-badge">4</div>
+                    <h4>Solução & Entrega Testada</h4>
+                    <p>Executamos o reparo com padrão de excelência, fazemos o teste final de rodagem/scanner e entregamos seu veículo pronto.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== INSTAGRAM + SUPORTE + GOOGLE MAPS (PARANAGUÁ - PR) ========== -->
+    <section class="contact-section" id="contato">
+        <div class="container">
+            <div class="contact-grid">
+                <!-- Coluna Instagram & Avaliações -->
+                <div class="insta-reviews-box">
+                    <div class="insta-header-row">
+                        <div class="insta-title-group">
+                            <span class="insta-dot"></span>
+                            <span>ACOMPANHE NOSSOS DIAGNÓSTICOS NO INSTAGRAM</span>
+                        </div>
+                        <a href="https://www.instagram.com/gtech.pgua" target="_blank" rel="noopener noreferrer" class="insta-pill-link">
+                            @gtech.pgua ↗
+                        </a>
+                    </div>
+
+                    <a href="https://www.instagram.com/gtech.pgua" target="_blank" rel="noopener noreferrer" class="review-card">
+                        <div class="rev-top">
+                            <div class="rev-avatar">RC</div>
+                            <div>
+                                <strong>Rodrigo C. • Renault Duster</strong>
+                                <span class="rev-stars">★★★★★ • via @gtech.pgua</span>
+                            </div>
+                        </div>
+                        <p>“Meu carro estava com falha de injeção que ninguém achava. O Giovane colocou o osciloscópio, achou o defeito exato no chicote sem me fazer gastar com módulo novo. Profissional nota 1000!”</p>
+                    </a>
+
+                    <a href="https://www.instagram.com/gtech.pgua" target="_blank" rel="noopener noreferrer" class="review-card">
+                        <div class="rev-top">
+                            <div class="rev-avatar">FM</div>
+                            <div>
+                                <strong>Fernanda M. • Chevrolet Onix</strong>
+                                <span class="rev-stars">★★★★★ • via @gtech.pgua</span>
+                            </div>
+                        </div>
+                        <p>“Atendimento impecável em Paranaguá! Mandou vídeo mostrando os testes no scanner, explicou tudo com clareza e entregou o carro perfeito no mesmo dia.”</p>
+                    </a>
+
+                    <a href="https://www.instagram.com/gtech.pgua" target="_blank" rel="noopener noreferrer" class="btn-insta-full">
+                        📸 SEGUIR @GTECH.PGUA NO INSTAGRAM
+                    </a>
+                </div>
+
+                <!-- Coluna Atendimento Direto + Rastreador de Protocolo -->
+                <div class="direct-contact-card">
+                    <img src="img/logo.jpg" alt="G-TECH Logo" class="contact-card-logo">
+                    <h3>FALE DIRETO COM A OFICINA</h3>
+                    <p class="contact-card-sub">Precisa de socorro elétrico, tirar uma dúvida técnica ou agendar agora pelo WhatsApp?</p>
+
+                    <div class="contact-info-list">
+                        <div class="c-info-row">
+                            <span class="c-icon">📱</span>
+                            <div>
+                                <small>WHATSAPP / TELEFONE</small>
+                                <a href="https://wa.me/554196522715" target="_blank" rel="noopener noreferrer">(41) 9652-2715</a>
+                            </div>
+                        </div>
+                        <div class="c-info-row">
+                            <span class="c-icon">📍</span>
+                            <div>
+                                <small>ENDEREÇO DA OFICINA</small>
+                                <span>Rua Maria da Conceição Teixeira de Souza, 815 — Oficina, Divinéia • Paranaguá - PR (83212-440)</span>
+                            </div>
+                        </div>
+                        <div class="c-info-row">
+                            <span class="c-icon">📸</span>
+                            <div>
+                                <small>INSTAGRAM OFICIAL</small>
+                                <a href="https://www.instagram.com/gtech.pgua" target="_blank" rel="noopener noreferrer">@gtech.pgua</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="https://wa.me/554196522715?text=Ol%C3%A1%20Giovane!%20Vim%20pelo%20site%20da%20G-TECH%20e%20gostaria%20de%20agendar%20um%20diagn%C3%B3stico%2Fservi%C3%A7o%20automotivo." target="_blank" rel="noopener noreferrer" class="btn-whatsapp-big">
+                        💬 CHAMAR NO WHATSAPP (41) 9652-2715
+                    </a>
+
+                    <!-- Acompanhar Protocolo -->
+                    <div class="protocol-box">
+                        <label>Já tem um protocolo de agendamento?</label>
+                        <div class="protocol-row">
+                            <input type="text" id="protocolInput" placeholder="Ex: GT-2026-0042">
+                            <button type="button" id="btnTrackProtocol">CONSULTAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google Maps Integrado: Rua Maria da Conceição Teixeira de Souza, 815 - Divinéia, Paranaguá - PR -->
+            <div class="map-card-container">
+                <div class="map-card-header">
+                    <div class="map-header-left">
+                        <div class="map-pin-box">📍</div>
+                        <div>
+                            <h4>LOCALIZAÇÃO G-TECH SERVIÇOS AUTOMOTIVOS — PARANAGUÁ / PR</h4>
+                            <p>Rua Maria da Conceição Teixeira de Souza, 815, Oficina — Bairro Divinéia • Paranaguá - PR • CEP 83212-440</p>
+                        </div>
+                    </div>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Rua+Maria+da+Conceicao+Teixeira+de+Souza+815+Divineia+Paranagua+PR+83212-440" target="_blank" rel="noopener noreferrer" class="btn-open-maps">
+                        🗺️ COMO CHEGAR (GOOGLE MAPS)
+                    </a>
+                </div>
+                <div class="map-iframe-wrap">
+                    <iframe
+                        title="Localização G-TECH Serviços Automotivos - Rua Maria da Conceição Teixeira de Souza, 815, Divinéia, Paranaguá - PR"
+                        src="https://www.google.com/maps?q=Rua+Maria+da+Concei%C3%A7%C3%A3o+Teixeira+de+Souza,+815,+Divin%C3%A9ia,+Paranagu%C3%A1+-+PR,+83212-440&output=embed"
+                        width="100%"
+                        height="100%"
+                        style="border: 0;"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                    ></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="#home" class="logo">
+                    <img src="img/logo.jpg" alt="G-TECH" class="header-logo-img">
+                    <div class="logo-text-wrap">
+                        <span class="logo-text"><span class="silver">G</span><span class="gold">-</span><span class="blue">TECH</span></span>
+                        <span class="logo-sub">SERVIÇOS AUTOMOTIVOS</span>
+                    </div>
+                </a>
+                <p class="footer-desc">
+                    Diagnóstico Automotivo Avançado, Elétrica, Injeção Eletrônica, Redes de Multiplexagem e Manutenção Mecânica com foco em qualidade, confiança e solução precisa.
+                </p>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Especialidades</h4>
+                <ul class="footer-links">
+                    <li><a href="#home">Injeção Eletrônica & Scanner</a></li>
+                    <li><a href="#home">Elétrica Automotiva & Baterias</a></li>
+                    <li><a href="#home">Módulos ECU & Redes CAN</a></li>
+                    <li><a href="#home">Mecânica Geral, Freios & Suspensão</a></li>
+                    <li><a href="#home">Revisão Preventiva & Ar-Condicionado</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Navegação</h4>
+                <ul class="footer-links">
+                    <li><a href="#home">Agendamento Rápido</a></li>
+                    <li><a href="#historia">Quem Sou Eu — Giovane Ribeiro</a></li>
+                    <li><a href="#especialidades">Diferenciais Técnicos</a></li>
+                    <li><a href="#como-funciona">Como Funciona</a></li>
+                    <li><a href="/logo-kinetic-reveal">Abertura Kinetic Reveal</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Atendimento</h4>
+                <p class="footer-contact-line">📱 WhatsApp: <a href="https://wa.me/554196522715" target="_blank" rel="noopener noreferrer">(41) 9652-2715</a></p>
+                <p class="footer-contact-line">📍 Rua Maria da Conceição Teixeira de Souza, 815 — Divinéia, Paranaguá - PR (83212-440)</p>
+                <p class="footer-contact-line">📸 Instagram: <a href="https://www.instagram.com/gtech.pgua" target="_blank" rel="noopener noreferrer">@gtech.pgua</a></p>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="container">
+                &copy; 2026 G-TECH Serviços Automotivos — Giovane Ribeiro • Paranaguá - PR. Todos os direitos reservados.
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== MODAL DE PROTOCOLO DE AGENDAMENTO ========== -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-icon">⚡</div>
+            <h3 class="modal-title">Agendamento Gerado com Sucesso!</h3>
+            <p class="modal-text">Seu protocolo de atendimento G-TECH é:</p>
+            <div class="protocol-badge" id="protocolDisplay">GT-2026-0001</div>
+            <p class="modal-sub">Clique abaixo para enviar os dados diretamente para o WhatsApp da G-TECH.</p>
+            <button class="btn-modal-action" id="modalCloseBtn">ABRIR WHATSAPP E CONFIRMAR</button>
+        </div>
+    </div>
+
+    <!-- ========== WHATSAPP FLUTUANTE ========== -->
+    <a href="https://wa.me/554196522715?text=Ol%C3%A1%20Giovane!%20Vim%20pelo%20site%20da%20G-TECH%20e%20gostaria%20de%20agendar%20um%20atendimento."
+       class="whatsapp-float"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="Agendar pelo WhatsApp">
+        <svg viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91-.01-2.65-1.04-5.13-2.9-7-1.87-1.87-4.36-2.9-7.01-2.92zM12.05 20c-1.5 0-2.97-.4-4.27-1.14l-.3-.18-3.12.82.83-3.04-.2-.31a8.16 8.16 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.02 4.54-3.68 8.23-8.15 8.22zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.11-.56-1.35-.77-1.84-.2-.48-.41-.42-.56-.43-.14 0-.31-.01-.47-.01-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29z"/></svg>
+    </a>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
