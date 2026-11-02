@@ -838,7 +838,10 @@ body.reveal-active {
     margin-bottom: 0.65rem;
 }
 
-.dash-lights-title span {
+.dash-lights-title span.dash-title-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
     font-family: var(--font-display);
     font-size: 0.72rem;
     font-weight: 800;
@@ -846,50 +849,111 @@ body.reveal-active {
     letter-spacing: 0.7px;
 }
 
+.title-dash-icon {
+    width: 14px;
+    height: 14px;
+    stroke: var(--gold);
+}
+
 .dash-lights-title small {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--blue-bright);
 }
 
 .dash-lights-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 0.45rem;
+    gap: 0.5rem;
 }
 
 .dash-light-btn {
-    background: rgba(11, 22, 43, 0.9);
-    border: 1px solid rgba(0, 153, 255, 0.25);
+    background: rgba(8, 17, 34, 0.92);
+    border: 1px solid rgba(0, 153, 255, 0.28);
     border-radius: 10px;
-    padding: 0.55rem 0.35rem;
+    padding: 0.65rem 0.35rem 0.55rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.45rem;
     cursor: pointer;
-    transition: all 0.2s var(--ease);
+    transition: all 0.25s var(--ease);
     color: var(--silver);
+    position: relative;
 }
 
-.dash-light-btn .dl-icon {
-    font-size: 1.15rem;
-    filter: drop-shadow(0 0 6px rgba(255, 208, 0, 0.45));
+.dl-symbol {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.25s var(--ease);
 }
+
+.dl-symbol svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Cores técnicas oficiais de luzes de alerta de painel */
+.dl-engine svg { stroke: #ffb800; }
+.dl-battery svg { stroke: #ff3b30; }
+.dl-wrench svg { stroke: #ff9500; }
+.dl-abs svg { stroke: #ffcc00; color: #ffcc00; }
+.dl-temp svg { stroke: #00c6ff; fill: rgba(0, 198, 255, 0.2); }
 
 .dash-light-btn .dl-label {
-    font-size: 0.66rem;
+    font-size: 0.65rem;
     font-weight: 700;
     text-align: center;
     line-height: 1.15;
+    color: var(--silver-muted);
+    transition: color 0.2s;
 }
 
-.dash-light-btn:hover,
-.dash-light-btn.active {
-    background: rgba(255, 208, 0, 0.15);
-    border-color: var(--gold);
-    color: var(--gold);
+.dash-light-btn:hover {
+    background: rgba(0, 136, 255, 0.15);
+    border-color: var(--blue-bright);
     transform: translateY(-2px);
-    box-shadow: 0 0 14px rgba(255, 208, 0, 0.3);
+    box-shadow: 0 4px 14px rgba(0, 136, 255, 0.25);
+}
+
+.dash-light-btn:hover .dl-label {
+    color: #fff;
+}
+
+/* Quando ativo / selecionado: acende como luz de painel ligada */
+.dash-light-btn.active {
+    background: rgba(255, 208, 0, 0.14);
+    border-color: var(--gold);
+    box-shadow: 0 0 16px rgba(255, 208, 0, 0.35), inset 0 0 8px rgba(255, 208, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.dash-light-btn.active .dl-label {
+    color: var(--gold);
+    font-weight: 800;
+}
+
+.dash-light-btn.active .dl-engine svg {
+    filter: drop-shadow(0 0 8px #ffb800);
+}
+
+.dash-light-btn.active .dl-battery svg {
+    filter: drop-shadow(0 0 8px #ff3b30);
+}
+
+.dash-light-btn.active .dl-wrench svg {
+    filter: drop-shadow(0 0 8px #ff9500);
+}
+
+.dash-light-btn.active .dl-abs svg {
+    filter: drop-shadow(0 0 8px #ffcc00);
+}
+
+.dash-light-btn.active .dl-temp svg {
+    filter: drop-shadow(0 0 8px #00c6ff);
 }
 
 .hero-authority-badges {

@@ -202,31 +202,82 @@
                     <span><strong>Padrão Concessionária:</strong> Especialista Linha Renault & Multimarcas (Nacionais e Importados)</span>
                 </div>
 
-                <!-- Painel Interativo: Que luz acendeu no seu painel? -->
+                <!-- Painel Interativo: Que luz acendeu no seu painel? (Ícones Técnicos de Painel Automotivo) -->
                 <div class="dashboard-lights-box">
                     <div class="dash-lights-title">
-                        <span>🚨 QUE LUZ ACENDEU NO SEU PAINEL?</span>
-                        <small>Clique para adicionar ao agendamento →</small>
+                        <span class="dash-title-label">
+                            <svg class="title-dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            ALERTAS & LUZES DO PAINEL
+                        </span>
+                        <small>Selecione para preencher o diagnóstico →</small>
                     </div>
                     <div class="dash-lights-grid">
-                        <button type="button" class="dash-light-btn" data-alert="Luz de Injeção Eletrônica acesa no painel">
-                            <span class="dl-icon gold">🟡</span>
+                        <!-- 1. Motor / Injeção Eletrônica (Ícone técnico de motor) -->
+                        <button type="button" class="dash-light-btn" data-alert="Luz de Injeção Eletrônica (Check Engine) acesa no painel">
+                            <span class="dl-symbol dl-engine" title="Injeção / Check Engine">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 10h2V8h3v2h8V8h3v2h2v4h-2v2h-3v-1H8v1H5v-2H3v-4z"/>
+                                    <circle cx="12" cy="13" r="2"/>
+                                    <path d="M8 10V6h2"/>
+                                    <path d="M16 10V6h-2"/>
+                                </svg>
+                            </span>
                             <span class="dl-label">Injeção / Motor</span>
                         </button>
-                        <button type="button" class="dash-light-btn" data-alert="Luz de Bateria / Alternador ou falha elétrica na partida">
-                            <span class="dl-icon red">🔋</span>
-                            <span class="dl-label">Bateria / Elétrica</span>
+
+                        <!-- 2. Bateria / Carga do Alternador -->
+                        <button type="button" class="dash-light-btn" data-alert="Luz de Bateria / Alternador ou pane elétrica na partida">
+                            <span class="dl-symbol dl-battery" title="Bateria / Alternador">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="7" width="20" height="13" rx="2"/>
+                                    <path d="M6 4v3"/>
+                                    <path d="M18 4v3"/>
+                                    <line x1="6" y1="13.5" x2="10" y2="13.5"/>
+                                    <line x1="14" y1="13.5" x2="18" y2="13.5"/>
+                                    <line x1="16" y1="11.5" x2="16" y2="15.5"/>
+                                </svg>
+                            </span>
+                            <span class="dl-label">Bateria / Alternador</span>
                         </button>
-                        <button type="button" class="dash-light-btn" data-alert="Luz Multifunção (Chave de Boca) / Alerta Eletrônico no painel">
-                            <span class="dl-icon orange">🔧</span>
-                            <span class="dl-label">Multifunção</span>
+
+                        <!-- 3. Multifunção / Chave de Serviço (Renault / Franceses) -->
+                        <button type="button" class="dash-light-btn" data-alert="Luz Multifunção / Chave de Manutenção ou Alerta Eletrônico">
+                            <span class="dl-symbol dl-wrench" title="Multifunção / Revisão">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                                </svg>
+                            </span>
+                            <span class="dl-label">Multifunção / ECU</span>
                         </button>
-                        <button type="button" class="dash-light-btn" data-alert="Luz de ABS / Freio / Controle de Estabilidade acesa">
-                            <span class="dl-icon gold">🛑</span>
+
+                        <!-- 4. ABS / Freios -->
+                        <button type="button" class="dash-light-btn" data-alert="Luz de ABS / Sistema de Freios / Controle de Estabilidade">
+                            <span class="dl-symbol dl-abs" title="Freios & ABS">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="7"/>
+                                    <path d="M4 12a8 8 0 0 1 1-3.8"/>
+                                    <path d="M4 12a8 8 0 0 0 1 3.8"/>
+                                    <path d="M20 12a8 8 0 0 0-1-3.8"/>
+                                    <path d="M20 12a8 8 0 0 1-1 3.8"/>
+                                    <text x="12" y="15" font-size="6.5" font-family="sans-serif" font-weight="900" text-anchor="middle" fill="currentColor" stroke="none">ABS</text>
+                                </svg>
+                            </span>
                             <span class="dl-label">ABS / Freios</span>
                         </button>
+
+                        <!-- 5. Temperatura / Arrefecimento -->
                         <button type="button" class="dash-light-btn" data-alert="Alerta de Temperatura / Aquecimento do motor">
-                            <span class="dl-icon blue">🌡️</span>
+                            <span class="dl-symbol dl-temp" title="Temperatura / Radiador">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+                                    <circle cx="11.5" cy="17.5" r="2" fill="currentColor"/>
+                                    <line x1="11.5" y1="9" x2="11.5" y2="15"/>
+                                </svg>
+                            </span>
                             <span class="dl-label">Temperatura</span>
                         </button>
                     </div>
