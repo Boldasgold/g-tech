@@ -14,6 +14,8 @@ const wizardState = {
     issue: "",
     name: "",
     phone: "",
+    date: "",
+    time: "",
     period: "Manhã (08h às 12h)",
     mobility: "Vou levar o veículo até a G-TECH",
     plate: ""
@@ -293,10 +295,21 @@ function initSchedulingWizard() {
 
     const clientName = document.getElementById("clientName");
     const clientPhone = document.getElementById("clientPhone");
+    const scheduleDate = document.getElementById("scheduleDate");
+    const scheduleTime = document.getElementById("scheduleTime");
     const schedulePeriod = document.getElementById("schedulePeriod");
     const vehicleMobility = document.getElementById("vehicleMobility");
     const vehiclePlate = document.getElementById("vehiclePlate");
     const summaryDetailsBox = document.getElementById("summaryDetailsBox");
+
+    // Limitar a data mínima para hoje
+    if (scheduleDate) {
+        const todayStr = new Date().toISOString().split("T")[0];
+        scheduleDate.min = todayStr;
+        if (!scheduleDate.value) {
+            scheduleDate.value = todayStr;
+        }
+    }
 
     const successModal = document.getElementById("successModal");
     const protocolDisplay = document.getElementById("protocolDisplay");
@@ -393,14 +406,20 @@ function initSchedulingWizard() {
         const nameOk = clientName.value.trim().length >= 2;
         const phoneDigits = clientPhone.value.replace(/\D/g, "");
         const phoneOk = phoneDigits.length >= 10;
+        const dateOk = scheduleDate ? scheduleDate.value.trim().length > 0 : true;
+        const timeOk = scheduleTime ? scheduleTime.value.trim().length > 0 : true;
 
         clientName.closest(".form-group")?.classList.toggle("has-error", !nameOk);
         clientPhone.closest(".form-group")?.classList.toggle("has-error", !phoneOk);
+        scheduleDate?.closest(".form-group")?.classList.toggle("has-error", !dateOk);
+        scheduleTime?.closest(".form-group")?.classList.toggle("has-error", !timeOk);
 
-        if (!nameOk || !phoneOk) return;
+        if (!nameOk || !phoneOk || !dateOk || !timeOk) return;
 
         wizardState.name = clientName.value.trim();
         wizardState.phone = clientPhone.value.trim();
+        wizardState.date = scheduleDate ? scheduleDate.value : "";
+        wizardState.time = scheduleTime ? scheduleTime.value : "";
         wizardState.period = schedulePeriod.value;
         wizardState.mobility = vehicleMobility.value;
         wizardState.plate = vehiclePlate.value.trim().toUpperCase() || "Não informada";
@@ -412,21 +431,34 @@ function initSchedulingWizard() {
     // Etapa 3 -> Voltar para Etapa 2
     document.getElementById("btnBackToStep2")?.addEventListener("click", () => goToStep(2));
 
+    // Formatar data para padrão brasileiro (DD/MM/AAAA)
+    function formatDateBr(isoDate) {
+        if (!isoDate) return "A combinar";
+        const parts = isoDate.split("-");
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return isoDate;
+    }
+
     // Etapa 3 -> Confirmar Agendamento no WhatsApp
     document.getElementById("btnSubmitWizard")?.addEventListener("click", () => {
         const protocol = generateProtocol();
         if (protocolDisplay) protocolDisplay.textContent = protocol;
 
+        const dataFormatada = formatDateBr(wizardState.date);
+        const horarioEscolhido = wizardState.time || "A combinar";
+
         const msg =
             `⚡ *AGENDAMENTO RÁPIDO — G-TECH SERVIÇOS AUTOMOTIVOS*\n` +
             `🔖 *Protocolo:* ${protocol}\n\n` +
+            `📅 *Data Agendada:* ${dataFormatada}\n` +
+            `⏰ *Horário:* ${horarioEscolhido}\n` +
+            `🕒 *Turno / Urgência:* ${wizardState.period}\n\n` +
             `🚗 *Marca do Veículo:* ${wizardState.brand}\n` +
             `🚘 *Modelo / Ano:* ${wizardState.modelYear}\n` +
             `🪪 *Placa:* ${wizardState.plate}\n` +
             `📋 *Sintomas / Solicitação:* ${wizardState.issue}\n\n` +
             `👤 *Cliente:* ${wizardState.name}\n` +
             `📱 *WhatsApp:* ${wizardState.phone}\n` +
-            `🕒 *Período / Urgência:* ${wizardState.period}\n` +
             `🚙 *Situação:* ${wizardState.mobility}`;
 
         whatsappRedirectUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
@@ -443,8 +475,19 @@ function initSchedulingWizard() {
 
     function renderSummary() {
         if (!summaryDetailsBox) return;
+        const dataFormatada = formatDateBr(wizardState.date);
+        const horarioEscolhido = wizardState.time || "A combinar";
+
         summaryDetailsBox.innerHTML = `
             <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="summary-label">Data Agendada</span>
+                    <span class="summary-value" style="color: var(--gold); font-weight: 800;">📅 ${dataFormatada}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Horário Desejado</span>
+                    <span class="summary-value" style="color: var(--blue-bright); font-weight: 800;">⏰ ${horarioEscolhido}</span>
+                </div>
                 <div class="summary-item">
                     <span class="summary-label">Marca do Veículo</span>
                     <span class="summary-value" style="color: var(--gold);">${wizardState.brand}</span>
@@ -467,7 +510,7 @@ function initSchedulingWizard() {
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Período / Urgência</span>
-                    <span class="summary-value" style="color: var(--blue-bright);">${wizardState.period}</span>
+                    <span class="summary-value">${wizardState.period}</span>
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Situação</span>
