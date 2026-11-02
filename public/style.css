@@ -981,9 +981,22 @@ body.reveal-active {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.15rem;
     background: rgba(0, 136, 255, 0.14);
     border: 1px solid rgba(0, 198, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.auth-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.auth-icon.gold svg {
+    stroke: var(--gold);
+}
+
+.auth-icon.blue svg {
+    stroke: var(--blue-bright);
 }
 
 .auth-badge strong {
@@ -1548,8 +1561,19 @@ body.reveal-active {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.15rem;
     flex-shrink: 0;
+}
+
+.cred-hex svg {
+    width: 22px;
+    height: 22px;
+    stroke: var(--blue-bright);
+    transition: stroke 0.2s, transform 0.2s;
+}
+
+.cred-item:hover .cred-hex svg {
+    stroke: var(--gold);
+    transform: scale(1.08);
 }
 
 .cred-text {
