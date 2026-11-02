@@ -1819,7 +1819,10 @@ body.reveal-active {
 }
 
 .btn-insta-full {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
     text-align: center;
     background: rgba(0, 136, 255, 0.15);
     border: 1px solid var(--blue-bright);
@@ -1831,6 +1834,20 @@ body.reveal-active {
     padding: 0.8rem;
     border-radius: 10px;
     margin-top: 0.5rem;
+    transition: all 0.25s var(--ease);
+}
+
+.btn-insta-full:hover {
+    background: rgba(0, 198, 255, 0.25);
+    border-color: var(--gold);
+    color: var(--gold);
+    transform: translateY(-2px);
+}
+
+.btn-brand-svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
 }
 
 .contact-card-logo {
@@ -1861,12 +1878,50 @@ body.reveal-active {
 
 .c-info-row {
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 0.85rem;
     background: rgba(5, 11, 22, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 0.65rem 0.85rem;
+    padding: 0.75rem 0.95rem;
     border-radius: 10px;
+    transition: border-color 0.2s;
+}
+
+.c-info-row:hover {
+    border-color: rgba(0, 198, 255, 0.35);
+}
+
+.c-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.c-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.icon-whatsapp {
+    background: rgba(37, 211, 102, 0.16);
+    border: 1px solid rgba(37, 211, 102, 0.4);
+    color: #25d366;
+}
+
+.icon-location {
+    background: rgba(255, 208, 0, 0.16);
+    border: 1px solid rgba(255, 208, 0, 0.4);
+    color: var(--gold);
+}
+
+.icon-instagram {
+    background: rgba(0, 198, 255, 0.16);
+    border: 1px solid rgba(0, 198, 255, 0.4);
+    color: var(--blue-bright);
 }
 
 .c-info-row small {
@@ -1874,18 +1929,22 @@ body.reveal-active {
     font-size: 0.65rem;
     color: var(--gold);
     font-weight: 800;
+    letter-spacing: 0.6px;
 }
 
 .c-info-row a,
 .c-info-row span {
     color: var(--text-white);
     text-decoration: none;
-    font-size: 0.84rem;
-    font-weight: 600;
+    font-size: 0.86rem;
+    font-weight: 700;
 }
 
 .btn-whatsapp-big {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
     text-align: center;
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: #fff;
@@ -1897,6 +1956,18 @@ body.reveal-active {
     border-radius: 10px;
     margin-bottom: 1rem;
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+    transition: all 0.25s var(--ease);
+}
+
+.btn-whatsapp-big:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(16, 185, 129, 0.5);
+    filter: brightness(1.08);
+}
+
+.btn-whatsapp-big .btn-brand-svg {
+    width: 20px;
+    height: 20px;
 }
 
 .protocol-box label {
@@ -1967,7 +2038,13 @@ body.reveal-active {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    color: var(--gold);
+    flex-shrink: 0;
+}
+
+.map-pin-box svg {
+    width: 24px;
+    height: 24px;
 }
 
 .map-header-left h4 {
@@ -1982,6 +2059,9 @@ body.reveal-active {
 }
 
 .btn-open-maps {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     background: linear-gradient(135deg, var(--gold) 0%, #ff9900 100%);
     color: #04070d;
     text-decoration: none;
@@ -1990,6 +2070,12 @@ body.reveal-active {
     font-weight: 900;
     padding: 0.75rem 1.2rem;
     border-radius: 8px;
+    transition: all 0.2s var(--ease);
+}
+
+.btn-open-maps:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 18px rgba(255, 208, 0, 0.4);
 }
 
 .map-iframe-wrap {
