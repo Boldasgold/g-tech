@@ -104,3 +104,4 @@ verify().catch(err => {
   console.error("Erro na verificação:", err);
   process.exit(1);
 });
+

@@ -30,6 +30,60 @@ interface Vehicle3DViewerProps {
   onSuggestRepair?: (data: any) => Promise<void> | void;
 }
 
+// 6 OEM Automotive Paint Finishes
+const OEM_PAINT_COLORS = [
+  { name: "Azul Safira G-Tech", hex: 0x0088ff, bg: "bg-[#0088ff]" },
+  { name: "Prata Reflex", hex: 0xcbd5e1, bg: "bg-[#cbd5e1]" },
+  { name: "Cinza Nardo", hex: 0x64748b, bg: "bg-[#64748b]" },
+  { name: "Preto Ninja Carbon", hex: 0x090d16, bg: "bg-[#090d16]" },
+  { name: "Branco Puro", hex: 0xf8fafc, bg: "bg-[#f8fafc]" },
+  { name: "Vermelho Flash", hex: 0xdc2626, bg: "bg-[#dc2626]" },
+];
+
+function playWorkshopAudio(type: "click" | "scan" | "camera" | "beep", enabled: boolean) {
+  if (!enabled || typeof window === "undefined") return;
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "click") {
+      osc.frequency.setValueAtTime(700, ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.05);
+    } else if (type === "beep") {
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    } else if (type === "scan") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(320, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(960, ctx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.45);
+    } else if (type === "camera") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(1100, ctx.currentTime);
+      gain.gain.setValueAtTime(0.07, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.09);
+    }
+  } catch {
+    // AudioContext blocked
+  }
+}
+
 function resolveRealPhoto(label: string, bodyType: string, overrideUrl?: string): string {
   if (overrideUrl) return overrideUrl;
   const recognition = recognizeVehicle("", label, bodyType);
@@ -66,6 +120,19 @@ export default function Vehicle3DViewer({
   // 10s Demo state
   const [isDemoRunning, setIsDemoRunning] = useState(false);
   const [demoPoseInfo, setDemoPoseInfo] = useState<{ index: number; label: string } | null>(null);
+
+  // High-Tech Pro Features: Paint, Sound, Laser, Fullscreen, Telemetry
+  const [activePaintHex, setActivePaintHex] = useState(0x0088ff);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLaserScanning, setIsLaserScanning] = useState(false);
+  const [laserProgress, setLaserProgress] = useState(0);
+  const [telemetry, setTelemetry] = useState({
+    azimuthDeg: 42,
+    elevationDeg: 20,
+    distance: 4.2,
+    componentsCount: 16
+  });
 
   // Ficha / Form state
   const [inspStatus, setInspStatus] = useState<"ok" | "atencao" | "critico" | "nao_inspecionado">("atencao");
@@ -187,11 +254,61 @@ export default function Vehicle3DViewer({
     }
   }, [replacedComponentIds]);
 
+  // Telemetry real-time loop (4Hz)
+  useEffect(() => {
+    if (viewMode !== "3d") return;
+    const interval = setInterval(() => {
+      if (sceneRef.current) {
+        const tel = sceneRef.current.getTelemetry();
+        setTelemetry({
+          azimuthDeg: tel.azimuthDeg,
+          elevationDeg: tel.elevationDeg,
+          distance: tel.distance,
+          componentsCount: tel.componentsCount
+        });
+      }
+    }, 250);
+    return () => clearInterval(interval);
+  }, [viewMode]);
+
+  const handleSelectPaint = (hex: number) => {
+    setActivePaintHex(hex);
+    playWorkshopAudio("click", soundEnabled);
+    sceneRef.current?.setPaintColor(hex);
+  };
+
+  const handleStartLaserScan = () => {
+    if (!sceneRef.current || isLaserScanning) return;
+    setIsLaserScanning(true);
+    setLaserProgress(0);
+    playWorkshopAudio("scan", soundEnabled);
+    sceneRef.current.triggerLaserScan(
+      (prog) => setLaserProgress(prog),
+      () => {
+        setIsLaserScanning(false);
+        playWorkshopAudio("beep", soundEnabled);
+      }
+    );
+  };
+
+  const handleToggleFullscreen = () => {
+    playWorkshopAudio("click", soundEnabled);
+    const root = containerRef.current?.parentElement?.parentElement;
+    if (!root) return;
+    if (!document.fullscreenElement) {
+      root.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  };
+
   const handleCameraView = (view: "dianteira" | "traseira" | "esquerda" | "direita" | "teto" | "reset") => {
+    playWorkshopAudio("click", soundEnabled);
     sceneRef.current?.setCameraView(view);
   };
 
   const handleZoomSystem = (sys: "motor" | "freios_diant_dir" | "suspensao" | "transmissao" | "reset") => {
+    playWorkshopAudio("click", soundEnabled);
     sceneRef.current?.zoomToSystem(sys);
   };
 
@@ -199,6 +316,7 @@ export default function Vehicle3DViewer({
     if (!sceneRef.current) return;
     const next = !isExploded;
     setIsExploded(next);
+    playWorkshopAudio("click", soundEnabled);
     sceneRef.current.setExploded(next);
   };
 
@@ -206,11 +324,13 @@ export default function Vehicle3DViewer({
     if (!sceneRef.current) return;
     const next = sceneRef.current.toggleBodyTransparency();
     setIsTransparent(next);
+    playWorkshopAudio("click", soundEnabled);
   };
 
   const handleStartDemo10s = () => {
     if (!sceneRef.current) return;
     setIsDemoRunning(true);
+    playWorkshopAudio("camera", soundEnabled);
     sceneRef.current.startDemo10s(
       (poseIndex, label) => {
         setDemoPoseInfo({ index: poseIndex, label });
@@ -319,7 +439,7 @@ export default function Vehicle3DViewer({
   };
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden border border-cyan-500/30 bg-[#060c18] shadow-2xl">
+    <div className="viewer-root-container relative w-full rounded-xl overflow-hidden border border-cyan-500/30 bg-[#060c18] shadow-2xl">
       {/* Top Header Bar */}
       <div className="flex flex-wrap justify-between items-center px-4 py-2.5 bg-[#0a1426] border-b border-cyan-500/20 text-xs gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -338,35 +458,85 @@ export default function Vehicle3DViewer({
           )}
         </div>
 
-        {/* View Mode Switcher: 3D, Real Photo, 2D */}
-        <div className="flex items-center gap-1.5 bg-[#060c18] p-1 rounded-lg border border-slate-800">
+        {/* View Mode Switcher, Paint Finishes, Sound & Fullscreen */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Paint Colors Palette */}
+          {viewMode === "3d" && (
+            <div className="hidden sm:flex items-center gap-1.5 bg-[#060c18] px-2 py-1 rounded-lg border border-slate-800">
+              <span className="text-[10px] text-slate-400 font-semibold mr-0.5">Pintura:</span>
+              {OEM_PAINT_COLORS.map(c => (
+                <button
+                  key={c.hex}
+                  type="button"
+                  onClick={() => handleSelectPaint(c.hex)}
+                  title={c.name}
+                  className={`w-3.5 h-3.5 rounded-full ${c.bg} transition border ${
+                    activePaintHex === c.hex ? "ring-2 ring-cyan-400 scale-125 border-white shadow-sm" : "border-slate-700 opacity-75 hover:opacity-100"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Sound Mute Toggle */}
           <button
             type="button"
-            onClick={() => setViewMode("3d")}
-            className={`px-2.5 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 ${
-              viewMode === "3d" ? "bg-cyan-500 text-slate-950 shadow" : "text-slate-400 hover:text-white"
-            }`}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? "Desativar Efeitos Sonoros" : "Ativar Efeitos Sonoros"}
+            className="px-2 py-1 rounded bg-[#060c18] hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 transition"
           >
-            🎮 3D 360°
+            {soundEnabled ? "🔊" : "🔇"}
           </button>
+
+          {/* Fullscreen Toggle */}
           <button
             type="button"
-            onClick={() => setViewMode("photo")}
-            className={`px-2.5 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 ${
-              viewMode === "photo" ? "bg-amber-400 text-slate-950 shadow" : "text-slate-400 hover:text-white"
-            }`}
+            onClick={handleToggleFullscreen}
+            title={isFullscreen ? "Sair da Tela Cheia" : "Modo Tela Cheia (Oficina)"}
+            className="px-2 py-1 rounded bg-[#060c18] hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 transition font-mono font-bold"
           >
-            📸 Foto Real
+            {isFullscreen ? "🗗" : "⛶"}
           </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("2d")}
-            className={`px-2.5 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 ${
-              viewMode === "2d" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            📐 2D / Peças
-          </button>
+
+          {/* View Mode Switcher: 3D, Real Photo, 2D */}
+          <div className="flex items-center gap-1.5 bg-[#060c18] p-1 rounded-lg border border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode("3d");
+                playWorkshopAudio("click", soundEnabled);
+              }}
+              className={`px-2.5 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 ${
+                viewMode === "3d" ? "bg-cyan-500 text-slate-950 shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              🎮 3D 360°
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode("photo");
+                playWorkshopAudio("camera", soundEnabled);
+              }}
+              className={`px-2.5 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 ${
+                viewMode === "photo" ? "bg-amber-400 text-slate-950 shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              📸 Foto Real
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode("2d");
+                playWorkshopAudio("click", soundEnabled);
+              }}
+              className={`px-2.5 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 ${
+                viewMode === "2d" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              📐 2D / Peças
+            </button>
+          </div>
         </div>
       </div>
 
@@ -463,8 +633,24 @@ export default function Vehicle3DViewer({
               </button>
             </div>
 
-            {/* Right Tools Bar (Explode, Transparency, Camera Angles) */}
-            <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 bg-black/75 p-2 rounded-lg backdrop-blur-sm border border-cyan-500/20 text-[10px]">
+            {/* Right Tools Bar (Laser Scan, Explode, Transparency, Camera Angles) */}
+            <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 bg-black/80 p-2 rounded-lg backdrop-blur-sm border border-cyan-500/25 text-[10px] shadow-xl">
+              {/* Laser Scan 360 Trigger */}
+              <button
+                type="button"
+                onClick={handleStartLaserScan}
+                disabled={isLaserScanning}
+                className={`px-2.5 py-1.5 rounded font-bold transition text-left flex items-center justify-between ${
+                  isLaserScanning
+                    ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30 animate-pulse"
+                    : "bg-gradient-to-r from-cyan-950 to-blue-950 text-cyan-300 hover:from-cyan-900 hover:to-blue-900 border border-cyan-500/30"
+                }`}
+                title="Executar varredura a laser holográfica de geometria"
+              >
+                <span>⚡ Laser Scan 360°</span>
+                <span className="font-mono text-[9px] ml-1">{isLaserScanning ? `${laserProgress}%` : "SCAN"}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleToggleExploded}
@@ -518,13 +704,66 @@ export default function Vehicle3DViewer({
                   >
                     Lado Esq.
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCameraView("teto")}
+                    className="col-span-2 p-1 rounded bg-slate-900 text-slate-300 hover:bg-cyan-950 text-center"
+                  >
+                    Teto / Superior
+                  </button>
                 </div>
               </div>
             </div>
 
+            {/* Laser Scanning Holographic Overlay */}
+            {isLaserScanning && (
+              <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-center bg-cyan-950/20 backdrop-blur-[1px]">
+                <div className="bg-[#050e1f]/95 border border-cyan-400 p-4 rounded-xl shadow-2xl shadow-cyan-500/40 text-center space-y-2 max-w-sm">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 font-mono">
+                      SCANNER HOLOGRÁFICO ATIVO
+                    </span>
+                  </div>
+                  <p className="text-sm font-extrabold text-white">
+                    Mapeando Geometria do Veículo ({laserProgress}%)
+                  </p>
+                  <div className="w-56 h-2 bg-slate-800 rounded-full overflow-hidden mx-auto border border-cyan-500/40">
+                    <div
+                      className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-300 transition-all duration-75"
+                      style={{ width: `${laserProgress}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono block">
+                    CENTRO DE DIAGNÓSTICO METROLÓGICO • G-TECH
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Instruction Badge at Bottom Left */}
-            <div className="absolute bottom-3 left-3 z-10 bg-black/80 px-3 py-1.5 rounded-md border border-cyan-500/20 text-[10px] text-slate-400">
-              💡 <strong className="text-cyan-300">Toque no motor ou freios</strong> para entrar na montagem interna. Toque em qualquer peça visível para abrir sua <span className="text-amber-300 font-bold">Ficha Técnica</span>.
+            <div className="absolute bottom-3 left-3 z-10 bg-black/80 px-3 py-1.5 rounded-md border border-cyan-500/20 text-[10px] text-slate-400 max-w-xs">
+              💡 <strong className="text-cyan-300">Toque no motor ou freios</strong> para entrar na montagem interna. Toque em qualquer peça para abrir sua <span className="text-amber-300 font-bold">Ficha Técnica</span>.
+            </div>
+
+            {/* Real-time Diagnostic Telemetry HUD (Bottom Right) */}
+            <div className="hidden sm:block absolute bottom-3 right-3 z-10 bg-black/85 px-3 py-2 rounded-lg border border-cyan-500/30 text-[10px] font-mono text-cyan-300 shadow-xl pointer-events-none space-y-0.5">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-slate-400">AZIMUTE:</span>
+                <span className="font-bold text-white">{telemetry.azimuthDeg}°</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-slate-400">ELEVAÇÃO:</span>
+                <span className="font-bold text-white">{telemetry.elevationDeg}°</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-slate-400">DISTÂNCIA:</span>
+                <span className="font-bold text-white">{telemetry.distance}m</span>
+              </div>
+              <div className="border-t border-slate-800 pt-0.5 mt-0.5 flex items-center justify-between gap-4 text-[9px]">
+                <span className="text-emerald-400 font-bold">● SISTEMA CALIBRADO</span>
+                <span className="text-slate-400">{telemetry.componentsCount} PEÇAS</span>
+              </div>
             </div>
           </>
         )}
@@ -774,6 +1013,34 @@ export default function Vehicle3DViewer({
                     placeholder="Ex: Máx 1.0 mm"
                     className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200 font-mono"
                   />
+                </div>
+              </div>
+
+              {/* Escala Visual de Desgaste Metrológico */}
+              <div className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 space-y-1.5">
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-slate-400 font-semibold uppercase">Escala de Conformidade Metrológica (G-Tech)</span>
+                  <span className={`font-bold font-mono ${
+                    inspStatus === "ok" ? "text-emerald-400" :
+                    inspStatus === "atencao" ? "text-amber-400" :
+                    inspStatus === "critico" ? "text-red-400" : "text-slate-400"
+                  }`}>
+                    {inspStatus === "ok" ? "TOLERÂNCIA OEM (100% OK)" :
+                     inspStatus === "atencao" ? "DESGASTE MODERADO (50% ALERTA)" :
+                     inspStatus === "critico" ? "LIMITE EXCEDIDO (TROCA OBRIGATÓRIA)" : "AGUARDANDO MEDIÇÃO"}
+                  </span>
+                </div>
+                <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex p-0.5 border border-slate-700">
+                  <div className={`h-full rounded-full transition-all duration-300 ${
+                    inspStatus === "ok" ? "w-1/3 bg-emerald-500 shadow-sm shadow-emerald-500/50" :
+                    inspStatus === "atencao" ? "w-2/3 bg-amber-500 shadow-sm shadow-amber-500/50" :
+                    inspStatus === "critico" ? "w-full bg-red-500 shadow-sm shadow-red-500/50" : "w-1/12 bg-slate-600"
+                  }`} />
+                </div>
+                <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                  <span>0% Seguro</span>
+                  <span>50% Alerta Preventivo</span>
+                  <span>100% Risco de Quebra</span>
                 </div>
               </div>
 

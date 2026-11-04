@@ -23,3 +23,4 @@ if (fs.existsSync(path.join(targetDir, 'creditos.csv'))) {
   console.log('--- CREDITOS.CSV PREVIEW ---');
   console.log(csv.split('\n').slice(0, 20).join('\n'));
 }
+

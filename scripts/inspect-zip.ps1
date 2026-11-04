@@ -5,3 +5,4 @@ foreach ($entry in $zip.Entries) {
     Write-Output "$($entry.FullName) | $($entry.Length) bytes"
 }
 $zip.Dispose()
+

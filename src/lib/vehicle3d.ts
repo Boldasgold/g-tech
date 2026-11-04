@@ -73,6 +73,22 @@ export class Vehicle3DScene {
   private onDemoPoseChangeCallback?: (poseIndex: number, label: string) => void;
   private onDemoCompleteCallback?: () => void;
 
+  // Smooth Camera Transition state
+  private targetCameraPos: THREE.Vector3 | null = null;
+  private targetControlsTarget: THREE.Vector3 | null = null;
+
+  // Holographic Laser Scanner state
+  private isLaserScanning = false;
+  private laserScanStartTime = 0;
+  private laserScanDuration = 2200; // ms
+  private laserMesh?: THREE.Mesh;
+  private laserLineMesh?: THREE.Line;
+  private onLaserProgressCallback?: (progress: number) => void;
+  private onLaserCompleteCallback?: () => void;
+
+  // Current Paint Color (defaults to G-Tech Safira Blue)
+  public currentPaintColor = 0x0a3c75;
+
   // Materials
   private bodyPaintMaterial!: THREE.MeshPhysicalMaterial;
 
@@ -169,20 +185,82 @@ export class Vehicle3DScene {
   }
 
   private setupGround() {
-    const groundGeo = new THREE.CircleGeometry(6, 48);
+    // 1. Base pedestal disk
+    const groundGeo = new THREE.CircleGeometry(6, 64);
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x081122,
+      color: 0x070e1b,
       roughness: 0.85,
-      metalness: 0.2
+      metalness: 0.3
     });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     this.scene.add(ground);
 
-    const grid = new THREE.GridHelper(9, 18, 0x0088ff, 0x14284d);
+    // 2. High-tech LED perimeter glowing ring (Cyan G-Tech)
+    const ringGeo = new THREE.RingGeometry(4.78, 4.88, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x00e5ff,
+      side: THREE.DoubleSide
+    });
+    const ledRing = new THREE.Mesh(ringGeo, ringMat);
+    ledRing.rotation.x = -Math.PI / 2;
+    ledRing.position.y = 0.003;
+    this.scene.add(ledRing);
+
+    // Inner gold safety ring
+    const goldRingGeo = new THREE.RingGeometry(2.38, 2.42, 48);
+    const goldRingMat = new THREE.MeshBasicMaterial({
+      color: 0xffd000,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.4
+    });
+    const goldRing = new THREE.Mesh(goldRingGeo, goldRingMat);
+    goldRing.rotation.x = -Math.PI / 2;
+    goldRing.position.y = 0.004;
+    this.scene.add(goldRing);
+
+    // 3. Grid Helper
+    const grid = new THREE.GridHelper(9, 18, 0x0088ff, 0x0d2040);
     grid.position.y = 0.005;
     this.scene.add(grid);
+
+    // 4. Setup Laser Scanner Plane
+    this.setupLaserScanner();
+  }
+
+  private setupLaserScanner() {
+    const laserGeo = new THREE.PlaneGeometry(3.6, 2.0);
+    const laserMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.22,
+      side: THREE.DoubleSide
+    });
+    this.laserMesh = new THREE.Mesh(laserGeo, laserMat);
+    this.laserMesh.position.set(0, 1.0, 0);
+    this.laserMesh.visible = false;
+    this.scene.add(this.laserMesh);
+  }
+
+  public setPaintColor(hex: number) {
+    this.currentPaintColor = hex;
+    if (this.bodyPaintMaterial) {
+      this.bodyPaintMaterial.color.setHex(hex);
+      this.bodyPaintMaterial.needsUpdate = true;
+    }
+  }
+
+  public triggerLaserScan(onProgress?: (progress: number) => void, onComplete?: () => void) {
+    this.isLaserScanning = true;
+    this.laserScanStartTime = performance.now();
+    this.onLaserProgressCallback = onProgress;
+    this.onLaserCompleteCallback = onComplete;
+    if (this.laserMesh) {
+      this.laserMesh.visible = true;
+      this.laserMesh.position.z = 2.8;
+    }
   }
 
   public setBodyType(type: string) {
@@ -246,11 +324,11 @@ export class Vehicle3DScene {
     }
 
     this.bodyPaintMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x0a3c75,
-      metalness: 0.85,
-      roughness: 0.25,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.1,
+      color: this.currentPaintColor,
+      metalness: 0.88,
+      roughness: 0.18,
+      clearcoat: 0.95,
+      clearcoatRoughness: 0.08,
       transparent: this.isTransparentBody,
       opacity: this.isTransparentBody ? 0.25 : 1.0
     });
@@ -789,71 +867,69 @@ export class Vehicle3DScene {
     }
   }
 
-  // Camera presets & drill-down zoom
+  // Camera presets & drill-down zoom (Smooth Transition Lerp)
   public zoomToSystem(system: "motor" | "freios_diant_dir" | "suspensao" | "transmissao" | "reset") {
     switch (system) {
       case "motor":
-        this.camera.position.set(1.4, 1.8, 2.5);
-        this.controls.target.set(0, 0.7, 1.25);
+        this.targetCameraPos = new THREE.Vector3(1.4, 1.8, 2.5);
+        this.targetControlsTarget = new THREE.Vector3(0, 0.7, 1.25);
         if (this.onBreadcrumbChangeCallback) {
           this.onBreadcrumbChangeCallback(["Veículo", "Propulsão e Alimentação", "Motor"]);
         }
         break;
       case "freios_diant_dir":
-        this.camera.position.set(2.4, 0.6, 1.8);
-        this.controls.target.set(0.94, 0.38, 1.38);
+        this.targetCameraPos = new THREE.Vector3(2.4, 0.6, 1.8);
+        this.targetControlsTarget = new THREE.Vector3(0.94, 0.38, 1.38);
         if (this.onBreadcrumbChangeCallback) {
           this.onBreadcrumbChangeCallback(["Veículo", "Rodagem e Controle", "Freios Dianteiros"]);
         }
         break;
       case "suspensao":
-        this.camera.position.set(2.0, 0.8, 1.2);
-        this.controls.target.set(0.9, 0.45, 1.3);
+        this.targetCameraPos = new THREE.Vector3(2.0, 0.8, 1.2);
+        this.targetControlsTarget = new THREE.Vector3(0.9, 0.45, 1.3);
         if (this.onBreadcrumbChangeCallback) {
           this.onBreadcrumbChangeCallback(["Veículo", "Rodagem e Controle", "Suspensão Dianteira"]);
         }
         break;
       case "reset":
       default:
-        this.camera.position.set(3.8, 2.2, 4.2);
-        this.controls.target.set(0, 0.6, 0);
+        this.targetCameraPos = new THREE.Vector3(3.8, 2.2, 4.2);
+        this.targetControlsTarget = new THREE.Vector3(0, 0.6, 0);
         if (this.onBreadcrumbChangeCallback) {
           this.onBreadcrumbChangeCallback(["Veículo", "Visão Geral"]);
         }
         break;
     }
-    this.controls.update();
   }
 
   public setCameraView(view: "dianteira" | "traseira" | "esquerda" | "direita" | "teto" | "reset") {
     switch (view) {
       case "dianteira":
-        this.camera.position.set(0, 1.4, 4.6);
-        this.controls.target.set(0, 0.6, 0);
+        this.targetCameraPos = new THREE.Vector3(0, 1.4, 4.6);
+        this.targetControlsTarget = new THREE.Vector3(0, 0.6, 0);
         break;
       case "traseira":
-        this.camera.position.set(0, 1.4, -4.6);
-        this.controls.target.set(0, 0.6, 0);
+        this.targetCameraPos = new THREE.Vector3(0, 1.4, -4.6);
+        this.targetControlsTarget = new THREE.Vector3(0, 0.6, 0);
         break;
       case "esquerda":
-        this.camera.position.set(-4.6, 1.2, 0);
-        this.controls.target.set(0, 0.6, 0);
+        this.targetCameraPos = new THREE.Vector3(-4.6, 1.2, 0);
+        this.targetControlsTarget = new THREE.Vector3(0, 0.6, 0);
         break;
       case "direita":
-        this.camera.position.set(4.6, 1.2, 0);
-        this.controls.target.set(0, 0.6, 0);
+        this.targetCameraPos = new THREE.Vector3(4.6, 1.2, 0);
+        this.targetControlsTarget = new THREE.Vector3(0, 0.6, 0);
         break;
       case "teto":
-        this.camera.position.set(0.01, 5.2, 0.01);
-        this.controls.target.set(0, 0.5, 0);
+        this.targetCameraPos = new THREE.Vector3(0.01, 5.2, 0.01);
+        this.targetControlsTarget = new THREE.Vector3(0, 0.5, 0);
         break;
       case "reset":
       default:
-        this.camera.position.set(3.8, 2.2, 4.2);
-        this.controls.target.set(0, 0.6, 0);
+        this.targetCameraPos = new THREE.Vector3(3.8, 2.2, 4.2);
+        this.targetControlsTarget = new THREE.Vector3(0, 0.6, 0);
         break;
     }
-    this.controls.update();
   }
 
   // ==============================================================
@@ -960,12 +1036,48 @@ export class Vehicle3DScene {
   private animate() {
     this.animationId = requestAnimationFrame(this.animate.bind(this));
 
-    // Handle 10s Demo playback
+    // 1. Handle Smooth Camera & Controls Lerp
+    if (this.targetCameraPos) {
+      this.camera.position.lerp(this.targetCameraPos, 0.08);
+      if (this.camera.position.distanceTo(this.targetCameraPos) < 0.02) {
+        this.camera.position.copy(this.targetCameraPos);
+        this.targetCameraPos = null;
+      }
+    }
+    if (this.targetControlsTarget) {
+      this.controls.target.lerp(this.targetControlsTarget, 0.08);
+      if (this.controls.target.distanceTo(this.targetControlsTarget) < 0.02) {
+        this.controls.target.copy(this.targetControlsTarget);
+        this.targetControlsTarget = null;
+      }
+    }
+
+    // 2. Handle Holographic Laser Scanner Sweep
+    if (this.isLaserScanning && this.laserMesh) {
+      const elapsed = performance.now() - this.laserScanStartTime;
+      const progress = Math.min(1.0, elapsed / this.laserScanDuration);
+      // Move along Z from +2.8 to -2.8
+      this.laserMesh.position.z = 2.8 - progress * 5.6;
+
+      if (this.onLaserProgressCallback) {
+        this.onLaserProgressCallback(Math.round(progress * 100));
+      }
+
+      if (progress >= 1.0) {
+        this.isLaserScanning = false;
+        this.laserMesh.visible = false;
+        if (this.onLaserCompleteCallback) {
+          this.onLaserCompleteCallback();
+        }
+      }
+    }
+
+    // 3. Handle 10s Demo playback
     if (this.isDemoRunning) {
       this.updateDemo10s(performance.now());
     }
 
-    // Smooth lerp for exploded view transition
+    // 4. Smooth lerp for exploded view transition
     this.explosionFactor += (this.targetExplosionFactor - this.explosionFactor) * 0.1;
     this.explodedParts.forEach(ep => {
       ep.mesh.position.set(
@@ -977,7 +1089,7 @@ export class Vehicle3DScene {
 
     this.controls.update();
 
-    // Pulse animation on hotspot rings
+    // 5. Pulse animation on hotspot rings
     const time = Date.now() * 0.003;
     this.hotspotGroup.children.forEach(child => {
       if (child instanceof THREE.Mesh && child.geometry instanceof THREE.RingGeometry) {
@@ -987,6 +1099,24 @@ export class Vehicle3DScene {
     });
 
     this.renderer.render(this.scene, this.camera);
+  }
+
+  public getTelemetry() {
+    const dir = new THREE.Vector3();
+    this.camera.getWorldDirection(dir);
+    const azimuthRad = Math.atan2(dir.x, dir.z);
+    const azimuthDeg = Math.round(((azimuthRad * 180) / Math.PI + 360) % 360);
+    const elevationDeg = Math.round((Math.asin(-dir.y) * 180) / Math.PI);
+    const distance = Number(this.camera.position.distanceTo(this.controls.target).toFixed(2));
+    return {
+      azimuthDeg,
+      elevationDeg,
+      distance,
+      bodyType: this.currentBodyType,
+      isExploded: this.isExploded,
+      isTransparent: this.isTransparentBody,
+      componentsCount: this.componentMeshes.length
+    };
   }
 
   public destroy() {

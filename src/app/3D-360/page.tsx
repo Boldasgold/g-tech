@@ -11,6 +11,7 @@ export default function Vehicle3D360Page() {
   const [searchQuery, setSearchQuery] = useState("");
   const [plateInput, setPlateInput] = useState("");
   const [activeCategory, setActiveCategory] = useState<"todos" | "golf" | "sedan" | "hatch" | "suv" | "van">("todos");
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   
   // Default to Golf VII GTI
   const [currentVwModel, setCurrentVwModel] = useState<VwModelData>(
@@ -19,6 +20,11 @@ export default function Vehicle3D360Page() {
   
   // Custom vehicle name when typing
   const [customModelText, setCustomModelText] = useState("");
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
 
   // Recognition calculation
   const recognition = useMemo(() => {
@@ -155,16 +161,28 @@ export default function Vehicle3D360Page() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
-            {/* Placa do Veículo */}
-            <div className="sm:col-span-3">
+            {/* Placa do Veículo com Emblema Mercosul Real */}
+            <div className="sm:col-span-4">
               <label className="block text-slate-400 font-semibold mb-1">Placa (Entrada Oficina)</label>
-              <input
-                type="text"
-                placeholder="Ex: BRA2E19"
-                value={plateInput}
-                onChange={e => setPlateInput(e.target.value.toUpperCase())}
-                className="w-full bg-[#050b16] border border-cyan-500/30 rounded-lg p-2 text-white font-mono font-bold tracking-wider uppercase focus:outline-none focus:border-cyan-400"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Ex: BRA2E19"
+                  value={plateInput}
+                  onChange={e => setPlateInput(e.target.value.toUpperCase())}
+                  className="flex-1 bg-[#050b16] border border-cyan-500/30 rounded-lg p-2 text-white font-mono font-bold tracking-wider uppercase focus:outline-none focus:border-cyan-400"
+                />
+                {/* Placa Padrão Mercosul Autêntica */}
+                <div className="w-24 h-9 bg-white rounded border-2 border-slate-900 shadow-md flex flex-col overflow-hidden select-none shrink-0">
+                  <div className="bg-[#003399] px-1 py-0.5 flex items-center justify-between text-white text-[6px] font-bold tracking-wider leading-none">
+                    <span>BRASIL</span>
+                    <span>🇧🇷</span>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center font-mono font-black text-slate-950 text-xs uppercase tracking-wider leading-none">
+                    {plateInput.trim() || "GTC•2026"}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Montadora Selector */}
@@ -194,7 +212,7 @@ export default function Vehicle3D360Page() {
             </div>
 
             {/* Modelo / Busca Rápida */}
-            <div className="sm:col-span-6">
+            <div className="sm:col-span-5">
               <label className="block text-slate-400 font-semibold mb-1">
                 {selectedBrand === "Volkswagen" ? "Buscar entre os 51 Modelos VW ou Digitar" : "Modelo do Veículo"}
               </label>
@@ -211,8 +229,37 @@ export default function Vehicle3D360Page() {
             </div>
           </div>
 
+          {/* Atalhos Rápidos para Modelos Populares */}
+          {selectedBrand === "Volkswagen" && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-1">
+              <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">Modelos Populares:</span>
+              {[
+                { label: "Golf GTI", id: "golf-gti" },
+                { label: "Jetta GLI", id: "jetta-gli" },
+                { label: "Polo GTS", id: "polo-hatch" },
+                { label: "Tiguan Allspace", id: "tiguan" },
+                { label: "Passat R-Line", id: "passat" },
+                { label: "Up! TSI", id: "up" },
+                { label: "ID.4 Elétrico", id: "id-4" },
+                { label: "Transporter T6", id: "transporter" }
+              ].map(item => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    const match = VW_MODELS_CATALOG.find(m => m.id === item.id);
+                    if (match) handleSelectModel(match);
+                  }}
+                  className="px-2 py-0.5 rounded-full bg-slate-900 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-800 hover:border-cyan-500 text-[10px] whitespace-nowrap transition"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* HUD de Reconhecimento em Tempo Real */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-[#050e1f] to-[#071329] border border-cyan-500/30 flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 rounded-xl bg-gradient-to-r from-[#050e1f] via-[#07152d] to-[#071329] border border-cyan-500/30 flex flex-wrap items-center justify-between gap-4 shadow-lg">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-cyan-950 border border-cyan-500/40 flex items-center justify-center text-2xl shadow-inner">
                 {recognition.isVolkswagen ? "🚗" : "🔧"}
@@ -237,16 +284,56 @@ export default function Vehicle3D360Page() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Ações Técnicas Diretas da Oficina */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const text = `*G-TECH PARANAGUÁ — LAUDO DE ENTRADA*\nVeículo: ${currentLabel}\nPlaca: ${plateInput || "Não informada"}\nÓleo Homologado: ${recognition.specs?.oilViscosity || "5W40"} (${recognition.specs?.oilCapacityLiters || 4.5}L) Norma ${recognition.specs?.oilNorm || "VW 502.00"}\nPneus: ${recognition.specs?.tirePressureFrontPsi || 32}/${recognition.specs?.tirePressureRearPsi || 30} PSI\nOficina: Giovane Ribeiro • Paranaguá-PR`;
+                  navigator.clipboard.writeText(text);
+                  showToast("Ficha técnica copiada!");
+                }}
+                className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition flex items-center gap-1"
+                title="Copiar Laudo Técnico"
+              >
+                📋 Copiar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition flex items-center gap-1"
+                title="Imprimir Ficha de Vistoria Oficial"
+              >
+                🖨️ Imprimir
+              </button>
+
+              <a
+                href={`https://wa.me/554196522715?text=${encodeURIComponent(`Olá Giovane! Estou dando entrada com o veículo ${currentLabel} (Placa ${plateInput || "A combinar"}). Gostaria de realizar o diagnóstico avançado na G-Tech.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs shadow transition flex items-center gap-1"
+              >
+                💬 WhatsApp
+              </a>
+
               <Link
                 href={`/oficina?new_os=1&brand=${encodeURIComponent(selectedBrand)}&model=${encodeURIComponent(currentLabel)}&plate=${encodeURIComponent(plateInput)}`}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition flex items-center gap-1.5"
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-lg transition flex items-center gap-1.5"
               >
-                🛠️ Abrir OS com este Veículo
+                🛠️ Abrir OS na Oficina
               </Link>
             </div>
           </div>
         </div>
+
+        {/* Floating Toast Notification */}
+        {toastMsg && (
+          <div className="fixed top-16 right-4 z-50 bg-emerald-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-2xl border border-emerald-400 flex items-center gap-2">
+            <span>✓</span>
+            <span>{toastMsg}</span>
+          </div>
+        )}
 
         {/* Visualizador 3D-360 e Inspeção Mecânica */}
         <div className="space-y-2">
@@ -395,18 +482,34 @@ export default function Vehicle3D360Page() {
         {/* Ficha Técnica StartMyCar do Veículo Reconhecido */}
         <div className="bg-[#081122] p-5 rounded-xl border border-slate-800 space-y-4 shadow-xl">
           <div className="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-              📊 Especificações Técnicas de Fábrica (StartMyCar Intelligence)
-            </h3>
-            <span className="text-[11px] text-slate-400 font-mono">
-              Homologação para {currentLabel}
-            </span>
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                📊 Especificações Técnicas de Fábrica (StartMyCar Intelligence)
+              </h3>
+              <span className="text-[11px] text-slate-400 font-mono block mt-0.5">
+                Parâmetros Oficiais de Engenharia • {currentLabel}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const text = `*ESPECIFICAÇÕES STARTMYCAR — ${currentLabel}*\n- Óleo do Motor: ${recognition.specs?.oilViscosity || "5W40"} (${recognition.specs?.oilCapacityLiters || 4.5}L) - Norma: ${recognition.specs?.oilNorm || "VW 502 00 / 508 88"}\n- Pressão dos Pneus: ${recognition.specs?.tirePressureFrontPsi || 32} PSI Diant. / ${recognition.specs?.tirePressureRearPsi || 30} PSI Tras. (Carga: ${recognition.specs?.tirePressureLoadedPsi || 36} PSI)\n- Gap de Velas: ${recognition.specs?.sparkPlugsGapMm || 0.8} mm\n- Arrefecimento: Aditivo Orgânico Rosa G12/G13 (50/50)\n- Transmissão: DSG Dupla Embreagem / Manual Sintético 75W\n- Bateria: EFB / AGM 70Ah Start-Stop`;
+                  navigator.clipboard.writeText(text);
+                  showToast("Ficha StartMyCar copiada com sucesso!");
+                }}
+                className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition flex items-center gap-1"
+              >
+                📋 Copiar Especificações
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-            {/* Óleo Recomendado */}
-            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase block">Óleo do Motor & Filtro</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+            {/* 1. Óleo Recomendado */}
+            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1 hover:border-amber-500/40 transition">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase block">1. Óleo do Motor</span>
               <strong className="text-sm font-bold text-amber-400 block font-mono">
                 {recognition.specs?.oilViscosity || "5W40 100% Sintético"}
               </strong>
@@ -418,45 +521,73 @@ export default function Vehicle3D360Page() {
               </p>
             </div>
 
-            {/* Pressão dos Pneus */}
-            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase block">Pressão dos Pneus (PSI)</span>
+            {/* 2. Pressão dos Pneus */}
+            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1 hover:border-cyan-500/40 transition">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase block">2. Pressão dos Pneus</span>
               <strong className="text-sm font-bold text-cyan-400 block font-mono">
-                {recognition.specs?.tirePressureFrontPsi || 32} PSI (Diant.) / {recognition.specs?.tirePressureRearPsi || 30} PSI (Tras.)
+                {recognition.specs?.tirePressureFrontPsi || 32}/{recognition.specs?.tirePressureRearPsi || 30} PSI
               </strong>
               <p className="text-[11px] text-slate-300">
-                Sob Carga Máxima: <strong className="text-amber-300">{recognition.specs?.tirePressureLoadedPsi || 36} PSI</strong>
+                Sob Carga: <strong className="text-amber-300">{recognition.specs?.tirePressureLoadedPsi || 36} PSI</strong>
               </p>
               <p className="text-[10px] text-slate-500">
-                Calibragem a frio em Paranaguá
+                Calibragem a frio
               </p>
             </div>
 
-            {/* Ignição & Velas */}
-            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase block">Ignição & Velas</span>
+            {/* 3. Ignição & Velas */}
+            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1 hover:border-emerald-500/40 transition">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase block">3. Ignição & Velas</span>
               <strong className="text-sm font-bold text-emerald-400 block font-mono">
                 Gap: {recognition.specs?.sparkPlugsGapMm || 0.8} mm
               </strong>
               <p className="text-[11px] text-slate-300">
-                Bobinas Individuais Dinâmicas
+                Bobinas Dinâmicas
               </p>
               <p className="text-[10px] text-slate-500 font-mono">
-                Verificação com calibre de folga
+                Calibre de lâminas
               </p>
             </div>
 
-            {/* Arrefecimento */}
-            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase block">Líquido de Arrefecimento</span>
+            {/* 4. Arrefecimento */}
+            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1 hover:border-pink-500/40 transition">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase block">4. Arrefecimento</span>
               <strong className="text-sm font-bold text-pink-400 block font-mono">
-                Aditivo Orgânico Rosa G12/G13
+                G12 / G13 Rosa
               </strong>
               <p className="text-[11px] text-slate-300">
-                Proporção: <strong className="text-white">50% Aditivo / 50% Água Desmineralizada</strong>
+                Proporção: <strong className="text-white">50% Aditivo</strong>
               </p>
               <p className="text-[10px] text-slate-500 font-mono">
-                Ponto de Ebulição: 135°C sob pressão
+                Pto. Ebulição: 135°C
+              </p>
+            </div>
+
+            {/* 5. Câmbio / Transmissão */}
+            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1 hover:border-purple-500/40 transition">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase block">5. Transmissão</span>
+              <strong className="text-sm font-bold text-purple-400 block font-mono">
+                DSG / Manual
+              </strong>
+              <p className="text-[11px] text-slate-300">
+                Troca: <strong className="text-white">60.000 km</strong>
+              </p>
+              <p className="text-[10px] text-slate-500 font-mono">
+                Fluido Sintético 75W
+              </p>
+            </div>
+
+            {/* 6. Bateria & Elétrica */}
+            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1 hover:border-blue-500/40 transition">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase block">6. Bateria & Partida</span>
+              <strong className="text-sm font-bold text-blue-400 block font-mono">
+                EFB / AGM 70Ah
+              </strong>
+              <p className="text-[11px] text-slate-300">
+                Corrente: <strong className="text-white">640A (EN)</strong>
+              </p>
+              <p className="text-[10px] text-slate-500 font-mono">
+                Start-Stop Inteligente
               </p>
             </div>
           </div>
@@ -484,3 +615,4 @@ export default function Vehicle3D360Page() {
     </div>
   );
 }
+
