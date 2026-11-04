@@ -211,3 +211,14 @@ Em atendimento estrito à solicitação do cliente ("*coloque todas essas fotos 
 
 ### 7.4 Testes Automatizados de Verificação
 - Script `scripts/verify-vw-3d360.mjs`: **32 testes executados e 100% aprovados** (rotas 200 OK, rewrite minúsculo, carregamento das fotos reais, APIs de especificações e checagem de exclusividade de marcas).
+
+### 7.5 Pacote Ultra-Profissional de Alta Precisão (Centro de Diagnóstico G-Tech)
+- **Transições Suaves de Câmera (Lerp/Slerp):** Ao alternar entre ângulos (Frente, Traseira, Lado Direito, Lado Esquerdo, Teto, Motor, Freios), a câmera e o foco realizam interpolação cinemática fluida, eliminando cortes abruptos.
+- **Acabamentos de Pintura Automotiva OEM:** Seletor de 6 cores homologadas (Azul Safira G-Tech, Prata Reflex, Cinza Nardo, Preto Ninja Carbon, Branco Puro e Vermelho Flash) com shader PBR físico metálico e verniz de alto brilho (clearcoat).
+- **Varredura Laser Holográfica 360°:** Cortina de laser ciano com cálculo de progresso em tempo real e overlay diagnóstico "Mapeando Geometria do Veículo".
+- **Painel de Telemetria Dinâmica:** Leitura instantânea de azimute, elevação angular da câmera, distância métrica focal e contador de componentes inspecionados.
+- **Emblema Autêntico de Placa Mercosul:** Gráfico padrão Mercosul com bandeira do Brasil, faixa azul e tipografia estampada que se atualiza dinamicamente conforme a placa é digitada.
+- **Feedback Sonoro Sintetizado (Web Audio API):** Efeitos sonoros sutis de scanner, obturador de fotos e bips de confirmação com chave seletora liga/desliga de áudio.
+- **Escala Visual de Tolerância Metrológica:** Barra de desgaste graduada de 0 a 100% no modal de inspeção de componentes (Verde = Tolerância OEM, Amarelo = Alerta de Desgaste, Vermelho = Limite Crítico Excedido).
+- **StartMyCar 6 Variáveis:** Óleo do motor, pressão dos pneus, gap de velas, arrefecimento G12/G13, transmissão DSG/manual e bateria Start-Stop EFB/AGM.
+- **Botão Scanner 3D-360° no Cabeçalho:** Acesso direto integrado com efeito de pulso LED na barra de navegação institucional.
