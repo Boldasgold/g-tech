@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         source: "/logo-kinetic-reveal",
         destination: "/index.html?reveal=1",
       },
+      {
+        source: "/3d-360",
+        destination: "/3D-360",
+      },
     ];
   },
   images: {

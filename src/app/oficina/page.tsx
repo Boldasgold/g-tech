@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import Vehicle3DViewer from "@/components/Vehicle3DViewer";
 import { BodyType, HotspotData } from "@/lib/vehicle3d";
+import { recognizeVehicle } from "@/lib/vw-recognition";
 
 export default function OficinaDashboardPage() {
   const [activeTab, setActiveTab] = useState<"quadro" | "detalhes" | "agendamentos" | "metricas">("quadro");
@@ -231,6 +233,7 @@ export default function OficinaDashboardPage() {
 
   // Convert Appointment to OS
   const handleConvertAppointment = (apt: any) => {
+    const rec = recognizeVehicle(apt.vehicle_brand, apt.vehicle_model);
     setNewOsForm({
       customer_name: apt.customer_name,
       customer_phone: apt.customer_phone,
@@ -240,7 +243,7 @@ export default function OficinaDashboardPage() {
       vehicle_plate: apt.vehicle_plate || "",
       vehicle_year: "2021",
       vehicle_km: "50000",
-      vehicle_body_type: "suv",
+      vehicle_body_type: rec.isVolkswagen ? rec.bodyType : "suv",
       initial_scope: "Atendimento iniciado a partir de agendamento web",
       customer_complaint: apt.issue_description + (apt.dashboard_alert ? ` [Alerta: ${apt.dashboard_alert}]` : ""),
       appointment_id: apt.id
@@ -472,7 +475,14 @@ export default function OficinaDashboardPage() {
         </div>
 
         {/* User profile badge & action */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/3D-360"
+            className="px-3 py-1.5 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/40 font-bold text-xs shadow transition flex items-center gap-1.5"
+            target="_blank"
+          >
+            <span>🔍 Scanner 3D-360°</span>
+          </Link>
           <button
             type="button"
             onClick={() => {
@@ -1746,11 +1756,19 @@ export default function OficinaDashboardPage() {
                   <label className="block text-slate-400 mb-1 font-medium">Marca *</label>
                   <select
                     value={newOsForm.vehicle_brand}
-                    onChange={e => setNewOsForm({ ...newOsForm, vehicle_brand: e.target.value })}
+                    onChange={e => {
+                      const brand = e.target.value;
+                      const rec = recognizeVehicle(brand, newOsForm.vehicle_model);
+                      setNewOsForm({
+                        ...newOsForm,
+                        vehicle_brand: brand,
+                        vehicle_body_type: rec.isVolkswagen ? rec.bodyType : newOsForm.vehicle_body_type
+                      });
+                    }}
                     className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
                   >
                     <option value="Renault">Renault</option>
-                    <option value="Volkswagen">Volkswagen</option>
+                    <option value="Volkswagen">Volkswagen (51 Modelos)</option>
                     <option value="Chevrolet">Chevrolet</option>
                     <option value="Fiat">Fiat</option>
                     <option value="Ford">Ford</option>
@@ -1770,8 +1788,16 @@ export default function OficinaDashboardPage() {
                     required
                     type="text"
                     value={newOsForm.vehicle_model}
-                    onChange={e => setNewOsForm({ ...newOsForm, vehicle_model: e.target.value })}
-                    placeholder="Ex: Duster 2.0"
+                    onChange={e => {
+                      const model = e.target.value;
+                      const rec = recognizeVehicle(newOsForm.vehicle_brand, model);
+                      setNewOsForm({
+                        ...newOsForm,
+                        vehicle_model: model,
+                        vehicle_body_type: rec.isVolkswagen ? rec.bodyType : newOsForm.vehicle_body_type
+                      });
+                    }}
+                    placeholder="Ex: Golf GTI, Jetta, Duster..."
                     className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
                   />
                 </div>
@@ -1790,6 +1816,36 @@ export default function OficinaDashboardPage() {
                   </select>
                 </div>
               </div>
+
+              {/* Indicador de Reconhecimento Inteligente VW */}
+              {(() => {
+                const rec = recognizeVehicle(newOsForm.vehicle_brand, newOsForm.vehicle_model);
+                if (rec.isVolkswagen && rec.matchedModel) {
+                  return (
+                    <div className="p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-600/50 flex items-center justify-between gap-2 text-emerald-300">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">🚗</span>
+                        <div>
+                          <strong className="block text-white text-[11px]">
+                            Veículo Reconhecido pela Oficina: {rec.matchedModel.name}
+                          </strong>
+                          <span className="text-[10px] text-emerald-400">
+                            {rec.matchedModel.generation} • Carroceria: {rec.bodyType.toUpperCase()} • Foto Real Vinculada
+                          </span>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/3D-360`}
+                        target="_blank"
+                        className="text-[10px] text-cyan-300 underline font-bold hover:text-white"
+                      >
+                        Abrir no 3D-360° ↗
+                      </Link>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

@@ -419,6 +419,7 @@ function initSchema(db: DatabaseSync) {
   seedInitialData(db);
   seedTechSpecs(db);
   seedComponentsAndReplacements(db);
+  seedVolkswagenModels(db);
 }
 
 function seedInitialData(db: DatabaseSync) {
@@ -1377,6 +1378,164 @@ function seedComponentsAndReplacements(db: DatabaseSync) {
       "Giovane Ribeiro",
       "PEÇA TROCADA",
       "Garantia de 90 dias / 10.000 km para o pacote de troca de óleo e filtro."
+    );
+  }
+}
+
+function seedVolkswagenModels(db: DatabaseSync) {
+  const insertSpec = db.prepare(`
+    INSERT OR REPLACE INTO vehicle_tech_specs (
+      id, brand, model, years, engine, body_type, real_photo_url,
+      oil_viscosity, oil_capacity_liters, oil_norm,
+      coolant_type, coolant_capacity_liters, brake_fluid,
+      tire_pressure_front_psi, tire_pressure_rear_psi, tire_pressure_loaded_psi,
+      spark_plugs_gap_mm, fuse_box_engine, fuse_box_cabin, common_issues
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const vwModels = [
+    {
+      id: "spec-vw-golf-gti",
+      brand: "Volkswagen",
+      model: "Golf VII GTI",
+      years: "2013-2020",
+      engine: "2.0 TSI EA888 Gen 3 Turbo (220/230cv)",
+      body_type: "hatch",
+      real_photo_url: "/img/vehicles/volkswagen/fotos/golf-gti.jpg",
+      oil_viscosity: "5W40 100% Sintético",
+      oil_capacity_liters: 5.7,
+      oil_norm: "VW 502 00 / 508 88",
+      coolant_type: "Aditivo G12 / G13 Rosa",
+      coolant_capacity_liters: 6.5,
+      brake_fluid: "DOT 4 Sintético",
+      tire_front: 34,
+      tire_rear: 34,
+      tire_loaded: 38,
+      gap: 0.7,
+      common: [
+        { symptom: "Falha de cilindro em alta carga", cause: "Carbonização de válvulas de admissão ou vela gasta.", procedure: "Descarbonização química e teste de compressão." },
+        { symptom: "Alerta de nível de líquido de arrefecimento", cause: "Vazamento na bomba d'água mecânica.", procedure: "Substituir conjunto de carcaça e termostática." }
+      ]
+    },
+    {
+      id: "spec-vw-jetta-gli",
+      brand: "Volkswagen",
+      model: "Jetta GLI",
+      years: "2019-2024",
+      engine: "2.0 TSI 350 TSI (230cv) DSG 7",
+      body_type: "sedan",
+      real_photo_url: "/img/vehicles/volkswagen/fotos/jetta-gli.jpg",
+      oil_viscosity: "5W40 / 0W20 Sintético",
+      oil_capacity_liters: 5.7,
+      oil_norm: "VW 502 00 / 508 88",
+      coolant_type: "Aditivo G12 / G13 Rosa",
+      coolant_capacity_liters: 6.5,
+      brake_fluid: "DOT 4",
+      tire_front: 35,
+      tire_rear: 35,
+      tire_loaded: 39,
+      gap: 0.7,
+      common: [
+        { symptom: "Tranco leve na troca de marcha em frio", cause: "Degradação do fluido DSG DQ381.", procedure: "Trocar fluido e filtro DSG com calibração básica via scanner." }
+      ]
+    },
+    {
+      id: "spec-vw-tiguan",
+      brand: "Volkswagen",
+      model: "Tiguan",
+      years: "2016-2024",
+      engine: "1.4 TSI / 2.0 TSI 350 TSI 4Motion",
+      body_type: "suv",
+      real_photo_url: "/img/vehicles/volkswagen/fotos/tiguan.jpg",
+      oil_viscosity: "5W40 Sintético Maxi Performance",
+      oil_capacity_liters: 5.7,
+      oil_norm: "VW 502 00 / 508 88",
+      coolant_type: "Aditivo G12 / G13 Rosa",
+      coolant_capacity_liters: 7.0,
+      brake_fluid: "DOT 4",
+      tire_front: 35,
+      tire_rear: 35,
+      tire_loaded: 41,
+      gap: 0.75,
+      common: [
+        { symptom: "Ruído na suspensão em piso irregular", cause: "Folga em buchas da bandeja dianteira.", procedure: "Substituição das buchas de poliuretano / OEM." }
+      ]
+    },
+    {
+      id: "spec-vw-polo-hatch",
+      brand: "Volkswagen",
+      model: "Polo",
+      years: "2018-2024",
+      engine: "1.0 MPI / 1.0 200 TSI / 1.4 GTS",
+      body_type: "hatch",
+      real_photo_url: "/img/vehicles/volkswagen/fotos/polo-hatch.jpg",
+      oil_viscosity: "5W40 / 0W20 Maxi Performance",
+      oil_capacity_liters: 4.0,
+      oilNorm: "VW 502 00 / 508 88",
+      coolant_type: "Aditivo G12 / G13 Rosa",
+      coolant_capacity_liters: 5.5,
+      brake_fluid: "DOT 4",
+      tire_front: 32,
+      tire_rear: 30,
+      tire_loaded: 34,
+      gap: 0.8,
+      common: [
+        { symptom: "Ruído de partida a frio", cause: "Batida momentânea de tucho hidráulico até pressão de óleo.", procedure: "Verificar viscosidade do óleo e filtro com válvula antirretorno." }
+      ]
+    },
+    {
+      id: "spec-vw-up",
+      brand: "Volkswagen",
+      model: "Up!",
+      years: "2014-2021",
+      engine: "1.0 12V EA211 (MPI / TSI Turbo)",
+      body_type: "hatch",
+      real_photo_url: "/img/vehicles/volkswagen/fotos/up.jpg",
+      oil_viscosity: "5W40 100% Sintético",
+      oil_capacity_liters: 3.3,
+      oilNorm: "VW 502 00 / 508 88",
+      coolant_type: "Aditivo G12 / G13 Rosa",
+      coolant_capacity_liters: 4.5,
+      brake_fluid: "DOT 4",
+      tire_front: 32,
+      tire_rear: 29,
+      tire_loaded: 34,
+      gap: 0.8,
+      common: [
+        { symptom: "Vazamento na junta da bomba d'água", cause: "Empenamento leve na carcaça plástica.", procedure: "Trocar carcaça e anéis de vedação." }
+      ]
+    }
+  ];
+
+  for (const m of vwModels) {
+    insertSpec.run(
+      m.id,
+      m.brand,
+      m.model,
+      m.years,
+      m.engine,
+      m.body_type,
+      m.real_photo_url,
+      m.oil_viscosity,
+      m.oil_capacity_liters,
+      m.oil_norm || "VW 502 00 / 508 88",
+      m.coolant_type,
+      m.coolant_capacity_liters,
+      m.brake_fluid,
+      m.tire_front,
+      m.tire_rear,
+      m.tire_loaded,
+      m.gap,
+      JSON.stringify([
+        { fuse: "F1", amp: "30A", color: "#22c55e", desc: "Ventoinha do Radiador" },
+        { fuse: "F2", amp: "20A", color: "#eab308", desc: "Bomba de Combustível Alta Pressão" },
+        { fuse: "F3", amp: "15A", color: "#3b82f6", desc: "Bobinas de Ignição e Injetores" }
+      ]),
+      JSON.stringify([
+        { fuse: "F10", amp: "15A", color: "#3b82f6", desc: "Tomada OBD2 e Painel" },
+        { fuse: "F11", amp: "20A", color: "#eab308", desc: "Vidros e Travas" }
+      ]),
+      JSON.stringify(m.common)
     );
   }
 }

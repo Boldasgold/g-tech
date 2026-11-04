@@ -1,4 +1,5 @@
 import { Vehicle3DScene, BodyType } from "./vehicle3d";
+import { recognizeVehicle } from "./vw-recognition";
 
 // Global GTech3D interface for public/script.js
 (window as any).GTech3D = {
@@ -41,6 +42,10 @@ import { Vehicle3DScene, BodyType } from "./vehicle3d";
   },
 
   detectBodyType(brand: string, model: string): BodyType {
+    const rec = recognizeVehicle(brand, model);
+    if (rec.isVolkswagen) {
+      return rec.bodyType;
+    }
     const text = `${brand} ${model}`.toLowerCase();
     if (text.includes("duster") || text.includes("suv") || text.includes("t-cross") || text.includes("tracker") || text.includes("compass") || text.includes("kicks") || text.includes("creta") || text.includes("renegade")) {
       return "suv";

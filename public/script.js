@@ -334,6 +334,12 @@ function initSchedulingWizard() {
     }
 
     function resolveVehiclePhoto(brand, model, bodyType) {
+        if (window.GTechVwMatcher) {
+            const vw = window.GTechVwMatcher.recognize(brand, model);
+            if (vw.isVw && vw.photoUrl) {
+                return vw.photoUrl;
+            }
+        }
         const text = `${brand} ${model}`.toLowerCase();
         if (text.includes("duster")) return "img/vehicles/renault-duster.jpg";
         if (text.includes("sandero") || text.includes("stepway") || text.includes("kwid")) return "img/vehicles/renault-sandero.jpg";
@@ -341,7 +347,6 @@ function initSchedulingWizard() {
         if (text.includes("oroch")) return "img/vehicles/renault-oroch.jpg";
         if (text.includes("master")) return "img/vehicles/renault-master.jpg";
         if (text.includes("onix")) return "img/vehicles/chevrolet-onix.jpg";
-        if (text.includes("gol") || text.includes("polo")) return "img/vehicles/volkswagen-gol.jpg";
 
         if (bodyType === "suv") return "img/vehicles/suv-real.jpg";
         if (bodyType === "sedan") return "img/vehicles/sedan-real.jpg";
@@ -354,9 +359,34 @@ function initSchedulingWizard() {
         const b = vehicleBrand ? vehicleBrand.value : "";
         const m = vehicleModelYear ? vehicleModelYear.value : "";
         let type = "hatch";
-        if (window.GTech3D) {
+        let isVwRecognized = false;
+        let vwName = "";
+
+        if (window.GTechVwMatcher) {
+            const vw = window.GTechVwMatcher.recognize(b, m);
+            if (vw.isVw) {
+                isVwRecognized = true;
+                vwName = vw.name || "Volkswagen";
+                type = vw.body || "hatch";
+            }
+        }
+
+        if (!isVwRecognized && window.GTech3D) {
             type = window.GTech3D.detectBodyType(b, m);
+        }
+
+        if (window.GTech3D) {
             window.GTech3D.setBodyType(type);
+        }
+
+        const vwBadge = document.getElementById("vehicleVwRecognizedBadge");
+        if (vwBadge) {
+            if (isVwRecognized) {
+                vwBadge.style.display = "inline-block";
+                vwBadge.textContent = `🚗 ${vwName}`;
+            } else {
+                vwBadge.style.display = "none";
+            }
         }
 
         // Update real photo

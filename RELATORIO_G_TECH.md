@@ -180,3 +180,34 @@ O servidor estará respondendo imediatamente em `http://localhost:3000`.
 6. **API Dados Técnicos StartMyCar:** [http://localhost:3000/api/tech-specs?brand=Renault&model=Duster](http://localhost:3000/api/tech-specs?brand=Renault&model=Duster)
 7. **Impressão da OS em PDF com Peças Trocadas & Metrologia:** [http://localhost:3000/api/work-orders/GT-OS-000127/pdf](http://localhost:3000/api/work-orders/GT-OS-000127/pdf)
 8. **Download de CSV:** [http://localhost:3000/api/dashboard/metrics?export=csv](http://localhost:3000/api/dashboard/metrics?export=csv)
+
+---
+
+## 7. Módulo de Reconhecimento Inteligente Volkswagen & Scanner 3D-360°
+
+Em atendimento estrito à solicitação do cliente ("*coloque todas essas fotos na parte apenas da volkswagen e essas todos ela tem que está na parte /3D-360 reconhecer o veiculo que entrar na oficina*"), foram implementados:
+
+### 7.1 Acervo Fotográfico Exclusivo Volkswagen (51 Modelos Oficiais)
+- O arquivo compactado `GTech_Fotos_Veiculos.zip` foi extraído na íntegra para `public/img/vehicles/volkswagen/fotos/`.
+- Contém exatamente **51 fotografias reais homologadas em alta resolução**, cobrindo todas as gerações e modelos emblemáticos da marca:
+  1. **Família Golf (16 modelos):** Golf I (MK1 1977), Golf II (1991), Golf III (GTI 1996), Golf IV (Sapão 1998), Golf V, Golf VI, Golf VII, Golf GTI (2.0 TSI DSG), Golf R (300cv 4Motion), Golf Alltrack (4x4), Golf Cabriolet, Golf Plus, Golf Sportsvan, Golf Variant (SportWagen), e-Golf e e-Golf 2017.
+  2. **Sedans, Coupés e Fastbacks (14 modelos):** Jetta (Comfortline/Highline), Jetta GLI (350 TSI 230cv), Passat (B8 R-Line), Passat CC, CC, Passat Variant, Passat NMS (Norte-Americano), Arteon (Fastback), Arteon Shooting Brake, Bora, Bora Variant, Phaeton (W12/V8), Polo Sedã / Virtus e Eos Cabriolet.
+  3. **Hatches e Compactos (9 modelos):** Polo Hatch (Track/TSI/GTS), Up! (MPI/TSI), e-Up! 100% Elétrico, Beetle (Novo Fusca TSI), Beetle Cabriolet, Lupo, Lupo 3L TDI (3L/100km), Scirocco Coupé e ID.3 Elétrico.
+  4. **SUVs e Crossovers (5 modelos):** Tiguan (Allspace 350 TSI), Tiguan 5N (Primeira Geração / Limited), Touareg (V6 R-Line), Atlas (7 Lugares) e ID.4 SUV Elétrico.
+  5. **Vans, Utilitários e Comerciais (7 modelos):** Crafter Furgão, e-Crafter Elétrico, Transporter T6 / Kombi Moderna, Caddy Furgão, Touran Minivan, Sharan (7 Lugares) e MAN TGE (Caminhão Leve Grupo VW).
+- **Regra de Exclusividade:** Nenhuma outra montadora (Renault, GM, Fiat, Toyota, etc.) utiliza fotos desse acervo; as fotos são ativadas estritamente para a Volkswagen.
+
+### 7.2 Nova Rota Dedicada: `/3D-360` (Scanner e Entrada da Oficina)
+- Criada a página `src/app/3D-360/page.tsx` (com rewrite de compatibilidade `/3d-360` em `next.config.ts`).
+- **HUD de Reconhecimento em Tempo Real:** Ao digitar a placa ou modelo na recepção da oficina, o sistema identifica automaticamente o veículo, calcula a geração, vincula a foto real homologada e ajusta a carroceria 3D (`hatch`, `sedan`, `suv`, `van`, `picape`).
+- **Galeria Visual dos 51 Modelos:** Filtros dinâmicos em abas (Todos, Golf, Sedans, Hatches, SUVs, Vans) para seleção imediata com um clique.
+- **Integração StartMyCar:** Exibição do óleo de fábrica homologado (ex: 5W40 VW 502 00 / 508 88), capacidade em litros, calibração de pneus dianteiro/traseiro em PSI e gap de velas de ignição em mm.
+- **Ação Direta de Entrada:** Botão "Abrir OS com este Veículo" que transfere todos os dados para o dashboard operacional `/oficina`.
+
+### 7.3 Atualização dos Visualizadores e Portais
+- `src/components/Vehicle3DViewer.tsx`: Incorporado o matcher inteligente com badge luminoso de reconhecimento e ficha técnica na aba "Foto Real".
+- `public/script.js` e `public/index.html`: Na etapa 1 do agendamento web, ao selecionar Volkswagen e digitar qualquer um dos modelos, o badge de reconhecimento e a foto real correspondente aparecem instantaneamente.
+- `src/app/oficina/page.tsx`: Modal de Nova OS e vistoria técnica integrados com prévia automática e botão de atalho para o Scanner 3D-360°.
+
+### 7.4 Testes Automatizados de Verificação
+- Script `scripts/verify-vw-3d360.mjs`: **32 testes executados e 100% aprovados** (rotas 200 OK, rewrite minúsculo, carregamento das fotos reais, APIs de especificações e checagem de exclusividade de marcas).

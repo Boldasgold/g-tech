@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Vehicle3DScene, BodyType, HotspotData, ComponentMeshInfo } from "@/lib/vehicle3d";
+import { recognizeVehicle } from "@/lib/vw-recognition";
 
 interface Vehicle3DViewerProps {
   bodyType: BodyType;
@@ -31,20 +32,8 @@ interface Vehicle3DViewerProps {
 
 function resolveRealPhoto(label: string, bodyType: string, overrideUrl?: string): string {
   if (overrideUrl) return overrideUrl;
-  const l = (label || "").toLowerCase();
-  if (l.includes("duster")) return "/img/vehicles/renault-duster.jpg";
-  if (l.includes("sandero") || l.includes("stepway") || l.includes("kwid")) return "/img/vehicles/renault-sandero.jpg";
-  if (l.includes("logan")) return "/img/vehicles/renault-logan.jpg";
-  if (l.includes("oroch")) return "/img/vehicles/renault-oroch.jpg";
-  if (l.includes("master")) return "/img/vehicles/renault-master.jpg";
-  if (l.includes("onix")) return "/img/vehicles/chevrolet-onix.jpg";
-  if (l.includes("gol") || l.includes("polo")) return "/img/vehicles/volkswagen-gol.jpg";
-
-  if (bodyType === "suv") return "/img/vehicles/suv-real.jpg";
-  if (bodyType === "sedan") return "/img/vehicles/sedan-real.jpg";
-  if (bodyType === "picape") return "/img/vehicles/picape-real.jpg";
-  if (bodyType === "van") return "/img/vehicles/van-real.jpg";
-  return "/img/vehicles/hatch-real.jpg";
+  const recognition = recognizeVehicle("", label, bodyType);
+  return recognition.photoUrl;
 }
 
 export default function Vehicle3DViewer({
@@ -112,7 +101,9 @@ export default function Vehicle3DViewer({
   const [hsDescription, setHsDescription] = useState("");
   const [hsPhotoUrl, setHsPhotoUrl] = useState("");
 
-  const resolvedPhoto = resolveRealPhoto(vehicleLabel, bodyType, realPhotoUrl);
+  const recognition = recognizeVehicle("", vehicleLabel, bodyType);
+  const effectiveBodyType = recognition.isVolkswagen ? recognition.bodyType : bodyType;
+  const resolvedPhoto = realPhotoUrl || recognition.photoUrl;
 
   useEffect(() => {
     if (!containerRef.current || viewMode !== "3d") return;
@@ -162,7 +153,7 @@ export default function Vehicle3DViewer({
       replacedComponentIds
     });
 
-    scene.setBodyType(bodyType);
+    scene.setBodyType(effectiveBodyType);
     scene.setHotspots(hotspots);
     sceneRef.current = scene;
 
@@ -174,9 +165,9 @@ export default function Vehicle3DViewer({
 
   useEffect(() => {
     if (sceneRef.current) {
-      sceneRef.current.setBodyType(bodyType);
+      sceneRef.current.setBodyType(effectiveBodyType);
     }
-  }, [bodyType]);
+  }, [effectiveBodyType]);
 
   useEffect(() => {
     if (sceneRef.current) {
@@ -331,14 +322,20 @@ export default function Vehicle3DViewer({
     <div className="relative w-full rounded-xl overflow-hidden border border-cyan-500/30 bg-[#060c18] shadow-2xl">
       {/* Top Header Bar */}
       <div className="flex flex-wrap justify-between items-center px-4 py-2.5 bg-[#0a1426] border-b border-cyan-500/20 text-xs gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
           <span className="font-bold text-slate-200 tracking-wider uppercase font-mono">
             {vehicleLabel}
           </span>
-          <span className="text-[10px] text-cyan-400/80 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded">
-            Carroceria: {bodyType.toUpperCase()}
+          <span className="text-[10px] text-cyan-400/80 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded font-mono">
+            Carroceria: {effectiveBodyType.toUpperCase()}
           </span>
+          {recognition.isVolkswagen && (
+            <span className="text-[10px] text-emerald-300 bg-emerald-950/80 border border-emerald-500/50 px-2 py-0.5 rounded font-bold flex items-center gap-1 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              🚗 Reconhecido: {recognition.matchedModel?.name || "Volkswagen"} (Foto Real Homologada)
+            </span>
+          )}
         </div>
 
         {/* View Mode Switcher: 3D, Real Photo, 2D */}
@@ -534,19 +531,35 @@ export default function Vehicle3DViewer({
 
         {/* VIEW 2: REAL VEHICLE PHOTOGRAPHY */}
         {viewMode === "photo" && (
-          <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#060c18] to-[#02050c]">
+          <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#060c18] to-[#02050c] overflow-y-auto">
             <img
               src={resolvedPhoto}
               alt={vehicleLabel}
-              className="max-h-[340px] max-w-[90%] object-contain rounded-lg border border-cyan-500/30 shadow-2xl"
+              className="max-h-[300px] max-w-[90%] object-contain rounded-lg border border-cyan-500/30 shadow-2xl"
             />
-            <div className="mt-4 text-center">
+            <div className="mt-4 text-center max-w-xl">
               <span className="text-xs text-amber-400 font-bold uppercase tracking-wider block">
-                Fotografia Real de Referência Homologada
+                {recognition.isVolkswagen && recognition.matchedModel
+                  ? `Fotografia Real: Volkswagen ${recognition.matchedModel.name} (${recognition.matchedModel.generation})`
+                  : "Fotografia Real de Referência Homologada"}
               </span>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Utilizada para checagem dimensional, comparação visual de peças e fidelidade à montadora.
-              </p>
+              {recognition.isVolkswagen && recognition.matchedModel ? (
+                <div className="mt-1 space-y-1">
+                  <p className="text-[11px] text-slate-300 font-medium">
+                    Motorização: <strong className="text-white">{recognition.matchedModel.engine}</strong> | Categoria: <strong className="text-cyan-300">{recognition.matchedModel.category}</strong>
+                  </p>
+                  <p className="text-[10px] text-slate-400">
+                    Óleo Homologado: <strong className="text-emerald-400 font-mono">{recognition.matchedModel.oilViscosity}</strong> ({recognition.matchedModel.oilCapacityLiters}L) • Pneus: <strong className="text-slate-200 font-mono">{recognition.matchedModel.tirePressureFrontPsi}/{recognition.matchedModel.tirePressureRearPsi} PSI</strong>
+                  </p>
+                  <p className="text-[9px] text-slate-500 font-mono mt-1">
+                    Foto: {recognition.matchedModel.author} ({recognition.matchedModel.license}) • Acervo Oficial G-Tech Paranaguá
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Utilizada para checagem dimensional, comparação visual de peças e fidelidade à montadora.
+                </p>
+              )}
             </div>
           </div>
         )}
