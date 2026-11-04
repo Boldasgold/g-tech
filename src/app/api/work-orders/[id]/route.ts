@@ -101,6 +101,22 @@ export async function GET(
       ORDER BY created_at ASC
     `).all(woId);
 
+    // 9. Replaced parts ("PEÇA TROCADA")
+    const replacedParts = db.prepare(`
+      SELECT * FROM wo_replaced_parts
+      WHERE work_order_id = ?
+      ORDER BY replaced_at DESC
+    `).all(woId);
+
+    // 10. Component inspections with measurements
+    const componentInspections = db.prepare(`
+      SELECT i.*, c.component_name, c.assembly_name, c.system_group, c.position_side, c.axle, c.mesh_id
+      FROM wo_component_inspections i
+      JOIN vehicle_components c ON i.component_id = c.id
+      WHERE i.work_order_id = ?
+      ORDER BY i.inspected_at DESC
+    `).all(woId);
+
     return NextResponse.json({
       success: true,
       work_order: wo,
@@ -110,7 +126,9 @@ export async function GET(
       quotes: quotesWithItems,
       customer_decisions: customerDecisions,
       exit_checklist: exitChecklist,
-      timeline
+      timeline,
+      replaced_parts: replacedParts,
+      component_inspections: componentInspections
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

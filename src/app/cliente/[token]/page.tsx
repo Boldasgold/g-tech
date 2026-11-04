@@ -251,11 +251,21 @@ export default function ClientePortalPage() {
 
         {/* 3D Vehicle Interactive Viewer & Inspection Findings */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">
               Vistoria 3D & Achados Técnicos do Veículo
             </h3>
-            <span className="text-[11px] text-slate-400">Gire em 360° para inspecionar</span>
+            <div className="flex items-center gap-2">
+              {data.replaced_parts && data.replaced_parts.length > 0 && (
+                <a
+                  href="#pecas-trocadas"
+                  className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center gap-1 transition"
+                >
+                  🔍 Ver Peças Trocadas ({data.replaced_parts.length})
+                </a>
+              )}
+              <span className="text-[11px] text-slate-400">Gire em 360° para inspecionar</span>
+            </div>
           </div>
 
           <Vehicle3DViewer
@@ -263,8 +273,77 @@ export default function ClientePortalPage() {
             hotspots={data.hotspots || []}
             readOnly={true}
             vehicleLabel={`${data.vehicle?.brand} ${data.vehicle?.model}`}
+            replacedComponentIds={data.replaced_parts?.map((r: any) => r.component_id) || []}
+            workOrderId={data.work_order_id}
           />
         </div>
+
+        {/* Section: Peças Substituídas com Selo Oficial ("PEÇA TROCADA") */}
+        {data.replaced_parts && data.replaced_parts.length > 0 && (
+          <div id="pecas-trocadas" className="bg-[#081122] p-5 rounded-xl border border-emerald-500/40 space-y-4 shadow-xl">
+            <div className="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold uppercase">
+                  Transparência Técnica G-Tech
+                </span>
+                <h3 className="font-bold text-sm text-white mt-1">
+                  Peças Substituídas neste Veículo ("PEÇA TROCADA")
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Comprovação técnica auditável com registro fotográfico antes e depois da execução.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {data.replaced_parts.map((r: any) => (
+                <div key={r.id} className="p-4 rounded-xl bg-[#0b1528] border border-emerald-500/30 space-y-3 text-xs">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <strong className="text-sm text-white block">{r.component_name}</strong>
+                      <span className="text-[10px] text-cyan-400 font-mono block mt-0.5">{r.assembly_path}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold text-[10px] tracking-wide shrink-0">
+                      ✅ {r.seal_status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 bg-slate-950/60 p-2.5 rounded border border-slate-800 text-[11px]">
+                    <div>
+                      <span className="text-slate-400 font-semibold">Peça Retirada (Anterior): </span>
+                      <span className="text-slate-300">{r.removed_part_desc}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-semibold">Peça Nova Instalada: </span>
+                      <span className="text-emerald-300 font-semibold">{r.installed_part_desc}</span>
+                    </div>
+                    <div className="flex justify-between pt-1 border-t border-slate-800 text-[10px] text-slate-400">
+                      <span>Mecânico: <strong className="text-slate-200">{r.technician_name}</strong></span>
+                      <span className="text-emerald-400 font-semibold">{r.warranty_terms}</span>
+                    </div>
+                  </div>
+
+                  {(r.photo_before_url || r.photo_after_url) && (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      {r.photo_before_url && (
+                        <div>
+                          <span className="text-[9px] uppercase font-bold text-red-400 block mb-1">📸 Antes (Retirada)</span>
+                          <img src={r.photo_before_url} alt="Antes" className="w-full h-24 object-cover rounded border border-red-950/60" />
+                        </div>
+                      )}
+                      {r.photo_after_url && (
+                        <div>
+                          <span className="text-[9px] uppercase font-bold text-emerald-400 block mb-1">📸 Depois (Instalada)</span>
+                          <img src={r.photo_after_url} alt="Depois" className="w-full h-24 object-cover rounded border border-emerald-950/60" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Item by Item Quote Breakdown */}
         <div className="bg-[#081122] p-5 rounded-xl border border-slate-800 space-y-4 shadow-xl">

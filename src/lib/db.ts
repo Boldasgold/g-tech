@@ -357,10 +357,68 @@ function initSchema(db: DatabaseSync) {
       common_issues TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
     );
+
+    -- 18. Catálogo Expansível de Componentes Automotivos
+    CREATE TABLE IF NOT EXISTS vehicle_components (
+      id TEXT PRIMARY KEY,
+      system_group TEXT NOT NULL,
+      assembly_name TEXT NOT NULL,
+      component_name TEXT NOT NULL,
+      position_side TEXT NOT NULL DEFAULT 'central',
+      axle TEXT NOT NULL DEFAULT 'dianteiro',
+      mesh_id TEXT,
+      applicability TEXT NOT NULL DEFAULT 'confirmada',
+      oem_code TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    );
+
+    -- 19. Inspeções Técnicas por Componente na OS
+    CREATE TABLE IF NOT EXISTS wo_component_inspections (
+      id TEXT PRIMARY KEY,
+      work_order_id TEXT NOT NULL,
+      component_id TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('ok', 'atencao', 'critico', 'nao_inspecionado', 'nao_aplicavel')),
+      test_performed TEXT,
+      measurement_value TEXT,
+      tolerance_spec TEXT,
+      finding_description TEXT,
+      priority TEXT NOT NULL DEFAULT 'normal' CHECK(priority IN ('baixa', 'normal', 'alta', 'critica')),
+      photo_url TEXT,
+      suggested_repair TEXT,
+      suggested_part_price REAL DEFAULT 0,
+      suggested_service_price REAL DEFAULT 0,
+      is_quoted INTEGER DEFAULT 0,
+      inspected_by TEXT NOT NULL,
+      inspected_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (work_order_id) REFERENCES work_orders(id),
+      FOREIGN KEY (component_id) REFERENCES vehicle_components(id)
+    );
+
+    -- 20. Registro Oficial de Peças Substituídas ("PEÇA TROCADA")
+    CREATE TABLE IF NOT EXISTS wo_replaced_parts (
+      id TEXT PRIMARY KEY,
+      work_order_id TEXT NOT NULL,
+      quote_item_id TEXT,
+      component_id TEXT,
+      component_name TEXT NOT NULL,
+      assembly_path TEXT NOT NULL,
+      position_side TEXT,
+      removed_part_desc TEXT NOT NULL,
+      installed_part_desc TEXT NOT NULL,
+      photo_before_url TEXT,
+      photo_after_url TEXT,
+      technician_name TEXT NOT NULL,
+      seal_status TEXT NOT NULL DEFAULT 'PEÇA TROCADA',
+      warranty_terms TEXT DEFAULT '90 dias conforme CDC',
+      replaced_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (work_order_id) REFERENCES work_orders(id)
+    );
   `);
 
   seedInitialData(db);
   seedTechSpecs(db);
+  seedComponentsAndReplacements(db);
 }
 
 function seedInitialData(db: DatabaseSync) {
@@ -1093,4 +1151,234 @@ function seedTechSpecs(db: DatabaseSync) {
     ])
   );
 }
+
+function seedComponentsAndReplacements(db: DatabaseSync) {
+  const checkComp = db.prepare("SELECT count(*) as count FROM vehicle_components").get() as { count: number };
+  if (checkComp && checkComp.count > 0) return;
+
+  const insertComp = db.prepare(`
+    INSERT INTO vehicle_components (
+      id, system_group, assembly_name, component_name, position_side, axle, mesh_id, applicability, oem_code, notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const components = [
+    // 1. Propulsão e Alimentação
+    { id: "cmp-engine-block", sys: "propulsao", ass: "Motor", name: "Bloco do Motor & Pistões", side: "central", axle: "dianteiro", mesh: "mesh_engine_block", oem: "F4R-2001", notes: "Bloco em ferro fundido de 4 cilindros em linha." },
+    { id: "cmp-cylinder-head", sys: "propulsao", ass: "Motor › Cabeçote", name: "Cabeçote 16 Válvulas", side: "central", axle: "dianteiro", mesh: "mesh_cylinder_head", oem: "7701471378", notes: "Cabeçote de alumínio com comando duplo DOHC." },
+    { id: "cmp-camshaft", sys: "propulsao", ass: "Motor › Cabeçote", name: "Comando de Válvulas", side: "central", axle: "dianteiro", mesh: "mesh_camshaft", oem: "8200100527", notes: "Eixo comando de admissão e escape com cames tratados." },
+    { id: "cmp-spark-plugs", sys: "propulsao", ass: "Motor › Ignição", name: "Velas de Ignição (Jogo 4)", side: "central", axle: "dianteiro", mesh: "mesh_spark_plugs", oem: "7700500168", notes: "Velas de níquel/irídio gap calibrado em 0.9mm." },
+    { id: "cmp-ignition-coils", sys: "propulsao", ass: "Motor › Ignição", name: "Bobinas de Ignição Individuais", side: "central", axle: "dianteiro", mesh: "mesh_ignition_coils", oem: "8200765882", notes: "Bobinas tipo caneta para cada vela." },
+    { id: "cmp-fuel-injectors", sys: "propulsao", ass: "Motor › Injeção", name: "Bicos Injetores Multiponto", side: "central", axle: "dianteiro", mesh: "mesh_fuel_injectors", oem: "H0280158", notes: "Válvulas injetoras de 4 furos de alta vazão." },
+    { id: "cmp-throttle-body", sys: "propulsao", ass: "Motor › Admissão", name: "Corpo de Borboleta Eletrônico (TBI)", side: "central", axle: "dianteiro", mesh: "mesh_tbi", oem: "8200123061", notes: "Acionamento drive-by-wire com sensor TPS duplo." },
+    { id: "cmp-turbocharger", sys: "propulsao", ass: "Motor › Sobrealimentação", name: "Turbocompressor & Válvula Wastegate", side: "central", axle: "dianteiro", mesh: "mesh_turbo", oem: "14411-4822R", notes: "Turbina refrigerada a óleo e água com rotor cerâmico." },
+    { id: "cmp-radiator", sys: "propulsao", ass: "Arrefecimento", name: "Radiador de Arrefecimento & Ventoinha", side: "central", axle: "dianteiro", mesh: "mesh_radiator", oem: "21410-0062R", notes: "Colmeia de alumínio brasado com eletroventilador 2 velocidades." },
+    { id: "cmp-water-pump", sys: "propulsao", ass: "Arrefecimento", name: "Bomba d'Água do Motor", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_water_pump", oem: "7701479043", notes: "Rotor metálico acionado pela correia dentada." },
+    { id: "cmp-thermostat", sys: "propulsao", ass: "Arrefecimento", name: "Válvula Termostática com Carcaça", side: "central", axle: "dianteiro", mesh: "mesh_thermostat", oem: "8200772985", notes: "Abertura calibrada a 89°C." },
+    { id: "cmp-oil-pan", sys: "propulsao", ass: "Lubrificação", name: "Cárter de Óleo & Bujão Magnético", side: "central", axle: "dianteiro", mesh: "mesh_oil_pan", oem: "8200728383", notes: "Reservatório de 4.8L com junta de vedação e bujão M16." },
+    { id: "cmp-timing-belt", sys: "propulsao", ass: "Motor › Sincronismo", name: "Kit Correia Dentada & Tensores", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_timing_belt", oem: "130C13191R", notes: "Correia de 128 dentes HNBR com polia tensora e guia." },
+
+    // 2. Transmissão e Tração
+    { id: "cmp-gearbox", sys: "transmissao", ass: "Câmbio", name: "Caixa de Câmbio Manual / CVT", side: "central", axle: "dianteiro", mesh: "mesh_gearbox", oem: "TL4-041", notes: "Caixa sincronizada de 6 marchas à frente e ré." },
+    { id: "cmp-clutch-kit", sys: "transmissao", ass: "Embreagem", name: "Kit de Embreagem (Platô e Disco)", side: "central", axle: "dianteiro", mesh: "mesh_clutch", oem: "7701476622", notes: "Disco orgânico de 215mm com molas amortecedoras." },
+    { id: "cmp-clutch-actuator", sys: "transmissao", ass: "Embreagem", name: "Atuador Hidráulico de Embreagem", side: "central", axle: "dianteiro", mesh: "mesh_clutch_actuator", oem: "306206822R", notes: "Atuador central concêntrico integrado à moringa." },
+    { id: "cmp-driveshaft-r", sys: "transmissao", ass: "Semieixo", name: "Semieixo Dianteiro Direito Completo", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_driveshaft_r", oem: "39100-2442R", notes: "Eixo homocinético com trizeta e coifas termoplásticas." },
+    { id: "cmp-driveshaft-l", sys: "transmissao", ass: "Semieixo", name: "Semieixo Dianteiro Esquerdo Completo", side: "dianteira_esquerda", axle: "dianteiro", mesh: "mesh_driveshaft_l", oem: "39101-2442R", notes: "Eixo homocinético lado motorista." },
+    { id: "cmp-cv-joint", sys: "transmissao", ass: "Semieixo", name: "Junta Homocinética Fixa Lado Roda", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_cv_joint", oem: "NJH-048", notes: "Com pista de 6 esferas temperadas e anel de ABS." },
+
+    // 3. Rodagem e Controle
+    { id: "cmp-brake-pads-front", sys: "rodagem", ass: "Freios Dianteiros", name: "Pastilhas de Freio Dianteiras (Jogo)", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_brake_pad_fr", oem: "41060-2192R", notes: "Composto cerâmico de baixo ruído e sensor acústico." },
+    { id: "cmp-brake-disc-front", sys: "rodagem", ass: "Freios Dianteiros", name: "Discos de Freio Dianteiros Ventilados", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_brake_disc_fr", oem: "40206-0010R", notes: "Diâmetro 280mm, espessura nova 24mm (mínima 21.8mm)." },
+    { id: "cmp-brake-caliper-front", sys: "rodagem", ass: "Freios Dianteiros", name: "Pinça de Freio Dianteira Direita", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_brake_caliper_fr", oem: "41001-3844R", notes: "Pinça flutuante com êmbolo de 54mm e sangrador M10." },
+    { id: "cmp-tie-rod-front-r", sys: "rodagem", ass: "Direção", name: "Terminal de Direção Dianteiro Direito", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_tie_rod_r", oem: "48520-2854R", notes: "Pivô esférico temperado com rosca M14 e coifa de borracha nitrílica." },
+    { id: "cmp-tie-rod-front-l", sys: "rodagem", ass: "Direção", name: "Terminal de Direção Dianteiro Esquerdo", side: "dianteira_esquerda", axle: "dianteiro", mesh: "mesh_tie_rod_l", oem: "48521-2854R", notes: "Terminal lado esquerdo." },
+    { id: "cmp-steering-rack", sys: "rodagem", ass: "Direção", name: "Caixa de Direção Eletro-Hidráulica", side: "central", axle: "dianteiro", mesh: "mesh_steering_rack", oem: "49001-4471R", notes: "Cremalheira com assistência elétrica variável." },
+    { id: "cmp-shock-front-r", sys: "rodagem", ass: "Suspensão Dianteira", name: "Amortecedor Dianteiro Direito Pressurizado", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_shock_fr", oem: "54302-8411R", notes: "Amortecedor tipo McPherson com batente e coifa." },
+    { id: "cmp-shock-front-l", sys: "rodagem", ass: "Suspensão Dianteira", name: "Amortecedor Dianteiro Esquerdo Pressurizado", side: "dianteira_esquerda", axle: "dianteiro", mesh: "mesh_shock_fl", oem: "54303-8411R", notes: "Amortecedor lado esquerdo." },
+    { id: "cmp-sway-bar", sys: "rodagem", ass: "Suspensão Dianteira", name: "Barra Estabilizadora Dianteira & Bieletas", side: "central", axle: "dianteiro", mesh: "mesh_sway_bar", oem: "54611-0021R", notes: "Barra de torção de 22mm com buchas de poliuretano e bieletas esféricas." },
+    { id: "cmp-control-arm", sys: "rodagem", ass: "Suspensão Dianteira", name: "Bandeja de Suspensão com Buchas e Pivô", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_control_arm", oem: "54500-9207R", notes: "Braço oscilante triangular em aço estampado com pivô rebitado." },
+    { id: "cmp-wheel-bearing", sys: "rodagem", ass: "Rodas e Rolamentos", name: "Rolamento de Roda Dianteira com Pista ABS", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_wheel_bearing", oem: "7701207677", notes: "Rolamento de esferas de carreira dupla com codificador magnético." },
+    { id: "cmp-tires-front", sys: "rodagem", ass: "Pneus", name: "Pneus Dianteiros 215/65 R16", side: "ambos", axle: "dianteiro", mesh: "mesh_tires_f", oem: "TIRE-215-65-16", notes: "Pneus radiais calibragem nominal 29 PSI." },
+
+    // 4. Elétrica e Eletrônica
+    { id: "cmp-battery-12v", sys: "eletrica", ass: "Alimentação 12V", name: "Bateria Automotiva 12V 60Ah 540A", side: "dianteira_esquerda", axle: "dianteiro", mesh: "mesh_battery", oem: "BAT-60AH-EFB", notes: "Bateria selada livre de manutenção com tecnologia EFB." },
+    { id: "cmp-alternator", sys: "eletrica", ass: "Alimentação 12V", name: "Alternador 120A com Regulador Inteligente", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_alternator", oem: "23100-7633R", notes: "Alternador Valeo com polia de roda livre." },
+    { id: "cmp-starter", sys: "eletrica", ass: "Partida", name: "Motor de Partida 1.2kW", side: "central", axle: "dianteiro", mesh: "mesh_starter", oem: "23300-3329R", notes: "Motor com redução planetária e relé magnético." },
+    { id: "cmp-ecu-engine", sys: "eletrica", ass: "Módulos & Redes", name: "Módulo Eletrônico da Injeção (ECU)", side: "dianteira_esquerda", axle: "dianteiro", mesh: "mesh_ecu", oem: "Continental EMS3125", notes: "Gerenciador do motor com interface CAN Bus High-Speed." },
+    { id: "cmp-o2-sensor-1", sys: "eletrica", ass: "Sensores", name: "Sensor de Oxigênio (Sonda Lambda 1)", side: "central", axle: "dianteiro", mesh: "mesh_o2_sensor_1", oem: "22690-1841R", notes: "Sonda planar de 4 fios pré-catalisador." },
+    { id: "cmp-abs-module", sys: "eletrica", ass: "Módulos & Redes", name: "Módulo Hidráulico do ABS / ESP", side: "dianteira_esquerda", axle: "dianteiro", mesh: "mesh_abs_mod", oem: "47660-8484R", notes: "Bloco hidráulico Bosch 9.0 com 8 válvulas e bomba de retorno." },
+    { id: "cmp-fuse-box-engine", sys: "eletrica", ass: "Fusíveis e Relés", name: "Caixa de Fusíveis e Relés do Cofre", side: "dianteira_esquerda", axle: "dianteiro", mesh: "mesh_fuses_engine", oem: "284B7-3129R", notes: "Módulo de distribuição de energia UPC / USM." },
+
+    // 5. Carroceria, Cabine e Conforto
+    { id: "cmp-ac-compressor", sys: "carroceria", ass: "Climatização", name: "Compressor do Ar-Condicionado", side: "dianteira_direita", axle: "dianteiro", mesh: "mesh_ac_comp", oem: "92600-4712R", notes: "Compressor rotativo de 6 pistões para gás R134a." },
+    { id: "cmp-cabin-filter", sys: "carroceria", ass: "Climatização", name: "Filtro de Cabine / Antipólen", side: "central", axle: "central", mesh: "mesh_cabin_filter", oem: "27277-2100R", notes: "Filtro com carvão ativado contra odores e micropartículas." },
+    { id: "cmp-bumper-front", sys: "carroceria", ass: "Estrutura Externa", name: "Para-choque Dianteiro com Grade", side: "central", axle: "dianteiro", mesh: "mesh_bumper_f", oem: "62022-8321R", notes: "Polipropileno injetado com defletor inferior e faróis de neblina." },
+    { id: "cmp-windshield", sys: "carroceria", ass: "Vidros e Visibilidade", name: "Para-brisa Dianteiro Laminado Degradê", side: "central", axle: "dianteiro", mesh: "mesh_windshield", oem: "72700-4822R", notes: "Vidro acústico laminado com serigrafia para sensor de chuva." },
+
+    // 6. Elétricos e Híbridos
+    { id: "cmp-traction-battery", sys: "hibrido", ass: "Sistema de Alta Tensão", name: "Bateria de Tração Íon-Lítio 400V", side: "central", axle: "central", mesh: "mesh_traction_bat", oem: "EV-BAT-400V-52KW", notes: "Módulo de alta densidade energética com células prismáticas." },
+    { id: "cmp-traction-inverter", sys: "hibrido", ass: "Eletrônica de Potência", name: "Inversor de Potência & Conversor DC/DC", side: "central", axle: "dianteiro", mesh: "mesh_inverter", oem: "INV-400V-100KW", notes: "Módulo de transistores SiC MOSFET com arrefecimento líquido dedicado." },
+    { id: "cmp-electric-motor", sys: "hibrido", ass: "Propulsão Elétrica", name: "Motor Elétrico de Tração Síncrono ímã permanente", side: "central", axle: "dianteiro", mesh: "mesh_emotor", oem: "EMOT-100KW-RENAULT", notes: "Motor síncrono de rotor enrolado de alta eficiência 96%." },
+    { id: "cmp-charge-port", sys: "hibrido", ass: "Recarga", name: "Conector de Recarga CCS2 / Tipo 2", side: "traseira_direita", axle: "traseiro", mesh: "mesh_charge_port", oem: "CHG-CCS2-80KW", notes: "Porta de recarga combinada AC (22kW) e DC (80kW) com trava mecânica." }
+  ];
+
+  for (const c of components) {
+    insertComp.run(c.id, c.sys, c.ass, c.name, c.side, c.axle, c.mesh, "confirmada", c.oem, c.notes);
+  }
+
+  // Seed demo case inspections on GT-OS-000127
+  const woId = "wo-demo-00127";
+  const checkInsp = db.prepare("SELECT count(*) as count FROM wo_component_inspections WHERE work_order_id = ?").get(woId) as { count: number };
+  if (checkInsp && checkInsp.count === 0) {
+    const insertInsp = db.prepare(`
+      INSERT INTO wo_component_inspections (
+        id, work_order_id, component_id, status, test_performed, measurement_value,
+        tolerance_spec, finding_description, priority, photo_url,
+        suggested_repair, suggested_part_price, suggested_service_price, is_quoted, inspected_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    // 1. Terminal de Direção Dianteiro Direito (CRÍTICO)
+    insertInsp.run(
+      "cinsp-1",
+      woId,
+      "cmp-tie-rod-front-r",
+      "critico",
+      "Medição de folga axial e radial com relógio comparador centesimal Mitutoyo",
+      "2.8 mm de folga",
+      "Folga máxima permitida: 1.0 mm",
+      "Folga severa detectada no pivô esférico. Risco iminente de desengate, desgaste acelerado do pneu e perda de estabilidade.",
+      "critica",
+      "/img/vehicles/renault-duster.jpg",
+      "Substituição imediata do Terminal de Direção Dianteiro Direito + Alinhamento Computadorizado de Geometria 3D",
+      160.0,
+      120.0,
+      1,
+      "Giovane Ribeiro"
+    );
+
+    // 2. Pastilhas de Freio Dianteiras (ATENÇÃO)
+    insertInsp.run(
+      "cinsp-2",
+      woId,
+      "cmp-brake-pads-front",
+      "atencao",
+      "Medição de espessura do material de atrito com paquímetro digital",
+      "2.5 mm",
+      "Espessura mínima de segurança: 3.0 mm (Pastilha nova: 12.0 mm)",
+      "Pastilhas de freio dianteiras atingiram o limite mínimo de segurança, próximas de entrar em contato aço com aço no disco.",
+      "alta",
+      "/img/vehicles/suv-real.jpg",
+      "Substituição do Jogo de Pastilhas de Freio Dianteiras Cerâmica Fras-le + Limpeza das Guias de Pinça",
+      240.0,
+      140.0,
+      1,
+      "Giovane Ribeiro"
+    );
+
+    // 3. Sonda Lambda 1 Pré-Catalisador (ATENÇÃO)
+    insertInsp.run(
+      "cinsp-3",
+      woId,
+      "cmp-o2-sensor-1",
+      "atencao",
+      "Análise da forma de onda de tensão no osciloscópio automotivo Hantek",
+      "Sinal travado em 0.85V (Mistura Rica)",
+      "Oscilação senoidal contínua entre 0.1V e 0.9V a cada 1 a 2 segundos",
+      "Código de falha DTC P0130 gravado na ECU. Sonda lenta, provocando aumento de consumo de combustível e acendimento da luz de injeção.",
+      "normal",
+      "/img/vehicles/renault-duster.jpg",
+      "Substituição da Sonda Lambda Planar Bosch + Reset de parâmetros autoadaptativos da ECU",
+      260.0,
+      130.0,
+      1,
+      "Giovane Ribeiro"
+    );
+
+    // 4. Comando de Válvulas (OK)
+    insertInsp.run(
+      "cinsp-4",
+      woId,
+      "cmp-camshaft",
+      "ok",
+      "Inspeção visual dos cames com videoscópio e verificação de folga de tuchos",
+      "Superfície íntegra / 0.25 mm",
+      "Tolerância Renault: 0.20 mm a 0.30 mm",
+      "Eixo comando de válvulas sem desgastes, riscos ou formação de verniz/borra. Lubrificação adequada.",
+      "baixa",
+      null,
+      null,
+      0,
+      0,
+      0,
+      "Giovane Ribeiro"
+    );
+
+    // 5. Velas de Ignição (OK)
+    insertInsp.run(
+      "cinsp-5",
+      woId,
+      "cmp-spark-plugs",
+      "ok",
+      "Inspeção e medição do gap de eletrodos com cálibre de lâminas",
+      "0.90 mm",
+      "Especificação: 0.90 mm ± 0.05 mm",
+      "Eletrodos sem carbonização úmida, coloração cinza clara indicando queima estequiométrica correta.",
+      "baixa",
+      null,
+      null,
+      0,
+      0,
+      0,
+      "Giovane Ribeiro"
+    );
+  }
+
+  // Seed Replaced Parts on GT-OS-000127 ("PEÇA TROCADA")
+  const checkRepl = db.prepare("SELECT count(*) as count FROM wo_replaced_parts WHERE work_order_id = ?").get(woId) as { count: number };
+  if (checkRepl && checkRepl.count === 0) {
+    const insertRepl = db.prepare(`
+      INSERT INTO wo_replaced_parts (
+        id, work_order_id, quote_item_id, component_id, component_name, assembly_path,
+        position_side, removed_part_desc, installed_part_desc, photo_before_url,
+        photo_after_url, technician_name, seal_status, warranty_terms
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    insertRepl.run(
+      "repl-1",
+      woId,
+      "qitem-1",
+      "cmp-tie-rod-front-r",
+      "Terminal de Direção Dianteiro Direito",
+      "Veículo › Rodagem e Controle › Direção › Terminal Dianteiro Direito",
+      "dianteira_direita",
+      "Terminal original de fábrica com 48.720 km apresentando folga radial excessiva de 2.8 mm e coifa rasgada.",
+      "Terminal de Direção Nakata Blindado N-99042 Novo, com porca autotravante nova e alinhamento a laser executado.",
+      "/img/vehicles/renault-duster.jpg",
+      "/img/vehicles/suv-real.jpg",
+      "Giovane Ribeiro",
+      "PEÇA TROCADA",
+      "Garantia legal de 90 dias conforme Código de Defesa do Consumidor (CDC) + 1 ano do fabricante Nakata."
+    );
+
+    insertRepl.run(
+      "repl-2",
+      woId,
+      "qitem-3",
+      "cmp-oil-pan",
+      "Óleo 5W40 Sintético Homologado Renault (5L) + Filtro de Óleo",
+      "Veículo › Propulsão e Alimentação › Motor › Lubrificação",
+      "central",
+      "Óleo lubrificante com alta viscosidade residual e filtro saturado.",
+      "4.8 Litros de Óleo 100% Sintético 5W40 Homologado Renault RN0710 + Filtro de Óleo Mann Filter W75/3 Novo.",
+      "/img/vehicles/renault-duster.jpg",
+      "/img/vehicles/suv-real.jpg",
+      "Giovane Ribeiro",
+      "PEÇA TROCADA",
+      "Garantia de 90 dias / 10.000 km para o pacote de troca de óleo e filtro."
+    );
+  }
+}
+
 

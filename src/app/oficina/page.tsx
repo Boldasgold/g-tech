@@ -17,9 +17,24 @@ export default function OficinaDashboardPage() {
   const [appointments, setAppointments] = useState<any[]>([]);
 
   // Active OS sub-tab
-  const [osSubTab, setOsSubTab] = useState<"vistoria" | "inspecao3d" | "startmycar" | "checklist" | "orcamento" | "execucao" | "saida">("inspecao3d");
+  const [osSubTab, setOsSubTab] = useState<"vistoria" | "inspecao3d" | "componentes" | "startmycar" | "checklist" | "orcamento" | "execucao" | "saida">("inspecao3d");
   const [techSpecs, setTechSpecs] = useState<any | null>(null);
   const [fuseSearch, setFuseSearch] = useState("");
+
+  // Components inspection list & filter state
+  const [componentsList, setComponentsList] = useState<any[]>([]);
+  const [compSystemFilter, setCompSystemFilter] = useState("todos");
+  const [compAxleFilter, setCompAxleFilter] = useState("todos");
+  const [compStatusFilter, setCompStatusFilter] = useState("todos");
+  const [compSearch, setCompSearch] = useState("");
+  const [selectedCompModal, setSelectedCompModal] = useState<any | null>(null);
+
+  // Replacement modal for quote items
+  const [replacementModalItem, setReplacementModalItem] = useState<any | null>(null);
+  const [modalReplRemoved, setModalReplRemoved] = useState("");
+  const [modalReplInstalled, setModalReplInstalled] = useState("");
+  const [modalReplBefore, setModalReplBefore] = useState("");
+  const [modalReplAfter, setModalReplAfter] = useState("");
 
   // Metrics
   const [metrics, setMetrics] = useState<any | null>(null);
@@ -111,11 +126,76 @@ export default function OficinaDashboardPage() {
             if (td.success) setTechSpecs(td.spec);
           })
           .catch(console.error);
+
+        // Fetch component inspection tree for this OS
+        fetch(`/api/work-orders/${id}/components`)
+          .then(r => r.json())
+          .then(cd => {
+            if (cd.success) setComponentsList(cd.components || []);
+          })
+          .catch(console.error);
       }
     } catch (err) {
       console.error("Erro ao carregar detalhes da OS", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const reloadComponents = async () => {
+    if (!selectedWoId) return;
+    try {
+      const url = new URL(`/api/work-orders/${selectedWoId}/components`, window.location.origin);
+      if (compSystemFilter !== "todos") url.searchParams.set("system", compSystemFilter);
+      if (compAxleFilter !== "todos") url.searchParams.set("axle", compAxleFilter);
+      if (compStatusFilter !== "todos") url.searchParams.set("status", compStatusFilter);
+      if (compSearch) url.searchParams.set("q", compSearch);
+
+      const res = await fetch(url.toString());
+      const data = await res.json();
+      if (data.success) {
+        setComponentsList(data.components || []);
+      }
+    } catch (e) {
+      console.error("Erro ao recarregar componentes", e);
+    }
+  };
+
+  const handleExecuteReplacement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replacementModalItem || !selectedWoId) return;
+
+    try {
+      const res = await fetch(`/api/work-orders/${selectedWoId}/replacements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quote_item_id: replacementModalItem.id,
+          component_name: replacementModalItem.description,
+          assembly_path: "Veículo › Execução de Orçamento Autorizado",
+          position_side: "central",
+          removed_part_desc: modalReplRemoved.trim() || "Peça usada com desgaste operacional substituída conforme autorização do cliente.",
+          installed_part_desc: modalReplInstalled.trim() || `${replacementModalItem.description} nova de primeira linha com nota fiscal e garantia.`,
+          photo_before_url: modalReplBefore.trim() || "/img/vehicles/renault-duster.jpg",
+          photo_after_url: modalReplAfter.trim() || "/img/vehicles/suv-real.jpg",
+          technician_name: "Giovane Ribeiro",
+          warranty_terms: "Garantia legal de 90 dias conforme CDC"
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Substituição registrada com sucesso! Selo oficial "PEÇA TROCADA" emitido.`);
+        setReplacementModalItem(null);
+        setModalReplRemoved("");
+        setModalReplInstalled("");
+        setModalReplBefore("");
+        setModalReplAfter("");
+        loadWoDetails(selectedWoId);
+      } else {
+        alert(data.error || "Erro ao registrar substituição.");
+      }
+    } catch (err: any) {
+      alert("Falha de conexão ao registrar substituição.");
     }
   };
 
@@ -692,6 +772,7 @@ export default function OficinaDashboardPage() {
             <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2 text-xs font-semibold">
               {[
                 { id: "inspecao3d", label: "🎯 Representação 3D & Avarias" },
+                { id: "componentes", label: "🔧 Inspecionar Componentes & Peças Trocadas" },
                 { id: "startmycar", label: "📖 Dados Técnicos & Fusíveis (StartMyCar)" },
                 { id: "vistoria", label: "📸 Vistoria Fotográfica Entrada" },
                 { id: "checklist", label: "📋 Checklist Técnico (10 Grupos)" },
@@ -723,9 +804,261 @@ export default function OficinaDashboardPage() {
                   readOnly={false}
                   vehicleLabel={`${selectedWo.work_order.vehicle_brand} ${selectedWo.work_order.vehicle_model}`}
                   realPhotoUrl={techSpecs?.real_photo_url}
+                  workOrderId={selectedWo.work_order.id}
+                  replacedComponentIds={selectedWo.replaced_parts?.map((r: any) => r.component_id) || []}
                   onAddHotspot={handleAddHotspot}
                   onDeleteHotspot={handleDeleteHotspot}
+                  onSaveInspection={async (payload) => {
+                    await fetch(`/api/work-orders/${selectedWo.work_order.id}/components`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(payload)
+                    });
+                    loadWoDetails(selectedWo.work_order.id);
+                  }}
+                  onSaveReplacement={async (payload) => {
+                    await fetch(`/api/work-orders/${selectedWo.work_order.id}/replacements`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(payload)
+                    });
+                    loadWoDetails(selectedWo.work_order.id);
+                  }}
                 />
+              </div>
+            )}
+
+            {/* Sub-Tab: Inspeção de Componentes & Peças Trocadas */}
+            {osSubTab === "componentes" && (
+              <div className="bg-[#081122] p-5 rounded-xl border border-slate-800 space-y-6">
+                {/* Header with Metrics */}
+                <div className="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 text-[10px] font-bold uppercase">
+                        Metrologia & Componentes
+                      </span>
+                      <h3 className="font-bold text-sm text-white">
+                        Inspeção Dimensional & Registro de Peças Trocadas
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Controle individual de cada peça: medição com instrumentos, diagnóstico e comprovação de substituição com fotos antes/depois.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOsSubTab("inspecao3d")}
+                      className="px-3 py-1.5 rounded bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow flex items-center gap-1.5"
+                    >
+                      🎮 Abrir Visualizador 3D Explodido
+                    </button>
+                  </div>
+                </div>
+
+                {/* Section: Peças Trocadas com Selo Oficial ("PEÇA TROCADA") */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-xs text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                      <span>✅ Peças Substituídas com Selo Oficial ("PEÇA TROCADA")</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px]">
+                        {selectedWo.replaced_parts?.length || 0} registradas
+                      </span>
+                    </h4>
+                  </div>
+
+                  {selectedWo.replaced_parts && selectedWo.replaced_parts.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedWo.replaced_parts.map((r: any) => (
+                        <div key={r.id} className="p-4 rounded-xl bg-[#0b1528] border border-emerald-500/40 space-y-3 text-xs shadow-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <strong className="text-sm text-white block">{r.component_name}</strong>
+                              <span className="text-[10px] text-cyan-400 font-mono block mt-0.5">{r.assembly_path}</span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold text-[10px] tracking-wide shrink-0">
+                              ✅ {r.seal_status}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5 bg-slate-950/60 p-2.5 rounded border border-slate-800 text-[11px]">
+                            <div>
+                              <span className="text-slate-400 font-semibold">Peça Retirada: </span>
+                              <span className="text-slate-300">{r.removed_part_desc}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 font-semibold">Peça Nova Instalada: </span>
+                              <span className="text-emerald-300 font-semibold">{r.installed_part_desc}</span>
+                            </div>
+                            <div className="flex justify-between pt-1 border-t border-slate-800 text-[10px] text-slate-400">
+                              <span>Técnico: <strong className="text-slate-200">{r.technician_name}</strong></span>
+                              <span className="text-emerald-400 font-semibold">{r.warranty_terms}</span>
+                            </div>
+                          </div>
+
+                          {(r.photo_before_url || r.photo_after_url) && (
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              {r.photo_before_url && (
+                                <div>
+                                  <span className="text-[9px] uppercase font-bold text-red-400 block mb-1">📸 Antes (Retirada)</span>
+                                  <img src={r.photo_before_url} alt="Antes" className="w-full h-24 object-cover rounded border border-red-950/60" />
+                                </div>
+                              )}
+                              {r.photo_after_url && (
+                                <div>
+                                  <span className="text-[9px] uppercase font-bold text-emerald-400 block mb-1">📸 Depois (Nova)</span>
+                                  <img src={r.photo_after_url} alt="Depois" className="w-full h-24 object-cover rounded border border-emerald-950/60" />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-center text-xs text-slate-500">
+                      Nenhuma peça trocada registrada ainda nesta OS. Na aba <strong>"Execução Autorizada"</strong>, clique em <strong>"Registrar Substituição"</strong> ao concluir o serviço.
+                    </div>
+                  )}
+                </div>
+
+                {/* Section: Árvore & Tabela de Componentes com Filtros */}
+                <div className="space-y-4 pt-4 border-t border-slate-800">
+                  <div className="flex flex-wrap justify-between items-center gap-3">
+                    <h4 className="font-bold text-xs text-cyan-400 uppercase tracking-wider">
+                      📋 Catálogo & Árvore de Componentes Inspecionáveis
+                    </h4>
+
+                    {/* Filter controls */}
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <select
+                        value={compSystemFilter}
+                        onChange={e => {
+                          setCompSystemFilter(e.target.value);
+                          setTimeout(reloadComponents, 50);
+                        }}
+                        className="bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-slate-200 text-xs"
+                      >
+                        <option value="todos">Todos os Sistemas</option>
+                        <option value="propulsao">Propulsão e Motor</option>
+                        <option value="transmissao">Transmissão e Tração</option>
+                        <option value="rodagem">Rodagem, Freios & Direção</option>
+                        <option value="eletrica">Elétrica e Eletrônica</option>
+                        <option value="carroceria">Carroceria e Conforto</option>
+                        <option value="hibrido">Elétricos e Híbridos</option>
+                      </select>
+
+                      <select
+                        value={compStatusFilter}
+                        onChange={e => {
+                          setCompStatusFilter(e.target.value);
+                          setTimeout(reloadComponents, 50);
+                        }}
+                        className="bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-slate-200 text-xs"
+                      >
+                        <option value="todos">Todos os Status</option>
+                        <option value="ok">Apenas OK</option>
+                        <option value="atencao">Apenas Atenção</option>
+                        <option value="critico">Apenas Crítico</option>
+                        <option value="nao_inspecionado">Não Inspecionados</option>
+                      </select>
+
+                      <input
+                        type="text"
+                        placeholder="Buscar componente ou código OEM..."
+                        value={compSearch}
+                        onChange={e => {
+                          setCompSearch(e.target.value);
+                          setTimeout(reloadComponents, 100);
+                        }}
+                        className="bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-slate-200 text-xs w-52"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Components Table */}
+                  <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    <table className="w-full text-left text-xs text-slate-300">
+                      <thead className="bg-[#0b1528] text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                        <tr>
+                          <th className="p-3">Componente / Conjunto</th>
+                          <th className="p-3">Sistema / Eixo</th>
+                          <th className="p-3">Medição & Ensaio</th>
+                          <th className="p-3">Status da Inspeção</th>
+                          <th className="p-3 text-right">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
+                        {componentsList.length > 0 ? (
+                          componentsList.map((c: any) => (
+                            <tr key={c.id} className="hover:bg-slate-900/50 transition">
+                              <td className="p-3">
+                                <strong className="text-white block">{c.component_name}</strong>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  {c.assembly_name} {c.oem_code ? `(OEM: ${c.oem_code})` : ""}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <span className="capitalize block text-slate-300">{c.system_group}</span>
+                                <span className="text-[10px] text-slate-500 capitalize">{c.position_side} • {c.axle}</span>
+                              </td>
+                              <td className="p-3">
+                                {c.measurement_value ? (
+                                  <div>
+                                    <span className="font-mono text-cyan-300 font-semibold block">{c.measurement_value}</span>
+                                    <span className="text-[10px] text-slate-500">{c.tolerance_spec || c.test_performed}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-600 text-[11px] italic">Pendente de medição</span>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                {c.seal_status ? (
+                                  <span className="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold text-[10px]">
+                                    ✅ PEÇA TROCADA
+                                  </span>
+                                ) : c.inspection_status === "critico" ? (
+                                  <span className="px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-800 font-bold text-[10px]">
+                                    ⛔ CRÍTICO
+                                  </span>
+                                ) : c.inspection_status === "atencao" ? (
+                                  <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-bold text-[10px]">
+                                    ⚠️ ATENÇÃO
+                                  </span>
+                                ) : c.inspection_status === "ok" ? (
+                                  <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold text-[10px]">
+                                    ✅ OK
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded bg-slate-900 text-slate-400 font-bold text-[10px]">
+                                    ⏳ PENDENTE
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedCompModal(c)}
+                                  className="px-2.5 py-1 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-[11px] font-semibold transition"
+                                >
+                                  Inspecionar / Editar
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="p-4 text-center text-slate-500">
+                              Nenhum componente encontrado para os filtros selecionados.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1152,14 +1485,122 @@ export default function OficinaDashboardPage() {
                           )}
                         </div>
 
-                        <span className="font-bold text-xs uppercase px-2 py-1 rounded bg-black/50">
-                          {it.decision === "aprovado" ? "✅ AUTORIZADO" : it.decision === "recusado" ? "❌ RECUSADO" : "⏳ PENDENTE"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs uppercase px-2 py-1 rounded bg-black/50">
+                            {it.decision === "aprovado" ? "✅ AUTORIZADO" : it.decision === "recusado" ? "❌ RECUSADO" : "⏳ PENDENTE"}
+                          </span>
+                          {it.decision === "aprovado" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplacementModalItem(it);
+                                setModalReplRemoved(`Peça original desgastada referente ao item "${it.description}".`);
+                                setModalReplInstalled(`${it.description} nova de primeira linha com nota fiscal e garantia.`);
+                              }}
+                              className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow transition flex items-center gap-1"
+                            >
+                              🛠️ Registrar Substituição
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="text-xs text-slate-500">Nenhum orçamento emitido para esta OS.</p>
+                )}
+
+                {/* Modal de Registro de Substituição em Item Autorizado */}
+                {replacementModalItem && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+                    <form
+                      onSubmit={handleExecuteReplacement}
+                      className="bg-[#0b1528] border border-emerald-500/50 rounded-xl p-5 max-w-md w-full shadow-2xl text-slate-200 space-y-4"
+                    >
+                      <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
+                            Selo Oficial de Execução
+                          </span>
+                          <h3 className="font-bold text-sm text-white">
+                            Substituição: {replacementModalItem.description}
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setReplacementModalItem(null)}
+                          className="text-slate-400 hover:text-white font-bold"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <label className="block text-slate-400 font-semibold mb-1">Peça Retirada (Condição Anterior) *</label>
+                          <textarea
+                            required
+                            rows={2}
+                            value={modalReplRemoved}
+                            onChange={e => setModalReplRemoved(e.target.value)}
+                            placeholder="Descreva a condição da peça retirada..."
+                            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-400 font-semibold mb-1">Peça Instalada Nova (Aplicação e Marca) *</label>
+                          <textarea
+                            required
+                            rows={2}
+                            value={modalReplInstalled}
+                            onChange={e => setModalReplInstalled(e.target.value)}
+                            placeholder="Descreva a peça nova, marca, código e garantia..."
+                            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-slate-400 font-semibold mb-1">Foto Antes (Retirada)</label>
+                            <input
+                              type="text"
+                              value={modalReplBefore}
+                              onChange={e => setModalReplBefore(e.target.value)}
+                              placeholder="/img/... ou link"
+                              className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 font-semibold mb-1">Foto Depois (Instalada)</label>
+                            <input
+                              type="text"
+                              value={modalReplAfter}
+                              onChange={e => setModalReplAfter(e.target.value)}
+                              placeholder="/img/... ou link"
+                              className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setReplacementModalItem(null)}
+                          className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition"
+                        >
+                          Emitir Selo "PEÇA TROCADA"
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 )}
               </div>
             )}
@@ -1398,6 +1839,187 @@ export default function OficinaDashboardPage() {
                 className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md"
               >
                 Abrir Ordem de Serviço
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL EDIÇÃO DE COMPONENTE NA TABELA */}
+      {selectedCompModal && selectedWoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as any;
+              const payload = {
+                component_id: selectedCompModal.id,
+                status: form.status.value,
+                test_performed: form.test_performed.value,
+                measurement_value: form.measurement_value.value,
+                tolerance_spec: form.tolerance_spec.value,
+                finding_description: form.finding_description.value,
+                priority: form.priority.value,
+                photo_url: form.photo_url.value || null,
+                suggested_repair: form.suggested_repair.value || null,
+                suggested_part_price: Number(form.suggested_part_price.value) || 0,
+                suggested_service_price: Number(form.suggested_service_price.value) || 0,
+                inspected_by: "Giovane Ribeiro"
+              };
+
+              await fetch(`/api/work-orders/${selectedWoId}/components`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+
+              alert(`Inspeção de "${selectedCompModal.component_name}" salva com sucesso!`);
+              setSelectedCompModal(null);
+              loadWoDetails(selectedWoId);
+            }}
+            className="bg-[#0b1528] border border-cyan-500/40 rounded-xl p-5 max-w-lg w-full shadow-2xl text-slate-200 space-y-4 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="font-bold text-base text-cyan-400">{selectedCompModal.component_name}</h3>
+                <span className="text-xs text-slate-400 block mt-0.5">
+                  {selectedCompModal.assembly_name} ({selectedCompModal.system_group})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCompModal(null)}
+                className="text-slate-400 hover:text-white font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Status</label>
+                  <select
+                    name="status"
+                    defaultValue={selectedCompModal.inspection_status || "ok"}
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white font-semibold"
+                  >
+                    <option value="ok">✅ OK (Conforme)</option>
+                    <option value="atencao">⚠️ Atenção (Desgaste)</option>
+                    <option value="critico">⛔ Crítico (Risco Segurança)</option>
+                    <option value="nao_inspecionado">⏳ Não Inspecionado</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Prioridade</label>
+                  <select
+                    name="priority"
+                    defaultValue={selectedCompModal.priority || "normal"}
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
+                  >
+                    <option value="baixa">Baixa</option>
+                    <option value="normal">Normal</option>
+                    <option value="alta">Alta</option>
+                    <option value="critica">Crítica</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Medição Obtida</label>
+                  <input
+                    name="measurement_value"
+                    defaultValue={selectedCompModal.measurement_value || ""}
+                    placeholder="Ex: 2.8 mm de folga"
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Tolerância da Montadora</label>
+                  <input
+                    name="tolerance_spec"
+                    defaultValue={selectedCompModal.tolerance_spec || ""}
+                    placeholder="Ex: Máx 1.0 mm"
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Ensaio / Teste Realizado</label>
+                <input
+                  name="test_performed"
+                  defaultValue={selectedCompModal.test_performed || "Inspeção dimensional com relógio comparador"}
+                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Achado Técnico</label>
+                <textarea
+                  name="finding_description"
+                  rows={2}
+                  defaultValue={selectedCompModal.finding_description || ""}
+                  placeholder="Descreva o achado técnico detalhado..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
+                />
+              </div>
+
+              <div className="p-3 bg-[#060c18] rounded-lg border border-slate-800 space-y-2">
+                <span className="font-bold text-cyan-400 block">💡 Sugerir Reparo p/ Orçamento</span>
+                <input
+                  name="suggested_repair"
+                  defaultValue={selectedCompModal.suggested_repair || ""}
+                  placeholder="Descrição da peça ou serviço sugerido..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-500 text-[10px]">Preço Peça (R$)</label>
+                    <input
+                      name="suggested_part_price"
+                      type="number"
+                      defaultValue={selectedCompModal.suggested_part_price || 0}
+                      className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-500 text-[10px]">Preço Mão de Obra (R$)</label>
+                    <input
+                      name="suggested_service_price"
+                      type="number"
+                      defaultValue={selectedCompModal.suggested_service_price || 0}
+                      className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Foto da Inspeção (URL)</label>
+                <input
+                  name="photo_url"
+                  defaultValue={selectedCompModal.inspection_photo || ""}
+                  placeholder="/img/... ou link"
+                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setSelectedCompModal(null)}
+                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs shadow-lg transition"
+              >
+                Salvar Inspeção do Componente
               </button>
             </div>
           </form>

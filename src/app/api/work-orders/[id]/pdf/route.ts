@@ -58,6 +58,18 @@ export async function GET(
     // Exit checklist
     const exitData = db.prepare("SELECT * FROM wo_exit_checklist WHERE work_order_id = ?").get(wo.id) as any;
 
+    // Replaced parts ("PEÇA TROCADA")
+    const replacedParts = db.prepare("SELECT * FROM wo_replaced_parts WHERE work_order_id = ? ORDER BY replaced_at DESC").all(wo.id) as any[];
+
+    // Component inspections with precise measurements
+    const compInspections = db.prepare(`
+      SELECT i.*, c.component_name, c.assembly_name, c.system_group
+      FROM wo_component_inspections i
+      JOIN vehicle_components c ON i.component_id = c.id
+      WHERE i.work_order_id = ?
+      ORDER BY i.inspected_at DESC
+    `).all(wo.id) as any[];
+
     const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -400,8 +412,79 @@ export async function GET(
     </div>
   ` : ''}
 
+  <!-- REGISTRO DE PEÇAS SUBSTITUÍDAS (PEÇA TROCADA) -->
+  ${replacedParts.length > 0 ? `
+    <div class="section-title">5. Registro Oficial de Peças Substituídas ("PEÇA TROCADA")</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Componente & Caminho</th>
+          <th>Peça Retirada (Condição Anterior)</th>
+          <th>Peça Instalada Nova (Aplicação)</th>
+          <th>Técnico</th>
+          <th>Garantia Legal</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${replacedParts.map(r => `
+          <tr style="background: #f8fafc;">
+            <td>
+              <strong style="color: #0b1528;">${r.component_name}</strong><br>
+              <small style="color: #64748b; font-family: monospace;">${r.assembly_path}</small>
+            </td>
+            <td style="font-size: 8.5pt; color: #475569;">${r.removed_part_desc}</td>
+            <td style="font-size: 8.5pt; color: #0f172a; font-weight: 600;">${r.installed_part_desc}</td>
+            <td style="font-size: 8.5pt;">${r.technician_name}</td>
+            <td style="font-size: 8pt; color: #166534;">${r.warranty_terms}</td>
+            <td>
+              <span class="badge badge-ok" style="font-size: 7.5pt; letter-spacing: 0.5px;">
+                ✅ ${r.seal_status}
+              </span>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  ` : ''}
+
+  <!-- MEDIÇÕES TÉCNICAS E TOLERÂNCIAS POR COMPONENTE -->
+  ${compInspections.length > 0 ? `
+    <div class="section-title">6. Medições de Metrologia & Ensaios por Componente</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Componente</th>
+          <th>Conjunto / Sistema</th>
+          <th>Ensaio / Teste Realizado</th>
+          <th>Medição Obtida</th>
+          <th>Tolerância da Montadora</th>
+          <th>Condição</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${compInspections.map(ci => `
+          <tr>
+            <td><strong>${ci.component_name}</strong></td>
+            <td style="font-size: 8.5pt; color: #64748b;">${ci.assembly_name} (${ci.system_group})</td>
+            <td style="font-size: 8.5pt;">${ci.test_performed || "Inspeção dimensional"}</td>
+            <td style="font-size: 9pt; font-family: monospace; font-weight: bold; color: ${ci.status === 'critico' ? '#b91c1c' : ci.status === 'atencao' ? '#d97706' : '#15803d'};">
+              ${ci.measurement_value || "Conforme"}
+            </td>
+            <td style="font-size: 8pt; color: #64748b;">${ci.tolerance_spec || "Padrão OEM"}</td>
+            <td>
+              <span class="badge ${ci.status === 'ok' ? 'badge-ok' : ci.status === 'atencao' ? 'badge-warn' : ci.status === 'critico' ? 'badge-crit' : 'badge-info'}">
+                ${ci.status.toUpperCase()}
+              </span>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  ` : ''}
+
   <!-- CHECKLIST DE SAÍDA E ENTREGA -->
-  <div class="section-title">5. Controle de Qualidade & Entrega</div>
+  <div class="section-title">7. Controle de Qualidade & Entrega</div>
   <div class="grid-4">
     <div class="data-box">
       <div class="label">Teste de Rodagem</div>

@@ -124,7 +124,44 @@ Disponíveis em `public/img/vehicles/` para todos os modelos cadastrados:
 
 ---
 
-## 6. Como Executar e Testar
+## 6. Módulo de Inspeção por Componente, Vista Explodida & Selo Oficial "PEÇA TROCADA"
+
+Implementação completa dos requisitos avançados de inspeção mecânica:
+
+### 1. Navegação Hierárquica e Drill-down no Veículo
+- **Entrada Visual por Toque:** Ao tocar no motor ou freios no visualizador 3D, a câmera navega suavemente para dentro do compartimento (cofre ou cubo de roda) e abre o conjunto interno.
+- **Trilha de Navegação (Breadcrumbs):** Caminho navegável exibido em tempo real (ex: `Veículo › Propulsão e Alimentação › Motor › Cabeçote › Comando de Válvulas` ou `Veículo › Rodagem e Controle › Freios Dianteiros › Pastilhas de Freio`), permitindo retornar a qualquer nível com 1 clique.
+- **Ocultar Lataria / Revelar Mecânica:** Botão `👻 Ocultar Lataria` que torna a carroceria translúcida (25% de opacidade) revelando todos os órgãos mecânicos internos em funcionamento.
+- **Vista Explodida 3D:** Botão `💥 Vista Explodida` que afasta as peças ao longo de seus eixos mecânicos naturais (roda desliza no eixo X, pinça e pastilhas separam no eixo Z, cabeçote e comando elevam no eixo Y).
+
+### 2. Demonstração Cinemática "Explorar montagem em 10 segundos"
+- Botão `🎬 Explorar montagem em 10s` integrado ao visor:
+  - **0–2s:** Carro inteiro em 3/4, órbita suave e realce do eixo dianteiro.
+  - **2–4s:** Foco no lado direito, destaque da roda e afastamento axial da roda.
+  - **4–6s:** Conjunto de freio visível, destaque da pinça e separação ilustrativa das pastilhas.
+  - **6–8s:** Pausa na montagem explodida, chamada da ficha e início do retorno guiado pelos eixos.
+  - **8–10s:** Roda alinhada, conjunto recomposto, finalização da órbita e chamada para ação *"Inspecionar Componente"*.
+  - Inclui barra de progresso em tempo real, botão de pular e respeito a movimento reduzido.
+
+### 3. Ficha Técnica e Comercial de Componente (Metrologia)
+- Ao tocar em qualquer peça no 3D ou na tabela:
+  - Exibe identificação, sistema, posição, código OEM e tolerâncias da montadora.
+  - Registro de medições físicas reais (ex: `2.8 mm de folga` no terminal de direção, `2.5 mm de espessura` nas pastilhas).
+  - Status padronizado: `OK`, `Atenção`, `Crítico`, `Não inspecionado`.
+  - Ações separadas: **"Salvar Achado da Inspeção"** e **"Sugerir Reparo p/ Orçamento"** (com peças e mão de obra).
+
+### 4. Registro Oficial de Peças Substituídas ("PEÇA TROCADA")
+- Na execução de itens autorizados na OS, o mecânico aciona **"Registrar Substituição"**:
+  - Descrição da peça antiga retirada (condição de desgaste).
+  - Descrição da peça nova instalada (marca de primeira linha, código, lote).
+  - Fotos Antes (retirada) e Depois (instalada) com selo de transparência.
+  - Emissão do selo oficial **`✅ PEÇA TROCADA`** com garantia legal de 90 dias conforme CDC.
+- **Consulta pelo Cliente:** No portal do cliente (`/cliente/[token]`), o botão **"🔍 Ver Peças Trocadas"** destaca as substituições realizadas com as fotos comparativas e garantia.
+- **Impressão Oficial de OS (PDF):** Tabela completa de peças substituídas com o selo `PEÇA TROCADA` e medições de metrologia incluídas antes das assinaturas.
+
+---
+
+## 7. Como Executar e Testar
 
 ### Iniciar o Servidor Localmente:
 ```cmd
@@ -136,8 +173,10 @@ O servidor estará respondendo imediatamente em `http://localhost:3000`.
 
 ### Rotas de Acesso Imediato:
 1. **Site Principal & Agendamento:** [http://localhost:3000/index.html](http://localhost:3000/index.html)
-2. **Painel da Oficina (com Aba StartMyCar & Fotos):** [http://localhost:3000/oficina](http://localhost:3000/oficina)
-3. **Portal do Cliente (com Alternância 3D / Foto Real):** [http://localhost:3000/cliente/gt-tok-rodrigo-127](http://localhost:3000/cliente/gt-tok-rodrigo-127)
-4. **API Dados Técnicos StartMyCar:** [http://localhost:3000/api/tech-specs?brand=Renault&model=Duster](http://localhost:3000/api/tech-specs?brand=Renault&model=Duster)
-5. **Impressão da OS em PDF:** [http://localhost:3000/api/work-orders/GT-OS-000127/pdf](http://localhost:3000/api/work-orders/GT-OS-000127/pdf)
-6. **Download de CSV:** [http://localhost:3000/api/dashboard/metrics?export=csv](http://localhost:3000/api/dashboard/metrics?export=csv)
+2. **Painel da Oficina (com Aba Componentes, 3D e Peças Trocadas):** [http://localhost:3000/oficina](http://localhost:3000/oficina)
+3. **Portal do Cliente (com Seção Peças Trocadas & 3D):** [http://localhost:3000/cliente/gt-tok-rodrigo-127](http://localhost:3000/cliente/gt-tok-rodrigo-127)
+4. **API Componentes & Inspeções:** [http://localhost:3000/api/work-orders/wo-demo-00127/components](http://localhost:3000/api/work-orders/wo-demo-00127/components)
+5. **API Peças Trocadas:** [http://localhost:3000/api/work-orders/wo-demo-00127/replacements](http://localhost:3000/api/work-orders/wo-demo-00127/replacements)
+6. **API Dados Técnicos StartMyCar:** [http://localhost:3000/api/tech-specs?brand=Renault&model=Duster](http://localhost:3000/api/tech-specs?brand=Renault&model=Duster)
+7. **Impressão da OS em PDF com Peças Trocadas & Metrologia:** [http://localhost:3000/api/work-orders/GT-OS-000127/pdf](http://localhost:3000/api/work-orders/GT-OS-000127/pdf)
+8. **Download de CSV:** [http://localhost:3000/api/dashboard/metrics?export=csv](http://localhost:3000/api/dashboard/metrics?export=csv)
