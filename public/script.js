@@ -328,6 +328,124 @@ function initSchedulingWizard() {
         });
     }
 
+    // 3D Vehicle Engine & Real Photo Integration (StartMyCar)
+    if (window.GTech3D) {
+        window.GTech3D.init("vehicle3DCanvasContainer");
+    }
+
+    function resolveVehiclePhoto(brand, model, bodyType) {
+        const text = `${brand} ${model}`.toLowerCase();
+        if (text.includes("duster")) return "img/vehicles/renault-duster.jpg";
+        if (text.includes("sandero") || text.includes("stepway") || text.includes("kwid")) return "img/vehicles/renault-sandero.jpg";
+        if (text.includes("logan")) return "img/vehicles/renault-logan.jpg";
+        if (text.includes("oroch")) return "img/vehicles/renault-oroch.jpg";
+        if (text.includes("master")) return "img/vehicles/renault-master.jpg";
+        if (text.includes("onix")) return "img/vehicles/chevrolet-onix.jpg";
+        if (text.includes("gol") || text.includes("polo")) return "img/vehicles/volkswagen-gol.jpg";
+
+        if (bodyType === "suv") return "img/vehicles/suv-real.jpg";
+        if (bodyType === "sedan") return "img/vehicles/sedan-real.jpg";
+        if (bodyType === "picape") return "img/vehicles/picape-real.jpg";
+        if (bodyType === "van") return "img/vehicles/van-real.jpg";
+        return "img/vehicles/hatch-real.jpg";
+    }
+
+    function updateVehicle3D() {
+        const b = vehicleBrand ? vehicleBrand.value : "";
+        const m = vehicleModelYear ? vehicleModelYear.value : "";
+        let type = "hatch";
+        if (window.GTech3D) {
+            type = window.GTech3D.detectBodyType(b, m);
+            window.GTech3D.setBodyType(type);
+        }
+
+        // Update real photo
+        const realImg = document.getElementById("vehicleRealPhotoImg");
+        if (realImg) {
+            realImg.src = resolveVehiclePhoto(b, m, type);
+        }
+
+        // Fetch StartMyCar specs for quick banner
+        const quickOil = document.getElementById("quickOilSpec");
+        const quickTire = document.getElementById("quickTireSpec");
+        if (b || m) {
+            fetch(`/api/tech-specs?brand=${encodeURIComponent(b)}&model=${encodeURIComponent(m)}&body_type=${type}`)
+                .then((r) => r.json())
+                .then((d) => {
+                    if (d.success && d.spec) {
+                        if (quickOil) quickOil.textContent = `${d.spec.oil_viscosity} (${d.spec.oil_capacity_liters}L)`;
+                        if (quickTire) quickTire.textContent = `${d.spec.tire_pressure_front_psi} PSI`;
+                    }
+                })
+                .catch(() => {});
+        }
+    }
+
+    // Toggle between 3D and Real Photo
+    const btnToggle3D = document.getElementById("btnToggle3D");
+    const btnToggleReal = document.getElementById("btnToggleRealPhoto");
+    const container3D = document.getElementById("vehicle3DCanvasContainer");
+    const containerPhoto = document.getElementById("vehicleRealPhotoContainer");
+
+    btnToggle3D?.addEventListener("click", () => {
+        if (container3D) container3D.style.display = "block";
+        if (containerPhoto) containerPhoto.style.display = "none";
+        btnToggle3D.style.background = "#0088ff";
+        btnToggle3D.style.color = "#fff";
+        if (btnToggleReal) {
+            btnToggleReal.style.background = "rgba(255,208,0,0.15)";
+            btnToggleReal.style.color = "#ffd000";
+        }
+    });
+
+    btnToggleReal?.addEventListener("click", () => {
+        if (container3D) container3D.style.display = "none";
+        if (containerPhoto) containerPhoto.style.display = "flex";
+        btnToggleReal.style.background = "#ffd000";
+        btnToggleReal.style.color = "#000";
+        if (btnToggle3D) {
+            btnToggle3D.style.background = "rgba(255,255,255,0.08)";
+            btnToggle3D.style.color = "#cbd5e1";
+        }
+    });
+
+    document.querySelectorAll(".btn-3d-angle").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const cam = btn.getAttribute("data-cam");
+            if (window.GTech3D && cam) window.GTech3D.setCamera(cam);
+        });
+    });
+
+    if (vehicleModelYear) {
+        vehicleModelYear.addEventListener("input", updateVehicle3D);
+    }
+
+    // Dynamic slot loading for schedule date
+    async function loadSlotsForDate(dateVal) {
+        if (!scheduleTime || !dateVal) return;
+        try {
+            const res = await fetch(`/api/appointments?date=${dateVal}`);
+            const data = await res.json();
+            if (data.success && data.slots) {
+                scheduleTime.innerHTML = '<option value="" disabled selected>Selecione o horário</option>';
+                data.slots.forEach((s) => {
+                    const opt = document.createElement("option");
+                    opt.value = s.time;
+                    opt.disabled = !s.available;
+                    opt.textContent = `${s.time} ${s.available ? "" : "(Ocupado / Indisponível)"}`;
+                    scheduleTime.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.warn("Erro ao buscar horários", err);
+        }
+    }
+
+    if (scheduleDate) {
+        scheduleDate.addEventListener("change", (e) => loadSlotsForDate(e.target.value));
+        if (scheduleDate.value) loadSlotsForDate(scheduleDate.value);
+    }
+
     // Botões rápidos de Marca do Veículo
     brandQuickBtns.forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -336,6 +454,7 @@ function initSchedulingWizard() {
             const brand = btn.getAttribute("data-brand") || "";
             if (vehicleBrand && brand) {
                 vehicleBrand.value = brand;
+                updateVehicle3D();
             }
             if (vehicleModelYear) {
                 vehicleModelYear.focus();
@@ -348,6 +467,7 @@ function initSchedulingWizard() {
             brandQuickBtns.forEach((b) => {
                 b.classList.toggle("active", b.getAttribute("data-brand") === vehicleBrand.value);
             });
+            updateVehicle3D();
         });
     }
 
@@ -439,30 +559,58 @@ function initSchedulingWizard() {
         return isoDate;
     }
 
-    // Etapa 3 -> Confirmar Agendamento no WhatsApp
-    document.getElementById("btnSubmitWizard")?.addEventListener("click", () => {
-        const protocol = generateProtocol();
-        if (protocolDisplay) protocolDisplay.textContent = protocol;
+    // Etapa 3 -> Confirmar Agendamento no Servidor & WhatsApp
+    const btnSubmit = document.getElementById("btnSubmitWizard");
+    btnSubmit?.addEventListener("click", async () => {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = "Gravando Agendamento...";
 
-        const dataFormatada = formatDateBr(wizardState.date);
-        const horarioEscolhido = wizardState.time || "A combinar";
+        try {
+            const res = await fetch("/api/appointments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    customer_name: wizardState.name,
+                    customer_phone: wizardState.phone,
+                    vehicle_brand: wizardState.brand,
+                    vehicle_model: wizardState.modelYear,
+                    vehicle_plate: wizardState.plate !== "Não informada" ? wizardState.plate : null,
+                    scheduled_date: wizardState.date,
+                    scheduled_time: wizardState.time,
+                    period: wizardState.period,
+                    issue_description: wizardState.issue,
+                    mobility: wizardState.mobility
+                })
+            });
 
-        const msg =
-            `⚡ *AGENDAMENTO RÁPIDO — G-TECH SERVIÇOS AUTOMOTIVOS*\n` +
-            `🔖 *Protocolo:* ${protocol}\n\n` +
-            `📅 *Data Agendada:* ${dataFormatada}\n` +
-            `⏰ *Horário:* ${horarioEscolhido}\n` +
-            `🕒 *Turno / Urgência:* ${wizardState.period}\n\n` +
-            `🚗 *Marca do Veículo:* ${wizardState.brand}\n` +
-            `🚘 *Modelo / Ano:* ${wizardState.modelYear}\n` +
-            `🪪 *Placa:* ${wizardState.plate}\n` +
-            `📋 *Sintomas / Solicitação:* ${wizardState.issue}\n\n` +
-            `👤 *Cliente:* ${wizardState.name}\n` +
-            `📱 *WhatsApp:* ${wizardState.phone}\n` +
-            `🚙 *Situação:* ${wizardState.mobility}`;
-
-        whatsappRedirectUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-        if (successModal) successModal.classList.add("active");
+            const data = await res.json();
+            if (data.success) {
+                if (protocolDisplay) protocolDisplay.textContent = data.protocol;
+                whatsappRedirectUrl = data.whatsapp_url;
+                if (successModal) successModal.classList.add("active");
+            } else {
+                alert("Atenção: " + (data.error || "Não foi possível registrar o agendamento."));
+            }
+        } catch (err) {
+            console.error("Erro ao enviar agendamento", err);
+            // Fallback caso a rede falhe
+            const fallbackProtocol = generateProtocol();
+            if (protocolDisplay) protocolDisplay.textContent = fallbackProtocol;
+            const dataFormatada = formatDateBr(wizardState.date);
+            const msg =
+                `⚡ *AGENDAMENTO RÁPIDO — G-TECH SERVIÇOS AUTOMOTIVOS*\n` +
+                `🔖 *Protocolo:* ${fallbackProtocol}\n\n` +
+                `📅 *Data Agendada:* ${dataFormatada}\n` +
+                `⏰ *Horário:* ${wizardState.time || "A combinar"}\n` +
+                `🚗 *Veículo:* ${wizardState.brand} ${wizardState.modelYear}\n` +
+                `👤 *Cliente:* ${wizardState.name} (${wizardState.phone})\n` +
+                `📋 *Sintomas:* ${wizardState.issue}`;
+            whatsappRedirectUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+            if (successModal) successModal.classList.add("active");
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = "⚡ CONFIRMAR AGENDAMENTO NO WHATSAPP";
+        }
     });
 
     if (modalCloseBtn) {
@@ -542,17 +690,70 @@ function generateProtocol() {
 function initProtocolTracker() {
     const btn = document.getElementById("btnTrackProtocol");
     const input = document.getElementById("protocolInput");
+    const modal = document.getElementById("trackingModal");
+    const modalBody = document.getElementById("trackingModalBody");
+    const btnClose = document.getElementById("btnTrackingClose");
+
+    if (btnClose && modal) {
+        btnClose.addEventListener("click", () => modal.classList.remove("active"));
+    }
+
     if (!btn || !input) return;
 
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
         const code = input.value.trim().toUpperCase();
         if (!code) {
-            alert("Digite o número do seu protocolo (Ex: GT-2026-1234).");
+            alert("Digite o número do seu protocolo (Ex: GT-2026-0001 ou GT-OS-000127).");
             input.focus();
             return;
         }
-        const msg = `Olá Giovane! Gostaria de consultar o andamento do meu protocolo de atendimento *${code}* na G-TECH Serviços Automotivos.`;
-        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+
+        const originalText = btn.textContent;
+        btn.textContent = "Buscando...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`/api/tracking/${encodeURIComponent(code)}`);
+            const data = await res.json();
+
+            if (data.success && modal && modalBody) {
+                const timelineHtml = (data.timeline || []).map((t) => `
+                    <div style="border-left: 2px solid #00c6ff; padding-left: 10px; margin-bottom: 8px;">
+                        <strong style="color: #00c6ff; font-size: 11px;">${t.title}</strong>
+                        <p style="margin: 2px 0 0; color: #94a3b8; font-size: 11px;">${t.description}</p>
+                        <span style="font-size: 9px; color: #64748b;">${t.timestamp}</span>
+                    </div>
+                `).join("");
+
+                modalBody.innerHTML = `
+                    <div style="background: #060c18; padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 198, 255, 0.2); margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-family: monospace; font-weight: bold; color: #00c6ff; font-size: 14px;">${data.protocol}</span>
+                            <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; background: #002b4d; color: #38bdf8;">${data.status_label}</span>
+                        </div>
+                        <div style="color: #e2e8f0; font-size: 12px; font-weight: 600;">🚗 Veículo: ${data.vehicle}</div>
+                        ${data.scheduled_date ? `<div style="color: #94a3b8; font-size: 11px; margin-top: 3px;">📅 Agendado para: ${data.scheduled_date} às ${data.scheduled_time}</div>` : ""}
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <strong style="color: #e2e8f0; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 8px;">Histórico de Atendimento</strong>
+                        ${timelineHtml || '<p style="color: #64748b; font-size: 11px;">Nenhum evento registrado ainda.</p>'}
+                    </div>
+                    <a href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá Giovane! Gostaria de informações sobre o protocolo ${data.protocol}.`)}" target="_blank" class="btn-modal-action" style="display: block; text-align: center; text-decoration: none;">
+                        💬 CONVERSAR NO WHATSAPP COM A OFICINA
+                    </a>
+                `;
+                modal.classList.add("active");
+            } else {
+                alert(data.error || "Protocolo não encontrado no sistema.");
+            }
+        } catch (err) {
+            console.error("Erro na consulta", err);
+            const msg = `Olá Giovane! Gostaria de consultar o andamento do meu protocolo *${code}* na G-TECH Serviços Automotivos.`;
+            window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
     });
 }
 

@@ -179,6 +179,13 @@
                             </svg>
                             <span>LOCALIZAÇÃO & CONTATO</span>
                         </a>
+                        <a href="/oficina" target="_blank" style="border-top: 1px solid rgba(0, 198, 255, 0.2); padding-top: 10px; margin-top: 6px;">
+                            <svg class="nav-link-svg" viewBox="0 0 24 24" fill="none" stroke="#ffd000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <path d="M7 8h10M7 12h10M7 16h6"/>
+                            </svg>
+                            <span style="color: #ffd000; font-weight: bold;">GESTÃO DA OFICINA</span>
+                        </a>
                     </nav>
                 </div>
 
@@ -447,6 +454,35 @@
                             <label>Descreva o que o veículo apresenta <span class="req">*</span></label>
                             <textarea id="vehicleIssue" class="form-control" rows="3" placeholder="Descreva os sintomas do veículo ou o serviço que deseja realizar..."></textarea>
                             <div class="error-msg">Descreva brevemente o sintoma ou serviço desejado.</div>
+                        </div>
+
+                        <!-- Prévia 3D Integrada do Veículo com Alternância de Foto Real (StartMyCar) -->
+                        <div class="vehicle-3d-box" style="margin-bottom: 16px; border: 1px solid rgba(0, 198, 255, 0.25); border-radius: 10px; overflow: hidden; background: #060c18;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #0a1426; border-bottom: 1px solid rgba(0, 198, 255, 0.15); font-size: 11px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #00c6ff;"></span>
+                                    <strong id="vehicle3DTypeLabel" style="color: #00c6ff;">HATCH</strong>
+                                </div>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button type="button" id="btnToggle3D" style="background: #0088ff; border: none; color: #fff; font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 4px; cursor: pointer;">🎮 3D 360°</button>
+                                    <button type="button" id="btnToggleRealPhoto" style="background: rgba(255,208,0,0.15); border: 1px solid rgba(255,208,0,0.4); color: #ffd000; font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 4px; cursor: pointer;">📸 Foto Real</button>
+                                    <span style="color: #475569; margin: 0 2px;">|</span>
+                                    <button type="button" class="btn-3d-angle" data-cam="dianteira" style="background: rgba(255,255,255,0.08); border: none; color: #cbd5e1; font-size: 10px; padding: 3px 6px; border-radius: 4px; cursor: pointer;">Frente</button>
+                                    <button type="button" class="btn-3d-angle" data-cam="direita" style="background: rgba(255,255,255,0.08); border: none; color: #cbd5e1; font-size: 10px; padding: 3px 6px; border-radius: 4px; cursor: pointer;">Lado</button>
+                                    <button type="button" class="btn-3d-angle" data-cam="reset" style="background: rgba(0, 198, 255, 0.2); border: none; color: #00c6ff; font-size: 10px; padding: 3px 6px; border-radius: 4px; cursor: pointer;">↺</button>
+                                </div>
+                            </div>
+                            <!-- Vista 3D Interativa -->
+                            <div id="vehicle3DCanvasContainer" style="width: 100%; height: 160px; position: relative;"></div>
+                            <!-- Vista Fotografia Real -->
+                            <div id="vehicleRealPhotoContainer" style="display: none; width: 100%; height: 160px; background: #040812; align-items: center; justify-content: center; position: relative;">
+                                <img id="vehicleRealPhotoImg" src="img/vehicles/hatch-real.jpg" style="max-height: 140px; max-width: 90%; object-fit: contain; border-radius: 6px;" alt="Foto Real" />
+                            </div>
+                            <!-- Barra de Especificação Técnica StartMyCar -->
+                            <div id="vehicleQuickTechSpec" style="padding: 4px 12px; background: #040814; border-top: 1px solid rgba(0, 198, 255, 0.1); font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between;">
+                                <span>🛢️ Óleo de Fábrica: <strong id="quickOilSpec" style="color: #ffd000;">5W40 Sintético (4.5L)</strong></span>
+                                <span>⚙️ Pneus: <strong id="quickTireSpec" style="color: #00c6ff;">30 PSI</strong></span>
+                            </div>
                         </div>
 
                         <div class="wizard-nav-btns">
@@ -1004,11 +1040,27 @@
     <div class="modal" id="successModal">
         <div class="modal-content">
             <div class="modal-icon">⚡</div>
-            <h3 class="modal-title">Agendamento Gerado com Sucesso!</h3>
-            <p class="modal-text">Seu protocolo de atendimento G-TECH é:</p>
+            <h3 class="modal-title">Agendamento Gravado com Sucesso!</h3>
+            <p class="modal-text">Seu protocolo único registrado no banco de dados da G-TECH é:</p>
             <div class="protocol-badge" id="protocolDisplay">GT-2026-0001</div>
-            <p class="modal-sub">Clique abaixo para enviar os dados diretamente para o WhatsApp da G-TECH.</p>
+            <p class="modal-sub">Horário e vaga garantidos. Clique abaixo para abrir o WhatsApp oficial com a mensagem pronta.</p>
             <button class="btn-modal-action" id="modalCloseBtn">ABRIR WHATSAPP E CONFIRMAR</button>
+        </div>
+    </div>
+
+    <!-- ========== MODAL DE RASTREAMENTO DE PROTOCOLO ========== -->
+    <div class="modal" id="trackingModal">
+        <div class="modal-content" style="max-width: 520px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 198, 255, 0.2); padding-bottom: 10px; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="color: #00c6ff; font-size: 18px;">🔍</span>
+                    <strong style="color: #fff; font-size: 15px;">Consulta de Protocolo</strong>
+                </div>
+                <button type="button" id="btnTrackingClose" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
+            </div>
+            <div id="trackingModalBody">
+                <!-- Preenchido dinamicamente via JS -->
+            </div>
         </div>
     </div>
 
@@ -1021,6 +1073,7 @@
         <svg viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91-.01-2.65-1.04-5.13-2.9-7-1.87-1.87-4.36-2.9-7.01-2.92zM12.05 20c-1.5 0-2.97-.4-4.27-1.14l-.3-.18-3.12.82.83-3.04-.2-.31a8.16 8.16 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.02 4.54-3.68 8.23-8.15 8.22zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.11-.56-1.35-.77-1.84-.2-.48-.41-.42-.56-.43-.14 0-.31-.01-.47-.01-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29z"/></svg>
     </a>
 
+    <script src="js/gtech-3d.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
