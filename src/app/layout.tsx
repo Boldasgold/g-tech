@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "G-TECH | Serviços Automotivos & Diagnóstico Avançado em Paranaguá - PR",

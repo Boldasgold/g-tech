@@ -134,6 +134,28 @@ export default function Vehicle3DViewer({
     componentsCount: 16
   });
 
+  // Tripo3D / Custom GLB Model state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [customModelLoaded, setCustomModelLoaded] = useState<string | null>(null);
+  const [glbProgress, setGlbProgress] = useState<number | null>(null);
+
+  const handleGlbFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !sceneRef.current) return;
+    try {
+      setGlbProgress(0);
+      playWorkshopAudio("scan", soundEnabled);
+      const url = URL.createObjectURL(file);
+      await sceneRef.current.loadGLBModel(url, (pct) => setGlbProgress(pct));
+      setCustomModelLoaded(file.name);
+      setGlbProgress(null);
+      playWorkshopAudio("beep", soundEnabled);
+    } catch {
+      alert("Erro ao carregar modelo 3D GLB/Tripo3D.");
+      setGlbProgress(null);
+    }
+  };
+
   // Ficha / Form state
   const [inspStatus, setInspStatus] = useState<"ok" | "atencao" | "critico" | "nao_inspecionado">("atencao");
   const [inspTest, setInspTest] = useState("Medição dimensional com paquímetro/relógio comparador");
@@ -456,6 +478,12 @@ export default function Vehicle3DViewer({
               🚗 Reconhecido: {recognition.matchedModel?.name || "Volkswagen"} (Foto Real Homologada)
             </span>
           )}
+          {customModelLoaded && (
+            <span className="text-[10px] text-purple-300 bg-purple-950/80 border border-purple-500/50 px-2 py-0.5 rounded font-bold flex items-center gap-1 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+              ✨ Tripo3D: {customModelLoaded}
+            </span>
+          )}
         </div>
 
         {/* View Mode Switcher, Paint Finishes, Sound & Fullscreen */}
@@ -633,7 +661,7 @@ export default function Vehicle3DViewer({
               </button>
             </div>
 
-            {/* Right Tools Bar (Laser Scan, Explode, Transparency, Camera Angles) */}
+            {/* Right Tools Bar (Laser Scan, Tripo3D Import, Explode, Transparency, Camera Angles) */}
             <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 bg-black/80 p-2 rounded-lg backdrop-blur-sm border border-cyan-500/25 text-[10px] shadow-xl">
               {/* Laser Scan 360 Trigger */}
               <button
@@ -649,6 +677,24 @@ export default function Vehicle3DViewer({
               >
                 <span>⚡ Laser Scan 360°</span>
                 <span className="font-mono text-[9px] ml-1">{isLaserScanning ? `${laserProgress}%` : "SCAN"}</span>
+              </button>
+
+              {/* Import Tripo3D / GLB Model */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".glb,.gltf"
+                className="hidden"
+                onChange={handleGlbFileUpload}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-2.5 py-1.5 rounded font-bold transition text-left flex items-center justify-between bg-gradient-to-r from-purple-950 to-indigo-950 text-purple-300 hover:from-purple-900 hover:to-indigo-900 border border-purple-500/40"
+                title="Carregar modelo 3D exportado do Tripo3D (.glb)"
+              >
+                <span>🎨 Modelo Tripo3D</span>
+                <span className="font-mono text-[9px] ml-1">{customModelLoaded ? "ATIVO" : "+ GLB"}</span>
               </button>
 
               <button

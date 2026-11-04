@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export type BodyType = "hatch" | "sedan" | "suv" | "picape" | "van" | "outro";
 
@@ -263,6 +264,70 @@ export class Vehicle3DScene {
     }
   }
 
+  // Load Photorealistic 3D Model from Tripo3D or .GLB file
+  public loadGLBModel(url: string, onProgress?: (pct: number) => void): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      const loader = new GLTFLoader();
+      loader.load(
+        url,
+        (gltf) => {
+          // Clear previous vehicle
+          while (this.carGroup.children.length > 0) {
+            this.carGroup.remove(this.carGroup.children[0]);
+          }
+
+          const model = gltf.scene;
+
+          // Normalize size to ~4.2 meters length
+          const bbox = new THREE.Box3().setFromObject(model);
+          const size = new THREE.Vector3();
+          bbox.getSize(size);
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const targetScale = 4.3 / (maxDim || 1);
+          model.scale.set(targetScale, targetScale, targetScale);
+
+          // Center on diagnostic turntable
+          const center = new THREE.Vector3();
+          bbox.getCenter(center);
+          model.position.x = -center.x * targetScale;
+          model.position.y = -bbox.min.y * targetScale; // Align with turntable floor
+          model.position.z = -center.z * targetScale;
+
+          // Enable shadows and apply materials
+          model.traverse((node) => {
+            if ((node as THREE.Mesh).isMesh) {
+              const mesh = node as THREE.Mesh;
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+              (mesh as any).semanticRegion = "carroceria";
+
+              // If material is standard, upgrade to physical reflection
+              if (mesh.material && (mesh.material as any).isMeshStandardMaterial) {
+                const mat = mesh.material as THREE.MeshStandardMaterial;
+                mat.envMapIntensity = 1.2;
+                mat.roughness = Math.min(mat.roughness, 0.4);
+                mat.metalness = Math.max(mat.metalness, 0.5);
+              }
+            }
+          });
+
+          this.carGroup.add(model);
+          this.rebuildHotspots();
+          resolve(true);
+        },
+        (xhr) => {
+          if (xhr.lengthComputable && onProgress) {
+            onProgress(Math.round((xhr.loaded / xhr.total) * 100));
+          }
+        },
+        (error) => {
+          console.error("Erro ao carregar modelo GLB/Tripo3D:", error);
+          reject(error);
+        }
+      );
+    });
+  }
+
   public setBodyType(type: string) {
     const valid: BodyType = ["hatch", "sedan", "suv", "picape", "van"].includes(type?.toLowerCase())
       ? (type.toLowerCase() as BodyType)
@@ -404,19 +469,79 @@ export class Vehicle3DScene {
     (windshield as any).semanticRegion = "dianteira";
     this.carGroup.add(windshield);
 
-    // Headlights
-    const hlGeo = new THREE.BoxGeometry(0.35, 0.14, 0.1);
+    // Headlights (3D Sculpted LED Matrix)
+    const hlGeo = new THREE.BoxGeometry(0.35, 0.14, 0.12);
     const hlLeft = new THREE.Mesh(hlGeo, headlightMat);
-    hlLeft.position.set(-bodyW * 0.38, baseY + bodyH * 0.2, bodyL / 2 + 0.01);
+    hlLeft.position.set(-bodyW * 0.38, baseY + bodyH * 0.2, bodyL / 2 + 0.05);
+    hlLeft.rotation.y = 0.15;
     (hlLeft as any).semanticRegion = "dianteira";
     this.carGroup.add(hlLeft);
 
-    const hlRight = hlLeft.clone();
-    hlRight.position.x = bodyW * 0.38;
+    const hlRight = new THREE.Mesh(hlGeo, headlightMat);
+    hlRight.position.set(bodyW * 0.38, baseY + bodyH * 0.2, bodyL / 2 + 0.05);
+    hlRight.rotation.y = -0.15;
     (hlRight as any).semanticRegion = "dianteira";
     this.carGroup.add(hlRight);
 
-    // Wheels
+    // Front Grille & Air Dam
+    const grilleGeo = new THREE.BoxGeometry(bodyW * 0.5, bodyH * 0.25, 0.08);
+    const grille = new THREE.Mesh(grilleGeo, darkPlastic);
+    grille.position.set(0, baseY + bodyH * 0.12, bodyL / 2 + 0.06);
+    this.carGroup.add(grille);
+
+    // Aerodynamic Hood Creases / Taper
+    const hoodGeo = new THREE.BoxGeometry(bodyW * 0.9, 0.04, bodyL * 0.35);
+    const hood = new THREE.Mesh(hoodGeo, this.bodyPaintMaterial);
+    hood.position.set(0, baseY + bodyH * 0.5 + 0.02, bodyL * 0.25);
+    hood.rotation.x = 0.08;
+    this.carGroup.add(hood);
+
+    // Side Mirrors (Aerodynamic Left & Right)
+    const mirrorGeo = new THREE.BoxGeometry(0.18, 0.1, 0.12);
+    const mirrorLeft = new THREE.Mesh(mirrorGeo, darkPlastic);
+    mirrorLeft.position.set(-cabinW * 0.56, baseY + bodyH * 0.45, cabinZ + cabinL * 0.35);
+    this.carGroup.add(mirrorLeft);
+
+    const mirrorRight = mirrorLeft.clone();
+    mirrorRight.position.x = cabinW * 0.56;
+    this.carGroup.add(mirrorRight);
+
+    // Rear Taillight Lightbar
+    const tlGeo = new THREE.BoxGeometry(bodyW * 0.88, 0.08, 0.06);
+    const taillightBar = new THREE.Mesh(tlGeo, taillightMat);
+    taillightBar.position.set(0, baseY + bodyH * 0.25, -bodyL / 2 - 0.05);
+    (taillightBar as any).semanticRegion = "traseira";
+    this.carGroup.add(taillightBar);
+
+    // Dual Chrome Exhaust Tips
+    const exhaustGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.18, 12);
+    const exhaustL = new THREE.Mesh(exhaustGeo, chromeMat);
+    exhaustL.rotation.x = Math.PI / 2;
+    exhaustL.position.set(-bodyW * 0.32, baseY - bodyH * 0.3, -bodyL / 2 - 0.22);
+    this.carGroup.add(exhaustL);
+
+    const exhaustR = exhaustL.clone();
+    exhaustR.position.x = bodyW * 0.32;
+    this.carGroup.add(exhaustR);
+
+    // Roof Styling: Roof Rails for SUV/Van or Sport Spoiler for Hatch/Sedan
+    if (bodyType === "suv" || bodyType === "van") {
+      const railGeo = new THREE.BoxGeometry(0.04, 0.05, cabinL * 0.85);
+      const railL = new THREE.Mesh(railGeo, chromeMat);
+      railL.position.set(-cabinW * 0.45, baseY + bodyH / 2 + cabinH + 0.02, cabinZ);
+      this.carGroup.add(railL);
+
+      const railR = railL.clone();
+      railR.position.x = cabinW * 0.45;
+      this.carGroup.add(railR);
+    } else {
+      const spoilerGeo = new THREE.BoxGeometry(cabinW * 0.9, 0.04, 0.2);
+      const spoiler = new THREE.Mesh(spoilerGeo, darkPlastic);
+      spoiler.position.set(0, baseY + bodyH * 0.48, -bodyL * 0.48);
+      this.carGroup.add(spoiler);
+    }
+
+    // High-Detail Wheels with 5-Spoke Alloy Rims & Brembo Red Calipers
     const wheelRadius = groundClearance * 1.15;
     const wheelWidth = 0.26;
     const wheelTrack = bodyW * 0.52;
@@ -424,7 +549,10 @@ export class Vehicle3DScene {
     const wheelBaseRear = -bodyL * 0.32;
 
     const tireGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 24);
-    const rimGeo = new THREE.CylinderGeometry(wheelRadius * 0.6, wheelRadius * 0.6, wheelWidth + 0.02, 16);
+    const rimGeo = new THREE.CylinderGeometry(wheelRadius * 0.65, wheelRadius * 0.65, wheelWidth + 0.02, 16);
+    const rotorGeo = new THREE.CylinderGeometry(wheelRadius * 0.55, wheelRadius * 0.55, 0.02, 16);
+    const caliperGeo = new THREE.BoxGeometry(0.08, 0.12, 0.06);
+    const caliperMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.8, roughness: 0.2 }); // Brembo Red
 
     const wheelPositions = [
       { x: -wheelTrack, z: wheelBaseFront, side: "lateral_esquerda", isFrontRight: false },
@@ -435,14 +563,38 @@ export class Vehicle3DScene {
 
     wheelPositions.forEach(pos => {
       const wheelGroup = new THREE.Group();
+      
+      // Rubber Tire
       const tire = new THREE.Mesh(tireGeo, tireMat);
       tire.rotation.z = Math.PI / 2;
       tire.castShadow = true;
       wheelGroup.add(tire);
 
+      // Alloy Rim
       const rim = new THREE.Mesh(rimGeo, chromeMat);
       rim.rotation.z = Math.PI / 2;
       wheelGroup.add(rim);
+
+      // 5-Spoke Star Design
+      for (let s = 0; s < 5; s++) {
+        const angle = (s * Math.PI * 2) / 5;
+        const spokeGeo = new THREE.BoxGeometry(0.03, wheelRadius * 0.55, 0.04);
+        const spoke = new THREE.Mesh(spokeGeo, chromeMat);
+        spoke.position.set(pos.x > 0 ? wheelWidth * 0.38 : -wheelWidth * 0.38, Math.sin(angle) * wheelRadius * 0.26, Math.cos(angle) * wheelRadius * 0.26);
+        spoke.rotation.x = angle;
+        wheelGroup.add(spoke);
+      }
+
+      // Silver Brake Rotor Disc
+      const rotor = new THREE.Mesh(rotorGeo, chromeMat);
+      rotor.rotation.z = Math.PI / 2;
+      rotor.position.x = pos.x > 0 ? -0.04 : 0.04;
+      wheelGroup.add(rotor);
+
+      // Brembo Red Brake Caliper
+      const caliper = new THREE.Mesh(caliperGeo, caliperMat);
+      caliper.position.set(pos.x > 0 ? -0.04 : 0.04, wheelRadius * 0.35, 0);
+      wheelGroup.add(caliper);
 
       wheelGroup.position.set(pos.x, wheelRadius, pos.z);
       (wheelGroup as any).semanticRegion = pos.side;
@@ -453,7 +605,7 @@ export class Vehicle3DScene {
         this.explodedParts.push({
           mesh: wheelGroup,
           origPos: new THREE.Vector3(pos.x, wheelRadius, pos.z),
-          explodedOffset: new THREE.Vector3(0.95, 0, 0) // slides right on X
+          explodedOffset: new THREE.Vector3(0.95, 0, 0)
         });
       }
     });
