@@ -1560,8 +1560,21 @@ export default function Vehicle3DViewer({
               </div>
 
               {selectedHotspot.photo_url && (
-                <div>
-                  <span className="block text-slate-500 font-semibold uppercase text-[10px] mb-1">Foto / Evidência</span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="block text-slate-500 font-semibold uppercase text-[10px]">Foto / Evidência</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sceneRef.current?.setRealPhotoBackdrop(selectedHotspot.photo_url || undefined, true);
+                        setShow3DBackdrop(true);
+                      }}
+                      className="text-[10px] text-cyan-300 hover:text-white px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700/60 font-bold flex items-center gap-1 transition"
+                      title="Projetar esta foto no telão 3D de showroom"
+                    >
+                      🖥️ Exibir no Telão 3D
+                    </button>
+                  </div>
                   <img
                     src={selectedHotspot.photo_url}
                     alt="Evidência"
@@ -1666,26 +1679,86 @@ export default function Vehicle3DViewer({
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Descrição Detalhada do Registro *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-slate-400 font-medium">Descrição Detalhada do Registro *</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      let desc = `Inspeção metrológica na região ${pendingHit.region_name}: `;
+                      if (hsDamageType === "risco") {
+                        desc += "Risco de ~6cm na camada de verniz/tinta original, sem deformação estrutural da chapa.";
+                        setHsSeverity("baixa");
+                      } else if (hsDamageType === "amassado") {
+                        desc += "Amassado com vincos perceptíveis sob reflexo de luz. Recomendado alinhamento técnico / martelinho de ouro.";
+                        setHsSeverity("media");
+                      } else if (hsDamageType === "trinca") {
+                        desc += "Trinca visível com perda de estanqueidade e integridade mecânica. Substituição recomendada.";
+                        setHsSeverity("alta");
+                      } else if (hsDamageType === "vazamento") {
+                        desc += "Gotejamento de fluido ativo na carcaça com perda de nível. Risco crítico de contaminação e superaquecimento.";
+                        setHsSeverity("critica");
+                      } else if (hsDamageType === "folga") {
+                        desc += "Folga axial/radial superior a 2.5 mm detectada com relógio comparador. Acima do padrão OEM da montadora.";
+                        setHsSeverity("critica");
+                      } else {
+                        desc += "Desgaste mecânico acentuado no componente. Substituição preventiva antes do rompimento.";
+                        setHsSeverity("alta");
+                      }
+                      setHsDescription(desc);
+                    }}
+                    className="text-[10px] text-amber-300 hover:text-white font-bold px-2 py-0.5 rounded bg-amber-950/60 border border-amber-600/50 transition flex items-center gap-1 shadow-sm"
+                  >
+                    ⚡ Preencher Laudo com IA
+                  </button>
+                </div>
                 <textarea
                   required
                   rows={3}
                   value={hsDescription}
                   onChange={e => setHsDescription(e.target.value)}
-                  placeholder="Descreva a avaria ou achado técnico observado na região..."
+                  placeholder="Descreva a avaria ou clique em 'Preencher Laudo com IA'..."
                   className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200 focus:border-cyan-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">URL da Foto / Evidência (Opcional)</label>
-                <input
-                  type="text"
-                  value={hsPhotoUrl}
-                  onChange={e => setHsPhotoUrl(e.target.value)}
-                  placeholder="https://... ou caminho da imagem anexada"
-                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200 focus:border-cyan-400 focus:outline-none"
-                />
+                <label className="block text-slate-400 mb-1 font-medium">Foto Real da Avaria / Evidência</label>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          if (ev.target?.result) setHsPhotoUrl(ev.target.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-xs text-slate-300 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-cyan-900 file:text-cyan-200 hover:file:bg-cyan-800 cursor-pointer bg-slate-900 border border-slate-700 rounded p-1"
+                  />
+                  <input
+                    type="text"
+                    value={hsPhotoUrl}
+                    onChange={e => setHsPhotoUrl(e.target.value)}
+                    placeholder="Ou informe o link/URL da foto..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200 focus:border-cyan-400 focus:outline-none text-[11px]"
+                  />
+                </div>
+                {hsPhotoUrl && (
+                  <div className="mt-2 relative">
+                    <img src={hsPhotoUrl} alt="Preview da Avaria" className="h-28 w-full object-cover rounded border border-cyan-500/40" />
+                    <button
+                      type="button"
+                      onClick={() => setHsPhotoUrl("")}
+                      className="absolute top-1 right-1 bg-black/80 hover:bg-black text-red-400 px-1.5 py-0.5 rounded text-[10px] font-bold"
+                    >
+                      Remover Foto ✕
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
