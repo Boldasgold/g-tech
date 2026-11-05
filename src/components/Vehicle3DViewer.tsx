@@ -163,7 +163,8 @@ export default function Vehicle3DViewer({
   };
 
   // Ficha / Form state
-  const [inspStatus, setInspStatus] = useState<"ok" | "atencao" | "critico" | "nao_inspecionado">("atencao");
+  const [inspStatus, setInspStatus] = useState<"ok" | "atencao" | "critico" | "nao_inspecionado" | "substituicao_recomendada" | "substituicao_realizada">("atencao");
+  const [inspServiceType, setInspServiceType] = useState<"troca_peca" | "limpeza" | "regulagem" | "inspecao" | "reparo">("troca_peca");
   const [inspTest, setInspTest] = useState("Medição dimensional com paquímetro/relógio comparador");
   const [inspMeasurement, setInspMeasurement] = useState("");
   const [inspTolerance, setInspTolerance] = useState("");
@@ -171,13 +172,23 @@ export default function Vehicle3DViewer({
   const [inspPriority, setInspPriority] = useState<"baixa" | "normal" | "alta" | "critica">("normal");
   const [inspPhotoUrl, setInspPhotoUrl] = useState("");
   const [suggestRepairText, setSuggestRepairText] = useState("");
+  const [suggestPartCode, setSuggestPartCode] = useState("");
+  const [suggestQuantity, setSuggestQuantity] = useState<number>(1);
   const [suggestPricePart, setSuggestPricePart] = useState<number>(0);
   const [suggestPriceService, setSuggestPriceService] = useState<number>(0);
+
+  // Component search drawer state
+  const [showComponentSearch, setShowComponentSearch] = useState(false);
+  const [compSearchTerm, setCompSearchTerm] = useState("");
 
   // Replacement Registration Modal
   const [showReplacementModal, setShowReplacementModal] = useState(false);
   const [replRemovedDesc, setReplRemovedDesc] = useState("");
   const [replInstalledDesc, setReplInstalledDesc] = useState("");
+  const [replPartCode, setReplPartCode] = useState("");
+  const [replManufacturer, setReplManufacturer] = useState("OEM / Homologado G-Tech");
+  const [replMileage, setReplMileage] = useState("45.000 km");
+  const [replWarranty, setReplWarranty] = useState("90 dias conforme CDC + 1 ano garantia de fábrica");
   const [replPhotoBefore, setReplPhotoBefore] = useState("");
   const [replPhotoAfter, setReplPhotoAfter] = useState("");
   const [replTechName, setReplTechName] = useState("Giovane Ribeiro");
@@ -351,6 +362,17 @@ export default function Vehicle3DViewer({
   const handleZoomSystem = (sys: "motor" | "freios_diant_dir" | "suspensao" | "transmissao" | "reset") => {
     playWorkshopAudio("click", soundEnabled);
     sceneRef.current?.zoomToSystem(sys);
+    if (sys === "motor") {
+      setBreadcrumbs(["Veículo", "Propulsão e Alimentação", "Motor (Bloco, Cabeçote & Lubrificação)"]);
+      setIsTransparent(true);
+    } else if (sys === "freios_diant_dir") {
+      setBreadcrumbs(["Veículo", "Rodagem e Controle", "Freios Dianteiros (Lado Direito)"]);
+    } else if (sys === "suspensao") {
+      setBreadcrumbs(["Veículo", "Chassi & Rodagem", "Suspensão Dianteira"]);
+    } else if (sys === "reset") {
+      setBreadcrumbs(["Veículo", "Visão Geral"]);
+      setIsTransparent(false);
+    }
   };
 
   const handleToggleExploded = () => {
@@ -415,9 +437,11 @@ export default function Vehicle3DViewer({
 
   const handleSaveComponentInspection = async () => {
     if (!selectedComponent) return;
+    const totalCalc = (suggestQuantity * suggestPricePart) + suggestPriceService;
     const payload = {
       component_id: selectedComponent.id,
       status: inspStatus,
+      service_type: inspServiceType,
       test_performed: inspTest,
       measurement_value: inspMeasurement,
       tolerance_spec: inspTolerance,
@@ -425,8 +449,11 @@ export default function Vehicle3DViewer({
       priority: inspPriority,
       photo_url: inspPhotoUrl || null,
       suggested_repair: suggestRepairText || null,
+      part_code: suggestPartCode || null,
+      quantity: suggestQuantity,
       suggested_part_price: suggestPricePart,
       suggested_service_price: suggestPriceService,
+      total_price: totalCalc,
       inspected_by: "Giovane Ribeiro"
     };
 
@@ -440,7 +467,7 @@ export default function Vehicle3DViewer({
       });
     }
 
-    alert(`Inspeção do componente "${selectedComponent.name}" gravada com sucesso!`);
+    alert(`Inspeção do componente "${selectedComponent.name}" gravada com sucesso! (Total R$ ${totalCalc.toFixed(2).replace('.', ',')})`);
     setSelectedComponent(null);
   };
 
@@ -456,12 +483,15 @@ export default function Vehicle3DViewer({
       component_name: selectedComponent.name,
       assembly_path: breadcrumbs.join(" › "),
       position_side: selectedComponent.side,
+      part_code: replPartCode.trim() || "OEM-GTECH",
+      manufacturer: replManufacturer.trim() || "Homologado G-Tech",
+      mileage: replMileage.trim() || "45.000 km",
       removed_part_desc: replRemovedDesc.trim(),
       installed_part_desc: replInstalledDesc.trim(),
       photo_before_url: replPhotoBefore.trim() || "/img/vehicles/renault-duster.jpg",
       photo_after_url: replPhotoAfter.trim() || "/img/vehicles/suv-real.jpg",
       technician_name: replTechName.trim() || "Giovane Ribeiro",
-      warranty_terms: "Garantia de 90 dias conforme CDC + 1 ano garantia de fábrica"
+      warranty_terms: replWarranty.trim() || "Garantia de 90 dias conforme CDC + 1 ano garantia de fábrica"
     };
 
     if (onSaveReplacement) {
@@ -473,6 +503,9 @@ export default function Vehicle3DViewer({
         body: JSON.stringify(payload)
       });
     }
+
+    selectedComponent.isReplaced = true;
+    setInspStatus("substituicao_realizada");
 
     alert(`Substituição oficial registrada! Selo PEÇA TROCADA emitido para "${selectedComponent.name}".`);
     setShowReplacementModal(false);
@@ -726,15 +759,15 @@ export default function Vehicle3DViewer({
               </div>
             )}
 
-            {/* Quick Drill-down Presets Bar */}
-            <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5 bg-black/70 p-1.5 rounded-lg backdrop-blur-sm border border-cyan-500/20">
+            {/* Quick Drill-down Presets Bar & Breadcrumb Navigation */}
+            <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-1.5 bg-black/80 p-1.5 rounded-lg backdrop-blur-sm border border-cyan-500/25 max-w-full">
               <span className="text-[10px] font-bold text-cyan-400 self-center mr-1">Sistemas:</span>
               <button
                 type="button"
                 onClick={() => handleZoomSystem("motor")}
                 className="px-2 py-1 rounded bg-slate-900 hover:bg-cyan-950 text-slate-200 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500 text-[10px] font-semibold transition"
               >
-                ⚙️ Motor
+                ⚙️ Motor (Zoom & Raio-X)
               </button>
               <button
                 type="button"
@@ -757,7 +790,30 @@ export default function Vehicle3DViewer({
               >
                 ↺ Carro Inteiro
               </button>
+
+              {/* Breadcrumb Indicator */}
+              {breadcrumbs.length > 2 && (
+                <div className="hidden md:flex items-center gap-1 pl-2 border-l border-slate-700 text-[10px] text-cyan-300">
+                  <span className="font-semibold text-slate-400">Trilha:</span>
+                  <span className="truncate max-w-[200px]">{breadcrumbs.join(" › ")}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleZoomSystem("reset")}
+                    className="ml-1 px-1.5 py-0.5 rounded bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400 transition"
+                  >
+                    ← Voltar
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Unsegmented GLB Mesh Disclaimer Banner */}
+            {customModelLoaded && (
+              <div className="absolute top-14 left-3 z-20 bg-amber-950/90 border border-amber-500/50 text-amber-200 px-3 py-1.5 rounded-lg text-[10px] max-w-sm shadow-xl flex items-center gap-2">
+                <span>⚠️</span>
+                <span><strong>Malha Externa GLB:</strong> Modelo monobloco não segmentado. Desmontagem e peças internas estão disponíveis no modelo homologado G-Tech.</span>
+              </div>
+            )}
 
             {/* Floating Picture-in-Picture (PIP) HUD Badge (Top-Left over 3D Canvas) */}
             {resolvedPhoto && !isSplitView && (
@@ -1007,27 +1063,24 @@ export default function Vehicle3DViewer({
               </div>
             </div>
 
-            {/* Laser Scanning Holographic Overlay */}
+            {/* Laser Scanning Visual Effect Overlay */}
             {isLaserScanning && (
               <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-center bg-cyan-950/20 backdrop-blur-[1px]">
                 <div className="bg-[#050e1f]/95 border border-cyan-400 p-4 rounded-xl shadow-2xl shadow-cyan-500/40 text-center space-y-2 max-w-sm">
                   <div className="flex items-center justify-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
                     <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 font-mono">
-                      SCANNER HOLOGRÁFICO ATIVO
+                      VARREDURA VISUAL ASSISTIVA
                     </span>
                   </div>
-                  <p className="text-sm font-extrabold text-white">
-                    Mapeando Geometria do Veículo ({laserProgress}%)
+                  <p className="text-xs font-extrabold text-white">
+                    Projeção Visual de Linhas e Contornos da Carroceria
                   </p>
-                  <div className="w-56 h-2 bg-slate-800 rounded-full overflow-hidden mx-auto border border-cyan-500/40">
-                    <div
-                      className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-300 transition-all duration-75"
-                      style={{ width: `${laserProgress}%` }}
-                    />
+                  <div className="relative w-56 h-1.5 bg-slate-800 rounded-full overflow-hidden mx-auto border border-cyan-500/40">
+                    <div className="scanner-beam-line" />
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono block">
-                    CENTRO DE DIAGNÓSTICO METROLÓGICO • G-TECH
+                  <span className="text-[9px] text-slate-400 block font-sans">
+                    * Efeito gráfico assistivo de apresentação. Não constitui medição a laser física nem diagnóstico de bancada.
                   </span>
                 </div>
               </div>
@@ -1258,18 +1311,46 @@ export default function Vehicle3DViewer({
             <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Status da Inspeção</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Status da Inspeção *</label>
                   <select
                     value={inspStatus}
-                    onChange={e => setInspStatus(e.target.value as any)}
+                    onChange={e => {
+                      const val = e.target.value as any;
+                      if (val === "substituicao_realizada" && !selectedComponent.isReplaced) {
+                        alert("O status 'Substituição realizada' exige o registro formal de execução técnica. Clique em 'Registrar Substituição' abaixo.");
+                        return;
+                      }
+                      setInspStatus(val);
+                    }}
                     className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200 font-semibold"
                   >
-                    <option value="ok">✅ OK (Conforme Especificação)</option>
+                    <option value="nao_inspecionado">⏳ Não Inspecionado</option>
+                    <option value="ok">✅ OK (Conforme Especificação OEM)</option>
                     <option value="atencao">⚠️ Atenção (Desgaste Moderado)</option>
                     <option value="critico">⛔ Crítico (Risco Operacional)</option>
-                    <option value="nao_inspecionado">⏳ Não Inspecionado</option>
+                    <option value="substituicao_recomendada">🔄 Substituição Recomendada</option>
+                    <option value="substituicao_realizada" disabled={!selectedComponent.isReplaced}>
+                      🏆 Substituição Realizada (Selo Peça Trocada)
+                    </option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Tipo de Serviço Sugerido</label>
+                  <select
+                    value={inspServiceType}
+                    onChange={e => setInspServiceType(e.target.value as any)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200"
+                  >
+                    <option value="troca_peca">🛠️ Troca de Peça (Substituição)</option>
+                    <option value="limpeza">🧼 Limpeza / Descarbonização</option>
+                    <option value="regulagem">📐 Regulagem / Calibração</option>
+                    <option value="inspecao">🔍 Inspeção Dedicada / Ensaio</option>
+                    <option value="reparo">⚙️ Reparo / Recondicionamento</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-400 font-semibold mb-1">Prioridade</label>
                   <select
@@ -1277,11 +1358,21 @@ export default function Vehicle3DViewer({
                     onChange={e => setInspPriority(e.target.value as any)}
                     className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200"
                   >
-                    <option value="baixa">Baixa</option>
-                    <option value="normal">Normal</option>
-                    <option value="alta">Alta</option>
-                    <option value="critica">Crítica</option>
+                    <option value="baixa">Baixa (Monitoramento)</option>
+                    <option value="normal">Normal (Preventiva)</option>
+                    <option value="alta">Alta (Troca Próxima)</option>
+                    <option value="critica">Crítica (Risco Iminente)</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Código da Peça / OEM</label>
+                  <input
+                    type="text"
+                    value={suggestPartCode}
+                    onChange={e => setSuggestPartCode(e.target.value)}
+                    placeholder="Ex: 06L 115 562 B"
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200 font-mono"
+                  />
                 </div>
               </div>
 
@@ -1315,17 +1406,22 @@ export default function Vehicle3DViewer({
                   <span className={`font-bold font-mono ${
                     inspStatus === "ok" ? "text-emerald-400" :
                     inspStatus === "atencao" ? "text-amber-400" :
+                    inspStatus === "substituicao_realizada" ? "text-emerald-400" :
+                    inspStatus === "substituicao_recomendada" ? "text-orange-400" :
                     inspStatus === "critico" ? "text-red-400" : "text-slate-400"
                   }`}>
                     {inspStatus === "ok" ? "TOLERÂNCIA OEM (100% OK)" :
                      inspStatus === "atencao" ? "DESGASTE MODERADO (50% ALERTA)" :
+                     inspStatus === "substituicao_recomendada" ? "SUBSTITUIÇÃO RECOMENDADA" :
+                     inspStatus === "substituicao_realizada" ? "PEÇA NOVA INSTALADA (100% OK)" :
                      inspStatus === "critico" ? "LIMITE EXCEDIDO (TROCA OBRIGATÓRIA)" : "AGUARDANDO MEDIÇÃO"}
                   </span>
                 </div>
                 <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex p-0.5 border border-slate-700">
                   <div className={`h-full rounded-full transition-all duration-300 ${
-                    inspStatus === "ok" ? "w-1/3 bg-emerald-500 shadow-sm shadow-emerald-500/50" :
+                    inspStatus === "ok" || inspStatus === "substituicao_realizada" ? "w-1/3 bg-emerald-500 shadow-sm shadow-emerald-500/50" :
                     inspStatus === "atencao" ? "w-2/3 bg-amber-500 shadow-sm shadow-amber-500/50" :
+                    inspStatus === "substituicao_recomendada" ? "w-5/6 bg-orange-500 shadow-sm shadow-orange-500/50" :
                     inspStatus === "critico" ? "w-full bg-red-500 shadow-sm shadow-red-500/50" : "w-1/12 bg-slate-600"
                   }`} />
                 </div>
@@ -1360,17 +1456,32 @@ export default function Vehicle3DViewer({
 
               {/* Suggest Repair / Quote fields */}
               <div className="p-3 bg-[#060c18] rounded-lg border border-slate-800 space-y-2">
-                <span className="font-bold text-cyan-400 block">💡 Sugerir Reparo p/ Orçamento</span>
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-cyan-400 block">💡 Composição de Orçamento Automotivo</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Valores em Reais (R$)</span>
+                </div>
+                
                 <input
                   type="text"
                   value={suggestRepairText}
                   onChange={e => setSuggestRepairText(e.target.value)}
-                  placeholder="Descrição da peça e serviço sugerido..."
+                  placeholder="Descrição da peça ou serviço para o orçamento..."
                   className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-slate-200"
                 />
-                <div className="grid grid-cols-2 gap-3">
+                
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-slate-500 text-[10px]">Preço Peça (R$)</label>
+                    <label className="block text-slate-400 text-[10px]">Qtd. Peças</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={suggestQuantity}
+                      onChange={e => setSuggestQuantity(Math.max(1, Number(e.target.value)))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-[10px]">Preço Unit. Peça (R$)</label>
                     <input
                       type="number"
                       value={suggestPricePart}
@@ -1379,7 +1490,7 @@ export default function Vehicle3DViewer({
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-500 text-[10px]">Preço Mão de Obra (R$)</label>
+                    <label className="block text-slate-400 text-[10px]">Mão de Obra (R$)</label>
                     <input
                       type="number"
                       value={suggestPriceService}
@@ -1387,6 +1498,17 @@ export default function Vehicle3DViewer({
                       className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 font-mono"
                     />
                   </div>
+                </div>
+
+                {/* Total Calculado ao Vivo em R$ */}
+                <div className="p-2.5 rounded bg-cyan-950/60 border border-cyan-500/30 flex justify-between items-center text-xs">
+                  <span className="text-cyan-300 font-bold flex items-center gap-1.5">
+                    <span>💰</span>
+                    <span>Total Previsto:</span>
+                  </span>
+                  <span className="font-mono font-black text-amber-400 text-sm">
+                    R$ {((suggestQuantity * suggestPricePart) + suggestPriceService).toFixed(2).replace('.', ',')}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1497,12 +1619,58 @@ export default function Vehicle3DViewer({
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Código OEM / Fabricante</label>
+                  <input
+                    type="text"
+                    value={replPartCode}
+                    onChange={e => setReplPartCode(e.target.value)}
+                    placeholder="Ex: NAK-99042 / 1K0 423 811"
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Fabricante / Fornecedor</label>
+                  <input
+                    type="text"
+                    value={replManufacturer}
+                    onChange={e => setReplManufacturer(e.target.value)}
+                    placeholder="Ex: Nakata / Bosch / TRW"
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Quilometragem do Veículo</label>
+                  <input
+                    type="text"
+                    value={replMileage}
+                    onChange={e => setReplMileage(e.target.value)}
+                    placeholder="Ex: 48.250 km"
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Mecânico Responsável</label>
+                  <input
+                    type="text"
+                    value={replTechName}
+                    onChange={e => setReplTechName(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Mecânico Responsável</label>
+                <label className="block text-slate-400 font-semibold mb-1">Termos de Garantia</label>
                 <input
                   type="text"
-                  value={replTechName}
-                  onChange={e => setReplTechName(e.target.value)}
+                  value={replWarranty}
+                  onChange={e => setReplWarranty(e.target.value)}
+                  placeholder="Ex: 90 dias legal + 1 ano fabricante"
                   className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200"
                 />
               </div>

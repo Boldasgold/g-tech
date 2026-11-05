@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../src";
 
 @layer base {
   * {
@@ -7,9 +8,87 @@
   body {
     background-color: #04070d;
     color: #f1f5f9;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     margin: 0;
     padding: 0;
   }
+
+  input, select, textarea {
+    background-color: #050b16;
+    color: #f8fafc;
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #00c6ff;
+    box-shadow: 0 0 8px rgba(0, 198, 255, 0.35);
+  }
+
+  select option {
+    background-color: #081122;
+    color: #f8fafc;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
 }
 
+/* Efeito Visual Assistivo: Scanner Luminoso de Imagem */
+@keyframes scanlineAnim {
+  0% {
+    top: 0%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 96%;
+    opacity: 1;
+  }
+  100% {
+    top: 0%;
+    opacity: 0.8;
+  }
+}
+
+.scanner-beam-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #00f0ff 25%, #ffffff 50%, #0088ff 75%, transparent 100%);
+  box-shadow: 0 0 16px 3px rgba(0, 240, 255, 0.7), 0 0 30px 6px rgba(0, 136, 255, 0.4);
+  animation: scanlineAnim 3.2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.scanner-grid-overlay {
+  background-image: 
+    linear-gradient(to right, rgba(0, 240, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Selo Oficial Peça Trocada Glow */
+.seal-peca-trocada {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.4) 100%);
+  border: 1px solid #10b981;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+/* Acessibilidade: Respeito a Movimento Reduzido (prefers-reduced-motion) */
+@media (prefers-reduced-motion: reduce) {
+  .scanner-beam-line {
+    animation: none !important;
+    top: 50% !important;
+    opacity: 0.7 !important;
+  }
+}

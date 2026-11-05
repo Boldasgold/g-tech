@@ -415,6 +415,7 @@ export class Vehicle3DScene {
           });
 
           this.carGroup.add(model);
+          this.isSegmentedModel = false;
           this.rebuildHotspots();
           resolve(true);
         },
@@ -458,11 +459,18 @@ export class Vehicle3DScene {
     this.rebuildHotspots();
   }
 
+  public isSegmentedModel: boolean = true;
+  private onSegmentedStatusCallback?: (isSegmented: boolean) => void;
+
   public toggleBodyTransparency(): boolean {
-    this.isTransparentBody = !this.isTransparentBody;
+    return this.setTransparentBody(!this.isTransparentBody);
+  }
+
+  public setTransparentBody(transparent: boolean): boolean {
+    this.isTransparentBody = transparent;
     if (this.bodyPaintMaterial) {
-      this.bodyPaintMaterial.transparent = this.isTransparentBody;
-      this.bodyPaintMaterial.opacity = this.isTransparentBody ? 0.25 : 1.0;
+      this.bodyPaintMaterial.transparent = transparent;
+      this.bodyPaintMaterial.opacity = transparent ? 0.22 : 1.0;
       this.bodyPaintMaterial.needsUpdate = true;
     }
     return this.isTransparentBody;
@@ -1128,6 +1136,7 @@ export class Vehicle3DScene {
       case "motor":
         this.targetCameraPos = new THREE.Vector3(1.4, 1.8, 2.5);
         this.targetControlsTarget = new THREE.Vector3(0, 0.7, 1.25);
+        this.setTransparentBody(true); // Desobstrui a visão da lataria para exibir peças internas
         if (this.onBreadcrumbChangeCallback) {
           this.onBreadcrumbChangeCallback(["Veículo", "Propulsão e Alimentação", "Motor"]);
         }
@@ -1150,6 +1159,7 @@ export class Vehicle3DScene {
       default:
         this.targetCameraPos = new THREE.Vector3(3.8, 2.2, 4.2);
         this.targetControlsTarget = new THREE.Vector3(0, 0.6, 0);
+        this.setTransparentBody(false); // Restaura a lataria opaca padrão
         if (this.onBreadcrumbChangeCallback) {
           this.onBreadcrumbChangeCallback(["Veículo", "Visão Geral"]);
         }
