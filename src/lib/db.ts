@@ -536,6 +536,9 @@ function seedInitialData(db: DatabaseSync) {
 
   // 4. Seed de uma OS de demonstração ponta a ponta (Caso real: Renault Duster do Caso Prático)
   seedDemoCase(db);
+
+  // 5. Seed de Ordens de Serviço Volkswagen com Reconhecimento Automático e 51 Fotos Reais
+  seedVolkswagenWorkOrders(db);
 }
 
 function seedDemoCase(db: DatabaseSync) {
@@ -1538,6 +1541,353 @@ function seedVolkswagenModels(db: DatabaseSync) {
       JSON.stringify(m.common)
     );
   }
+}
+
+function seedVolkswagenWorkOrders(db: DatabaseSync) {
+  const osCheck = db.prepare("SELECT id FROM work_orders WHERE os_number = ?").get("GT-OS-000128");
+  if (osCheck) return;
+
+  // 1. VW Golf VII GTI 2.0 TSI (GT-OS-000128)
+  const custGolf = "cust-demo-marcos-vw";
+  db.prepare(`
+    INSERT OR IGNORE INTO customers (id, company_id, name, phone, email, document, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    custGolf,
+    "gtech-paranagua",
+    "Marcos Vinicius Silveira",
+    "(41) 99876-5432",
+    "marcos.silveira@email.com",
+    "055.123.987-44",
+    "Entusiasta de Golf GTI, cliente rigoroso com manutenção preventiva e tolerância metrológica."
+  );
+
+  const vehGolf = "veh-demo-golf-gti";
+  db.prepare(`
+    INSERT OR IGNORE INTO vehicles (id, customer_id, plate, brand, model, year, motor, color, km, fuel, body_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    vehGolf,
+    custGolf,
+    "MK7-2026",
+    "Volkswagen",
+    "Golf VII GTI 2.0 TSI",
+    "2019",
+    "2.0 TSI EA888 Gen 3 Turbo (230cv)",
+    "Azul Safira G-Tech",
+    52400,
+    "Gasolina Podium / Premium",
+    "hatch"
+  );
+
+  const apptGolf = "appt-demo-golf-gti";
+  db.prepare(`
+    INSERT OR IGNORE INTO appointments (
+      id, company_id, protocol, customer_name, customer_phone,
+      vehicle_brand, vehicle_model, vehicle_plate, scheduled_date, scheduled_time,
+      period, issue_description, dashboard_alert, mobility, status, work_order_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    apptGolf,
+    "gtech-paranagua",
+    "GT-2026-9901",
+    "Marcos Vinicius Silveira",
+    "(41) 99876-5432",
+    "Volkswagen",
+    "Golf VII GTI 2.0 TSI",
+    "MK7-2026",
+    new Date().toISOString().split("T")[0],
+    "10:00",
+    "Manhã (08h às 12h)",
+    "Revisão dos 50.000 km, descarbonização de válvulas e checagem de freios cerâmica.",
+    "Luz de Injeção Eletrônica (Check Engine)",
+    "Aguarda na recepção",
+    "em_atendimento",
+    "wo-demo-128"
+  );
+
+  db.prepare(`
+    INSERT INTO work_orders (
+      id, company_id, os_number, appointment_id, customer_id, vehicle_id,
+      assigned_mechanic_id, initial_scope, customer_complaint, diagnostic_authorized,
+      diagnostic_fee, fuel_level_entry, km_entry, belongings_declared, status, priority
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    "wo-demo-128",
+    "gtech-paranagua",
+    "GT-OS-000128",
+    apptGolf,
+    custGolf,
+    vehGolf,
+    "user-giovane",
+    "Inspeção 3D de Geometria, Descarbonização da Injeção Direta TSI e Avaliação Metrológica de Freios",
+    "Luz de injeção acendendo esporadicamente em aceleração forte; pedal de freio com curso um pouco longo.",
+    1,
+    220.0,
+    "Cheio",
+    52400,
+    "Óculos de sol, cabo de dados e chave reserva",
+    "em_servico",
+    "alta"
+  );
+
+  // Vistoria de Entrada Golf GTI
+  db.prepare(`
+    INSERT INTO wo_intake_inspection (
+      id, work_order_id, photo_front, photo_rear, photo_left, photo_right,
+      photo_interior, photo_dashboard, odometer_km, fuel_pct, panel_alerts_found,
+      observations, client_acknowledged, responsible_name
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    "intake-demo-128",
+    "wo-demo-128",
+    "/img/vehicles/volkswagen/fotos/golf-gti.jpg",
+    "/img/vehicles/volkswagen/fotos/golf-r.jpg",
+    "/img/vehicles/volkswagen/fotos/golf-vii.jpg",
+    "/img/vehicles/volkswagen/fotos/golf-alltrack.jpg",
+    "/img/demo/duster_interior.jpg",
+    "/img/demo/duster_dash.jpg",
+    52400,
+    95,
+    "DTC P0303 - Falha de Ignição Cilindro 3 gravada",
+    "Veículo impecável. Pintura Azul Safira original com vitrificação recente. Rodas sem ralados.",
+    1,
+    "Giovane Ribeiro"
+  );
+
+  // Hotspots 3D Golf GTI
+  const insertHotspot = db.prepare(`
+    INSERT INTO wo_hotspots (
+      id, work_order_id, hotspot_type, region_name, orientation_side,
+      pos_x, pos_y, pos_z, severity, damage_type, description, author_name
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertHotspot.run(
+    "hs-vw-1",
+    "wo-demo-128",
+    "achado_tecnico",
+    "Freios Dianteiros Brembo / Discos Ventilados",
+    "dianteira",
+    0.88, 0.38, 1.35,
+    "alta",
+    "desgaste de pastilha",
+    "Pastilhas de freio com 2.5 mm de material de fricção (abaixo da cota OEM de segurança).",
+    "Giovane Ribeiro"
+  );
+
+  insertHotspot.run(
+    "hs-vw-2",
+    "wo-demo-128",
+    "achado_tecnico",
+    "Bobina de Ignição & Vela - Cilindro 3",
+    "motor",
+    0.10, 0.70, 1.30,
+    "critica",
+    "falha de ignição",
+    "Bobina de ignição com fuga de centelha e vela com eletrodo desgastado (gap 1.1 mm vs 0.7 mm especificado).",
+    "Giovane Ribeiro"
+  );
+
+  // Peça trocada com selo oficial
+  const insertRepl = db.prepare(`
+    INSERT INTO wo_replaced_parts (
+      id, work_order_id, quote_item_id, component_id, component_name,
+      assembly_path, position_side, removed_part_desc, installed_part_desc,
+      photo_before_url, photo_after_url, technician_name, seal_status, warranty_terms
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertRepl.run(
+    "repl-vw-1",
+    "wo-demo-128",
+    "qitem-vw-1",
+    "cmp-brake-pads-front",
+    "Jogo de Pastilhas de Freio Dianteiras Cerâmica",
+    "Veículo › Rodagem e Controle › Freios Dianteiros",
+    "dianteira_direita",
+    "Pastilhas originais desgastadas atingindo 2.5 mm com sensor de desgaste próximo ao contato.",
+    "Jogo de Pastilhas Cerâmica Brembo Racing Padrão Golf GTI Novo com sensores embutidos.",
+    "/img/vehicles/volkswagen/fotos/golf-gti.jpg",
+    "/img/vehicles/volkswagen/fotos/golf-r.jpg",
+    "Giovane Ribeiro",
+    "PEÇA TROCADA",
+    "Garantia legal de 90 dias conforme CDC + 1 ano de fábrica Brembo."
+  );
+
+  // 2. VW Jetta GLI 350 TSI (GT-OS-000129)
+  const custJetta = "cust-demo-camila-vw";
+  db.prepare(`
+    INSERT OR IGNORE INTO customers (id, company_id, name, phone, email, document, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    custJetta,
+    "gtech-paranagua",
+    "Camila Becker Ferreira",
+    "(41) 98765-4321",
+    "camila.ferreira@email.com",
+    "029.384.756-11",
+    "Atendimento corporativo, necessita de relatório técnico detalhado e orçamento antes da execução."
+  );
+
+  const vehJetta = "veh-demo-jetta-gli";
+  db.prepare(`
+    INSERT OR IGNORE INTO vehicles (id, customer_id, plate, brand, model, year, motor, color, km, fuel, body_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    vehJetta,
+    custJetta,
+    "GLI-3500",
+    "Volkswagen",
+    "Jetta GLI 350 TSI",
+    "2022",
+    "2.0 TSI 350 TSI (231cv) DSG 7",
+    "Cinza Nardo",
+    38100,
+    "Gasolina Aditivada",
+    "sedan"
+  );
+
+  db.prepare(`
+    INSERT INTO work_orders (
+      id, company_id, os_number, appointment_id, customer_id, vehicle_id,
+      assigned_mechanic_id, initial_scope, customer_complaint, diagnostic_authorized,
+      diagnostic_fee, fuel_level_entry, km_entry, belongings_declared, status, priority
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    "wo-demo-129",
+    "gtech-paranagua",
+    "GT-OS-000129",
+    null,
+    custJetta,
+    vehJetta,
+    "user-giovane",
+    "Alinhamento 3D Computadorizado, Calibração de Sensores ADAS e Geometria de Direção",
+    "Veículo puxando para a direita na BR-277 após cair em desnível de pista.",
+    1,
+    190.0,
+    "1/2",
+    38100,
+    "Cadeirinha infantil, cabo de carregamento rápido",
+    "aguardando_cliente",
+    "normal"
+  );
+
+  // 3. VW Amarok Extreme V6 3.0 TDI (GT-OS-000130)
+  const custAmarok = "cust-demo-carlos-vw";
+  db.prepare(`
+    INSERT OR IGNORE INTO customers (id, company_id, name, phone, email, document, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    custAmarok,
+    "gtech-paranagua",
+    "Carlos Eduardo Santos",
+    "(41) 99111-2233",
+    "carlos.santos@porto.com.br",
+    "018.493.827-99",
+    "Transportador do Porto de Paranaguá, utiliza o veículo em rodovias e trecho portuário."
+  );
+
+  const vehAmarok = "veh-demo-amarok-v6";
+  db.prepare(`
+    INSERT OR IGNORE INTO vehicles (id, customer_id, plate, brand, model, year, motor, color, km, fuel, body_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    vehAmarok,
+    custAmarok,
+    "AMK-0006",
+    "Volkswagen",
+    "Amarok Extreme V6 3.0 TDI",
+    "2023",
+    "3.0 V6 TDI Turbo Diesel (258cv) 4Motion",
+    "Preto Ninja Carbon",
+    42000,
+    "Diesel S10",
+    "picape"
+  );
+
+  db.prepare(`
+    INSERT INTO work_orders (
+      id, company_id, os_number, appointment_id, customer_id, vehicle_id,
+      assigned_mechanic_id, initial_scope, customer_complaint, diagnostic_authorized,
+      diagnostic_fee, fuel_level_entry, km_entry, belongings_declared, status, priority
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    "wo-demo-130",
+    "gtech-paranagua",
+    "GT-OS-000130",
+    null,
+    custAmarok,
+    vehAmarok,
+    "user-giovane",
+    "Revisão Periódica dos 40.000 km, Troca de Óleo Homologado VW 507 00 e Filtros DPF",
+    "Revisão de rotina; conferir nível do sistema de arrefecimento e lubrificação da caixa 4Motion.",
+    1,
+    250.0,
+    "Full",
+    42000,
+    "Equipamentos portuários na caçamba com capota marítima travada",
+    "aprovada",
+    "alta"
+  );
+
+  // 4. VW T-Cross Highline 250 TSI (GT-OS-000131)
+  const custTcross = "cust-demo-beatriz-vw";
+  db.prepare(`
+    INSERT OR IGNORE INTO customers (id, company_id, name, phone, email, document, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    custTcross,
+    "gtech-paranagua",
+    "Beatriz Oliveira Souza",
+    "(41) 99222-3344",
+    "beatriz.souza@educacao.pr.gov.br",
+    "044.832.190-67",
+    "Professora da rede pública, agenda aos sábados ou início da manhã."
+  );
+
+  const vehTcross = "veh-demo-tcross-vw";
+  db.prepare(`
+    INSERT OR IGNORE INTO vehicles (id, customer_id, plate, brand, model, year, motor, color, km, fuel, body_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    vehTcross,
+    custTcross,
+    "TCR-2501",
+    "Volkswagen",
+    "T-Cross Highline 250 TSI",
+    "2021",
+    "1.4 TSI EA211 250 TSI (150cv)",
+    "Branco Puro",
+    49800,
+    "Flex",
+    "suv"
+  );
+
+  db.prepare(`
+    INSERT INTO work_orders (
+      id, company_id, os_number, appointment_id, customer_id, vehicle_id,
+      assigned_mechanic_id, initial_scope, customer_complaint, diagnostic_authorized,
+      diagnostic_fee, fuel_level_entry, km_entry, belongings_declared, status, priority
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    "wo-demo-131",
+    "gtech-paranagua",
+    "GT-OS-000131",
+    null,
+    custTcross,
+    vehTcross,
+    "user-giovane",
+    "Diagnóstico do Sistema de Arrefecimento & Checkup de Freios",
+    "Aviso luminoso no painel de temperatura oscilou na subida da serra.",
+    1,
+    180.0,
+    "1/4",
+    49800,
+    "Material escolar no porta-malas",
+    "aberta",
+    "normal"
+  );
 }
 
 

@@ -134,6 +134,12 @@ export default function Vehicle3DViewer({
     componentsCount: 16
   });
 
+  // Real Vehicle Photo Integration in 3D (Showroom Backdrop Screen & Floating PIP HUD)
+  const [show3DBackdrop, setShow3DBackdrop] = useState(true);
+  const [isPipMinimized, setIsPipMinimized] = useState(false);
+  const [isSplitView, setIsSplitView] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+
   // Tripo3D / Custom GLB Model state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [customModelLoaded, setCustomModelLoaded] = useState<string | null>(null);
@@ -244,6 +250,7 @@ export default function Vehicle3DViewer({
 
     scene.setBodyType(effectiveBodyType);
     scene.setHotspots(hotspots);
+    scene.setRealPhotoBackdrop(resolvedPhoto, show3DBackdrop);
     sceneRef.current = scene;
 
     return () => {
@@ -251,6 +258,18 @@ export default function Vehicle3DViewer({
       sceneRef.current = null;
     };
   }, [viewMode]);
+
+  useEffect(() => {
+    if (sceneRef.current) {
+      sceneRef.current.setRealPhotoBackdrop(resolvedPhoto, show3DBackdrop);
+    }
+  }, [resolvedPhoto, show3DBackdrop]);
+
+  useEffect(() => {
+    if (sceneRef.current) {
+      setTimeout(() => sceneRef.current?.onWindowResize(), 80);
+    }
+  }, [isSplitView]);
 
   useEffect(() => {
     if (sceneRef.current) {
@@ -622,11 +641,90 @@ export default function Vehicle3DViewer({
       </div>
 
       {/* Main Display Area */}
-      <div className="relative w-full h-[460px] bg-[#040812]">
+      <div className="relative w-full h-[480px] bg-[#040812]">
         {/* VIEW 1: INTERACTIVE 3D WEBGL SCENE */}
         {viewMode === "3d" && (
-          <>
-            <div ref={containerRef} className="w-full h-full" />
+          <div className="w-full h-full relative flex flex-col md:flex-row">
+            {/* 3D WebGL Canvas */}
+            <div
+              ref={containerRef}
+              className={`h-full transition-all duration-300 relative ${
+                isSplitView ? "w-full md:w-1/2 border-r border-cyan-500/30" : "w-full"
+              }`}
+            />
+
+            {/* Split View Right Pane: High-Res Real Photography & Comparison */}
+            {isSplitView && (
+              <div className="w-full md:w-1/2 h-full bg-[#030713] p-4 flex flex-col justify-between overflow-y-auto border-t md:border-t-0 border-cyan-500/30">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between pb-2 border-b border-cyan-500/20">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-cyan-300">
+                        {recognition.isVolkswagen ? "Fotografia Real Oficial Volkswagen" : "Fotografia Real Homologada"}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsSplitView(false)}
+                      className="text-xs text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-900 border border-slate-700"
+                    >
+                      Fechar Split ✕
+                    </button>
+                  </div>
+
+                  <div
+                    className="relative group cursor-pointer overflow-hidden rounded-xl border border-cyan-500/30 shadow-2xl bg-black"
+                    onClick={() => setShowPhotoModal(true)}
+                  >
+                    <img
+                      src={resolvedPhoto}
+                      alt={vehicleLabel}
+                      className="w-full h-[230px] object-contain group-hover:scale-102 transition duration-300"
+                    />
+                    <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 rounded text-[10px] text-cyan-300 border border-cyan-500/40">
+                      🔍 Clique para Zoom HD
+                    </div>
+                  </div>
+
+                  {recognition.isVolkswagen && recognition.matchedModel ? (
+                    <div className="bg-[#060c18] p-3 rounded-lg border border-slate-800 text-[11px] space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Modelo Oficial:</span>
+                        <strong className="text-white">Volkswagen {recognition.matchedModel.name} ({recognition.matchedModel.generation})</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Motorização:</span>
+                        <strong className="text-cyan-300">{recognition.matchedModel.engine}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Óleo Homologado:</span>
+                        <strong className="text-emerald-400 font-mono">{recognition.matchedModel.oilViscosity} ({recognition.matchedModel.oilCapacityLiters}L)</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Pressão Pneus:</span>
+                        <strong className="text-slate-200 font-mono">{recognition.matchedModel.tirePressureFrontPsi}/{recognition.matchedModel.tirePressureRearPsi} PSI</strong>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-[#060c18] p-3 rounded-lg border border-slate-800 text-[11px] text-slate-300">
+                      Fotografia oficial para checagem dimensional e tolerância metrológica.
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-[10px] text-slate-500 font-mono pt-2 border-t border-slate-800 flex justify-between items-center">
+                  <span>Acervo Oficial G-Tech Paranaguá–PR</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPhotoModal(true)}
+                    className="text-cyan-400 hover:underline font-bold"
+                  >
+                    Abrir em Tela Cheia ↗
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Quick Drill-down Presets Bar */}
             <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5 bg-black/70 p-1.5 rounded-lg backdrop-blur-sm border border-cyan-500/20">
@@ -661,6 +759,120 @@ export default function Vehicle3DViewer({
               </button>
             </div>
 
+            {/* Floating Picture-in-Picture (PIP) HUD Badge (Top-Left over 3D Canvas) */}
+            {resolvedPhoto && !isSplitView && (
+              <div
+                className={`absolute top-14 left-3 z-20 transition-all duration-300 ${
+                  isPipMinimized ? "w-auto" : "w-64 sm:w-72"
+                }`}
+              >
+                {isPipMinimized ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsPipMinimized(false)}
+                    className="flex items-center gap-2 bg-[#060c18]/90 hover:bg-[#0a1529] border border-cyan-500/50 rounded-lg px-2.5 py-1.5 shadow-xl backdrop-blur-md text-xs text-white group"
+                    title="Expandir Foto Real do Veículo"
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="font-bold text-cyan-300">📸 Foto Real</span>
+                    <span className="text-[10px] text-slate-400 font-mono">[{recognition.isVolkswagen ? "VW" : "Homologada"}]</span>
+                  </button>
+                ) : (
+                  <div className="bg-[#050b14]/95 backdrop-blur-md rounded-xl border border-cyan-500/40 p-2.5 shadow-2xl space-y-2">
+                    {/* PIP Header */}
+                    <div className="flex items-center justify-between gap-1 border-b border-cyan-500/20 pb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                          {recognition.isVolkswagen ? "📸 Foto Real Oficial VW" : "📸 Foto Real Homologada"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsSplitView(true)}
+                          className="px-1.5 py-0.5 rounded text-[9px] font-bold border bg-slate-900 text-slate-300 border-slate-700 hover:text-cyan-300 hover:border-cyan-500 transition"
+                          title="Modo Lado a Lado (3D + Foto)"
+                        >
+                          🌓 Dividir
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsPipMinimized(true)}
+                          className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs"
+                          title="Minimizar badge"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Real Vehicle Thumbnail with 1-click zoom */}
+                    <div
+                      className="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-700 bg-slate-950"
+                      onClick={() => setShowPhotoModal(true)}
+                    >
+                      <img
+                        src={resolvedPhoto}
+                        alt={vehicleLabel}
+                        className="w-full h-32 object-cover object-center group-hover:scale-105 transition duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition flex items-end justify-between p-2">
+                        <span className="text-[10px] text-cyan-300 font-bold flex items-center gap-1">
+                          🔍 Clique para Ampliar
+                        </span>
+                        <span className="text-[9px] text-slate-300 bg-black/60 px-1 rounded">HD</span>
+                      </div>
+                    </div>
+
+                    {/* Vehicle Specs Info */}
+                    <div className="text-[10px] space-y-0.5">
+                      <div className="font-bold text-white truncate">
+                        {recognition.isVolkswagen && recognition.matchedModel
+                          ? `Volkswagen ${recognition.matchedModel.name}`
+                          : vehicleLabel}
+                      </div>
+                      {recognition.isVolkswagen && recognition.matchedModel && (
+                        <>
+                          <div className="text-slate-400 text-[9px] truncate">
+                            {recognition.matchedModel.variant} ({recognition.matchedModel.years})
+                          </div>
+                          <div className="flex items-center justify-between text-[9px] pt-1 border-t border-slate-800/80">
+                            <span className="text-slate-400">Motor:</span>
+                            <span className="font-semibold text-cyan-300 truncate max-w-[140px]">{recognition.matchedModel.engine}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[9px]">
+                            <span className="text-slate-400">Óleo:</span>
+                            <span className="font-mono text-emerald-400">{recognition.matchedModel.oilViscosity}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Backdrop in 3D toggle button */}
+                    <div className="pt-1 border-t border-slate-800 flex items-center justify-between text-[9px]">
+                      <span className="text-slate-400">Telão Showroom 3D:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextVal = !show3DBackdrop;
+                          setShow3DBackdrop(nextVal);
+                          sceneRef.current?.setRealPhotoBackdrop(resolvedPhoto, nextVal);
+                        }}
+                        className={`px-2 py-0.5 rounded font-bold border transition ${
+                          show3DBackdrop
+                            ? "bg-cyan-950 text-cyan-300 border-cyan-500/60"
+                            : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                        }`}
+                      >
+                        {show3DBackdrop ? "🖥️ Ativo no 3D" : "Desligado"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Right Tools Bar (Laser Scan, Tripo3D Import, Explode, Transparency, Camera Angles) */}
             <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 bg-black/80 p-2 rounded-lg backdrop-blur-sm border border-cyan-500/25 text-[10px] shadow-xl">
               {/* Laser Scan 360 Trigger */}
@@ -677,6 +889,40 @@ export default function Vehicle3DViewer({
               >
                 <span>⚡ Laser Scan 360°</span>
                 <span className="font-mono text-[9px] ml-1">{isLaserScanning ? `${laserProgress}%` : "SCAN"}</span>
+              </button>
+
+              {/* Showroom Screen 3D Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const nextVal = !show3DBackdrop;
+                  setShow3DBackdrop(nextVal);
+                  sceneRef.current?.setRealPhotoBackdrop(resolvedPhoto, nextVal);
+                }}
+                className={`px-2.5 py-1.5 rounded font-bold transition text-left flex items-center justify-between ${
+                  show3DBackdrop
+                    ? "bg-cyan-950 text-cyan-300 border border-cyan-500/40"
+                    : "bg-slate-900 text-slate-400 hover:text-white"
+                }`}
+                title="Ligar/Desligar telão 3D com foto real do carro atrás da plataforma"
+              >
+                <span>🖥️ Telão 3D</span>
+                <span className="font-mono text-[9px] ml-1">{show3DBackdrop ? "ON" : "OFF"}</span>
+              </button>
+
+              {/* Split View Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsSplitView(!isSplitView)}
+                className={`px-2.5 py-1.5 rounded font-bold transition text-left flex items-center justify-between ${
+                  isSplitView
+                    ? "bg-amber-500 text-slate-950 shadow"
+                    : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                }`}
+                title="Visualizar 3D interativo e Foto Real lado a lado"
+              >
+                <span>🌓 Lado a Lado</span>
+                <span className="font-mono text-[9px] ml-1">{isSplitView ? "ATIVO" : "SPLIT"}</span>
               </button>
 
               {/* Import Tripo3D / GLB Model */}
@@ -811,7 +1057,7 @@ export default function Vehicle3DViewer({
                 <span className="text-slate-400">{telemetry.componentsCount} PEÇAS</span>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* VIEW 2: REAL VEHICLE PHOTOGRAPHY */}
@@ -1459,6 +1705,57 @@ export default function Vehicle3DViewer({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Fullscreen High-Resolution Photo Modal */}
+      {showPhotoModal && resolvedPhoto && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="relative max-w-4xl w-full bg-[#070e1b] border border-cyan-500/40 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center p-3 border-b border-cyan-500/20 bg-[#0a1529]">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <h3 className="font-bold text-sm text-white">
+                  {recognition.isVolkswagen && recognition.matchedModel
+                    ? `Volkswagen ${recognition.matchedModel.name} — Fotografia Oficial Homologada`
+                    : `Fotografia Real: ${vehicleLabel}`}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPhotoModal(false)}
+                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/70">
+              <img
+                src={resolvedPhoto}
+                alt={vehicleLabel}
+                className="max-h-[65vh] w-auto object-contain rounded-lg shadow-2xl border border-cyan-500/30"
+              />
+            </div>
+
+            {recognition.isVolkswagen && recognition.matchedModel ? (
+              <div className="p-3 bg-[#081122] border-t border-slate-800 text-xs flex flex-wrap justify-between items-center gap-2">
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <span className="text-slate-400">Motor: <strong className="text-cyan-300">{recognition.matchedModel.engine}</strong></span>
+                  <span className="text-slate-400">Óleo: <strong className="text-emerald-400 font-mono">{recognition.matchedModel.oilViscosity}</strong></span>
+                  <span className="text-slate-400">Pneus: <strong className="text-slate-200 font-mono">{recognition.matchedModel.tirePressureFrontPsi}/{recognition.matchedModel.tirePressureRearPsi} PSI</strong></span>
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono">
+                  {recognition.matchedModel.author} ({recognition.matchedModel.license}) • G-Tech Paranaguá
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-[#081122] border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
+                <span>Fotografia oficial para checagem metrológica e de integridade física.</span>
+                <span className="text-[10px] text-slate-500 font-mono">Acervo G-Tech Paranaguá</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

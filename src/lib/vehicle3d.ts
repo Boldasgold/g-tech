@@ -87,6 +87,13 @@ export class Vehicle3DScene {
   private onLaserProgressCallback?: (progress: number) => void;
   private onLaserCompleteCallback?: () => void;
 
+  // Showroom Backdrop Screen (Real Vehicle Photo Billboard in 3D Space)
+  private showroomBackdropGroup?: THREE.Group;
+  private showroomScreenMesh?: THREE.Mesh;
+  private textureLoader = new THREE.TextureLoader();
+  private currentBackdropUrl?: string;
+  private isBackdropVisible = true;
+
   // Current Paint Color (defaults to G-Tech Safira Blue)
   public currentPaintColor = 0x0a3c75;
 
@@ -229,6 +236,102 @@ export class Vehicle3DScene {
 
     // 4. Setup Laser Scanner Plane
     this.setupLaserScanner();
+
+    // 5. Setup Showroom 3D Real Photo Backdrop Screen
+    this.setupShowroomBackdrop();
+  }
+
+  private setupShowroomBackdrop() {
+    this.showroomBackdropGroup = new THREE.Group();
+    this.showroomBackdropGroup.name = "showroom-backdrop-group";
+
+    // 1. Sleek 16:9 Display Screen (4.6m width x 2.6m height)
+    const screenGeo = new THREE.PlaneGeometry(4.6, 2.6);
+    const screenMat = new THREE.MeshBasicMaterial({
+      color: 0x07111f,
+      side: THREE.DoubleSide
+    });
+    this.showroomScreenMesh = new THREE.Mesh(screenGeo, screenMat);
+    this.showroomScreenMesh.position.set(0, 1.45, -3.2);
+    this.showroomBackdropGroup.add(this.showroomScreenMesh);
+
+    // 2. Bezel Frame with Carbon Finish
+    const frameGeo = new THREE.BoxGeometry(4.75, 2.75, 0.08);
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: 0x050a14,
+      metalness: 0.85,
+      roughness: 0.25
+    });
+    const frame = new THREE.Mesh(frameGeo, frameMat);
+    frame.position.set(0, 1.45, -3.25);
+    this.showroomBackdropGroup.add(frame);
+
+    // 3. Neon Cyan LED Edge Accent
+    const edges = new THREE.EdgesGeometry(screenGeo);
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x00d4ff });
+    const edgeLines = new THREE.LineSegments(edges, lineMat);
+    edgeLines.position.set(0, 1.45, -3.19);
+    this.showroomBackdropGroup.add(edgeLines);
+
+    // 4. Aluminum Stand Pillars
+    const pillarGeo = new THREE.CylinderGeometry(0.04, 0.05, 1.5, 16);
+    const pillarMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      metalness: 0.9,
+      roughness: 0.2
+    });
+    const pillarL = new THREE.Mesh(pillarGeo, pillarMat);
+    pillarL.position.set(-1.8, 0.75, -3.25);
+    const pillarR = new THREE.Mesh(pillarGeo, pillarMat);
+    pillarR.position.set(1.8, 0.75, -3.25);
+    this.showroomBackdropGroup.add(pillarL);
+    this.showroomBackdropGroup.add(pillarR);
+
+    // Initial visibility
+    this.showroomBackdropGroup.visible = false;
+    this.scene.add(this.showroomBackdropGroup);
+  }
+
+  public setRealPhotoBackdrop(url?: string, visible: boolean = true) {
+    this.isBackdropVisible = visible;
+    if (!this.showroomBackdropGroup) {
+      this.setupShowroomBackdrop();
+    }
+    if (!url || !visible) {
+      if (this.showroomBackdropGroup) {
+        this.showroomBackdropGroup.visible = false;
+      }
+      return;
+    }
+
+    this.currentBackdropUrl = url;
+    this.showroomBackdropGroup!.visible = true;
+
+    this.textureLoader.load(
+      url,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        if (this.showroomScreenMesh) {
+          this.showroomScreenMesh.material = new THREE.MeshBasicMaterial({
+            map: tex,
+            side: THREE.DoubleSide
+          });
+        }
+      },
+      undefined,
+      (err) => {
+        console.warn("Não foi possível carregar textura 3D da foto real:", err);
+      }
+    );
+  }
+
+  public toggleShowroomBackdrop(): boolean {
+    if (this.showroomBackdropGroup) {
+      this.isBackdropVisible = !this.showroomBackdropGroup.visible;
+      this.showroomBackdropGroup.visible = this.isBackdropVisible;
+      return this.isBackdropVisible;
+    }
+    return false;
   }
 
   private setupLaserScanner() {
@@ -1176,7 +1279,7 @@ export class Vehicle3DScene {
     }
   }
 
-  private onWindowResize() {
+  public onWindowResize() {
     if (!this.container) return;
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;

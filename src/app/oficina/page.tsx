@@ -808,6 +808,39 @@ export default function OficinaDashboardPage() {
             {/* Sub-Tab 1: 3D Vehicle Inspection */}
             {osSubTab === "inspecao3d" && (
               <div className="space-y-3">
+                {/* Quick Model & Photo Switcher Toolbar */}
+                <div className="bg-[#060c18] border border-cyan-500/30 p-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-white flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                      <span>Veículo em Inspeção:</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/50 font-bold font-mono">
+                      {selectedWo.work_order.vehicle_brand} {selectedWo.work_order.vehicle_model} ({selectedWo.work_order.vehicle_plate})
+                    </span>
+                    {selectedWo.work_order.vehicle_brand === "Volkswagen" && (
+                      <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/50 text-[10px] font-bold">
+                        ✓ Foto Real Homologada no 3D
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-400">Alternar Ordem de Serviço:</span>
+                    <select
+                      value={selectedWo.work_order.id}
+                      onChange={(e) => loadWoDetails(e.target.value)}
+                      className="bg-[#0b1528] text-white border border-cyan-500/40 rounded-lg px-2.5 py-1 text-xs focus:border-cyan-400 focus:outline-none font-medium"
+                    >
+                      {workOrders.map((wo: any) => (
+                        <option key={wo.id} value={wo.id}>
+                          {wo.os_number} — {wo.vehicle_brand} {wo.vehicle_model} ({wo.vehicle_plate})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <Vehicle3DViewer
                   bodyType={selectedWo.work_order.vehicle_body_type || "suv"}
                   hotspots={selectedWo.hotspots || []}
