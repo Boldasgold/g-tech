@@ -37,6 +37,11 @@ export class Vehicle3DScene {
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
   private carGroup: THREE.Group;
+  private proceduralBodyGroup: THREE.Group;
+  private customMeshGroup: THREE.Group;
+  public hasLoadedCustomModel: boolean = false;
+  public loadedModelName: string | null = null;
+  private currentLoadToken: number = 0;
   private internalGroup: THREE.Group;
   private hotspotGroup: THREE.Group;
   private currentBodyType: BodyType = "suv";
@@ -152,6 +157,13 @@ export class Vehicle3DScene {
 
     // 7. Groups
     this.carGroup = new THREE.Group();
+    this.proceduralBodyGroup = new THREE.Group();
+    this.proceduralBodyGroup.name = "procedural-body-group";
+    this.customMeshGroup = new THREE.Group();
+    this.customMeshGroup.name = "custom-mesh-group";
+    this.customMeshGroup.visible = false;
+    this.carGroup.add(this.proceduralBodyGroup);
+    this.carGroup.add(this.customMeshGroup);
     this.scene.add(this.carGroup);
 
     this.internalGroup = new THREE.Group();
@@ -369,34 +381,42 @@ export class Vehicle3DScene {
 
   // Load Photorealistic 3D Model from Tripo3D or .GLB file
   public loadGLBModel(url: string, onProgress?: (pct: number) => void): Promise<boolean> {
+    const token = ++this.currentLoadToken;
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
       loader.load(
         url,
         (gltf) => {
-          // Clear previous vehicle
-          while (this.carGroup.children.length > 0) {
-            this.carGroup.remove(this.carGroup.children[0]);
+          // Descartar se uma requisição mais recente foi disparada durante o download
+          if (token !== this.currentLoadToken) {
+            console.log("Requisição de modelo GLB anterior descartada (concorrência prevenida).");
+            return;
+          }
+
+          // Limpar apenas o grupo de malhas customizadas anteriores
+          while (this.customMeshGroup.children.length > 0) {
+            this.customMeshGroup.remove(this.customMeshGroup.children[0]);
           }
 
           const model = gltf.scene;
 
-          // Normalize size to ~4.2 meters length
+          // Normalização métrica com BoundingBox: ajusta para ~4.4m de comprimento (sedan/SUV padrão)
           const bbox = new THREE.Box3().setFromObject(model);
           const size = new THREE.Vector3();
           bbox.getSize(size);
           const maxDim = Math.max(size.x, size.y, size.z);
-          const targetScale = 4.3 / (maxDim || 1);
+          const targetScale = 4.4 / (maxDim || 1);
           model.scale.set(targetScale, targetScale, targetScale);
 
-          // Center on diagnostic turntable
+          // Centralização precisa na plataforma de diagnóstico
           const center = new THREE.Vector3();
           bbox.getCenter(center);
           model.position.x = -center.x * targetScale;
-          model.position.y = -bbox.min.y * targetScale; // Align with turntable floor
+          model.position.y = -bbox.min.y * targetScale; // Alinha os pneus perfeitamente com o piso
           model.position.z = -center.z * targetScale;
 
-          // Enable shadows and apply materials
+          // Habilitar sombras e materiais
+          let hasInternalMeshes = false;
           model.traverse((node) => {
             if ((node as THREE.Mesh).isMesh) {
               const mesh = node as THREE.Mesh;
@@ -404,18 +424,32 @@ export class Vehicle3DScene {
               mesh.receiveShadow = true;
               (mesh as any).semanticRegion = "carroceria";
 
-              // If material is standard, upgrade to physical reflection
+              const nName = (mesh.name || "").toLowerCase();
+              if (nName.includes("engine") || nName.includes("motor") || nName.includes("brake") || nName.includes("freio") || nName.includes("suspensao")) {
+                hasInternalMeshes = true;
+              }
+
               if (mesh.material && (mesh.material as any).isMeshStandardMaterial) {
                 const mat = mesh.material as THREE.MeshStandardMaterial;
                 mat.envMapIntensity = 1.2;
-                mat.roughness = Math.min(mat.roughness, 0.4);
-                mat.metalness = Math.max(mat.metalness, 0.5);
+                mat.roughness = Math.min(mat.roughness, 0.45);
+                mat.metalness = Math.max(mat.metalness, 0.4);
               }
             }
           });
 
-          this.carGroup.add(model);
-          this.isSegmentedModel = false;
+          // Adicionar à cena e ocultar a carroceria procedural ilustrativa
+          this.customMeshGroup.add(model);
+          this.hasLoadedCustomModel = true;
+          this.proceduralBodyGroup.visible = false;
+          this.customMeshGroup.visible = true;
+          this.isSegmentedModel = hasInternalMeshes;
+
+          // Enquadramento automático da câmera
+          this.controls.target.set(0, 0.65, 0);
+          this.camera.position.set(3.8, 2.2, 4.2);
+          this.controls.update();
+
           this.rebuildHotspots();
           resolve(true);
         },
@@ -425,11 +459,29 @@ export class Vehicle3DScene {
           }
         },
         (error) => {
+          if (token !== this.currentLoadToken) return;
           console.error("Erro ao carregar modelo GLB/Tripo3D:", error);
+          // Em caso de falha, manter a carroceria procedural ilustrativa visível
+          this.proceduralBodyGroup.visible = true;
+          this.customMeshGroup.visible = false;
+          this.hasLoadedCustomModel = false;
           reject(error);
         }
       );
     });
+  }
+
+  // Descarregar modelo customizado e restaurar a representação procedural ilustrativa
+  public unloadCustomModel(): void {
+    while (this.customMeshGroup.children.length > 0) {
+      this.customMeshGroup.remove(this.customMeshGroup.children[0]);
+    }
+    this.hasLoadedCustomModel = false;
+    this.loadedModelName = null;
+    this.proceduralBodyGroup.visible = true;
+    this.customMeshGroup.visible = false;
+    this.isSegmentedModel = true;
+    this.rebuildHotspots();
   }
 
   public setBodyType(type: string) {
@@ -473,6 +525,21 @@ export class Vehicle3DScene {
       this.bodyPaintMaterial.opacity = transparent ? 0.22 : 1.0;
       this.bodyPaintMaterial.needsUpdate = true;
     }
+    if (this.customMeshGroup) {
+      this.customMeshGroup.traverse((node) => {
+        if ((node as THREE.Mesh).isMesh) {
+          const mesh = node as THREE.Mesh;
+          if (mesh.material) {
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            mats.forEach((m) => {
+              m.transparent = transparent;
+              m.opacity = transparent ? 0.28 : 1.0;
+              m.needsUpdate = true;
+            });
+          }
+        }
+      });
+    }
     return this.isTransparentBody;
   }
 
@@ -495,8 +562,8 @@ export class Vehicle3DScene {
   }
 
   private buildVehicle(bodyType: BodyType) {
-    while (this.carGroup.children.length > 0) {
-      this.carGroup.remove(this.carGroup.children[0]);
+    while (this.proceduralBodyGroup.children.length > 0) {
+      this.proceduralBodyGroup.remove(this.proceduralBodyGroup.children[0]);
     }
 
     this.bodyPaintMaterial = new THREE.MeshPhysicalMaterial({
@@ -551,26 +618,26 @@ export class Vehicle3DScene {
     lowerBody.castShadow = true;
     lowerBody.receiveShadow = true;
     (lowerBody as any).semanticRegion = "carroceria";
-    this.carGroup.add(lowerBody);
+    this.proceduralBodyGroup.add(lowerBody);
 
     // Bumpers
     const bumperGeo = new THREE.BoxGeometry(bodyW * 0.98, bodyH * 0.45, 0.4);
     const frontBumper = new THREE.Mesh(bumperGeo, darkPlastic);
     frontBumper.position.set(0, baseY - bodyH * 0.25, bodyL / 2 + 0.15);
     (frontBumper as any).semanticRegion = "dianteira";
-    this.carGroup.add(frontBumper);
+    this.proceduralBodyGroup.add(frontBumper);
 
     const rearBumper = new THREE.Mesh(bumperGeo, darkPlastic);
     rearBumper.position.set(0, baseY - bodyH * 0.25, -bodyL / 2 - 0.15);
     (rearBumper as any).semanticRegion = "traseira";
-    this.carGroup.add(rearBumper);
+    this.proceduralBodyGroup.add(rearBumper);
 
     // Cabin
     const cabinGeo = new THREE.BoxGeometry(cabinW, cabinH, cabinL);
     const cabin = new THREE.Mesh(cabinGeo, this.bodyPaintMaterial);
     cabin.position.set(0, baseY + bodyH / 2 + cabinH / 2 - 0.02, cabinZ);
     (cabin as any).semanticRegion = "teto";
-    this.carGroup.add(cabin);
+    this.proceduralBodyGroup.add(cabin);
 
     // Windshield
     const windshieldGeo = new THREE.PlaneGeometry(cabinW * 0.9, cabinH * 0.85);
@@ -578,7 +645,7 @@ export class Vehicle3DScene {
     windshield.position.set(0, baseY + bodyH / 2 + cabinH / 2, cabinZ + cabinL / 2 + 0.02);
     windshield.rotation.x = -Math.PI / 6;
     (windshield as any).semanticRegion = "dianteira";
-    this.carGroup.add(windshield);
+    this.proceduralBodyGroup.add(windshield);
 
     // Headlights (3D Sculpted LED Matrix)
     const hlGeo = new THREE.BoxGeometry(0.35, 0.14, 0.12);
@@ -586,70 +653,70 @@ export class Vehicle3DScene {
     hlLeft.position.set(-bodyW * 0.38, baseY + bodyH * 0.2, bodyL / 2 + 0.05);
     hlLeft.rotation.y = 0.15;
     (hlLeft as any).semanticRegion = "dianteira";
-    this.carGroup.add(hlLeft);
+    this.proceduralBodyGroup.add(hlLeft);
 
     const hlRight = new THREE.Mesh(hlGeo, headlightMat);
     hlRight.position.set(bodyW * 0.38, baseY + bodyH * 0.2, bodyL / 2 + 0.05);
     hlRight.rotation.y = -0.15;
     (hlRight as any).semanticRegion = "dianteira";
-    this.carGroup.add(hlRight);
+    this.proceduralBodyGroup.add(hlRight);
 
     // Front Grille & Air Dam
     const grilleGeo = new THREE.BoxGeometry(bodyW * 0.5, bodyH * 0.25, 0.08);
     const grille = new THREE.Mesh(grilleGeo, darkPlastic);
     grille.position.set(0, baseY + bodyH * 0.12, bodyL / 2 + 0.06);
-    this.carGroup.add(grille);
+    this.proceduralBodyGroup.add(grille);
 
     // Aerodynamic Hood Creases / Taper
     const hoodGeo = new THREE.BoxGeometry(bodyW * 0.9, 0.04, bodyL * 0.35);
     const hood = new THREE.Mesh(hoodGeo, this.bodyPaintMaterial);
     hood.position.set(0, baseY + bodyH * 0.5 + 0.02, bodyL * 0.25);
     hood.rotation.x = 0.08;
-    this.carGroup.add(hood);
+    this.proceduralBodyGroup.add(hood);
 
     // Side Mirrors (Aerodynamic Left & Right)
     const mirrorGeo = new THREE.BoxGeometry(0.18, 0.1, 0.12);
     const mirrorLeft = new THREE.Mesh(mirrorGeo, darkPlastic);
     mirrorLeft.position.set(-cabinW * 0.56, baseY + bodyH * 0.45, cabinZ + cabinL * 0.35);
-    this.carGroup.add(mirrorLeft);
+    this.proceduralBodyGroup.add(mirrorLeft);
 
     const mirrorRight = mirrorLeft.clone();
     mirrorRight.position.x = cabinW * 0.56;
-    this.carGroup.add(mirrorRight);
+    this.proceduralBodyGroup.add(mirrorRight);
 
     // Rear Taillight Lightbar
     const tlGeo = new THREE.BoxGeometry(bodyW * 0.88, 0.08, 0.06);
     const taillightBar = new THREE.Mesh(tlGeo, taillightMat);
     taillightBar.position.set(0, baseY + bodyH * 0.25, -bodyL / 2 - 0.05);
     (taillightBar as any).semanticRegion = "traseira";
-    this.carGroup.add(taillightBar);
+    this.proceduralBodyGroup.add(taillightBar);
 
     // Dual Chrome Exhaust Tips
     const exhaustGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.18, 12);
     const exhaustL = new THREE.Mesh(exhaustGeo, chromeMat);
     exhaustL.rotation.x = Math.PI / 2;
     exhaustL.position.set(-bodyW * 0.32, baseY - bodyH * 0.3, -bodyL / 2 - 0.22);
-    this.carGroup.add(exhaustL);
+    this.proceduralBodyGroup.add(exhaustL);
 
     const exhaustR = exhaustL.clone();
     exhaustR.position.x = bodyW * 0.32;
-    this.carGroup.add(exhaustR);
+    this.proceduralBodyGroup.add(exhaustR);
 
     // Roof Styling: Roof Rails for SUV/Van or Sport Spoiler for Hatch/Sedan
     if (bodyType === "suv" || bodyType === "van") {
       const railGeo = new THREE.BoxGeometry(0.04, 0.05, cabinL * 0.85);
       const railL = new THREE.Mesh(railGeo, chromeMat);
       railL.position.set(-cabinW * 0.45, baseY + bodyH / 2 + cabinH + 0.02, cabinZ);
-      this.carGroup.add(railL);
+      this.proceduralBodyGroup.add(railL);
 
       const railR = railL.clone();
       railR.position.x = cabinW * 0.45;
-      this.carGroup.add(railR);
+      this.proceduralBodyGroup.add(railR);
     } else {
       const spoilerGeo = new THREE.BoxGeometry(cabinW * 0.9, 0.04, 0.2);
       const spoiler = new THREE.Mesh(spoilerGeo, darkPlastic);
       spoiler.position.set(0, baseY + bodyH * 0.48, -bodyL * 0.48);
-      this.carGroup.add(spoiler);
+      this.proceduralBodyGroup.add(spoiler);
     }
 
     // High-Detail Wheels with 5-Spoke Alloy Rims & Brembo Red Calipers
@@ -709,7 +776,7 @@ export class Vehicle3DScene {
 
       wheelGroup.position.set(pos.x, wheelRadius, pos.z);
       (wheelGroup as any).semanticRegion = pos.side;
-      this.carGroup.add(wheelGroup);
+      this.proceduralBodyGroup.add(wheelGroup);
 
       // Register front-right wheel for axial explosion
       if (pos.isFrontRight) {
@@ -720,6 +787,9 @@ export class Vehicle3DScene {
         });
       }
     });
+
+    // Se um modelo GLB customizado estiver carregado, a carroceria procedural fica oculta
+    this.proceduralBodyGroup.visible = !this.hasLoadedCustomModel;
   }
 
   // Build Internal Assemblies (Engine Bay, Brakes, Transmission)

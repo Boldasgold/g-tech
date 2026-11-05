@@ -1,8 +1,30 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Vehicle3DScene, BodyType, HotspotData, ComponentMeshInfo } from "@/lib/vehicle3d";
 import { recognizeVehicle } from "@/lib/vw-recognition";
+
+export type ModelStatus = 
+  | "verificando"
+  | "carregando"
+  | "especifico_carregado"
+  | "ausente_ilustrativo"
+  | "erro_carregamento";
+
+export interface ActiveModelMetadata {
+  id?: string;
+  vehicle_key?: string;
+  brand?: string;
+  model?: string;
+  generation?: string;
+  work_order_id?: string;
+  file_name: string;
+  file_url: string;
+  file_size_bytes?: number;
+  model_type: "malha_externa_monobloco" | "modelo_com_pecas_segmentadas";
+  source?: string;
+  created_at?: string;
+}
 
 interface Vehicle3DViewerProps {
   bodyType: BodyType;
@@ -24,6 +46,11 @@ interface Vehicle3DViewerProps {
   vehicleLabel?: string;
   realPhotoUrl?: string;
   workOrderId?: string;
+  vehicleKey?: string;
+  brand?: string;
+  model?: string;
+  generation?: string;
+  initialGlbUrl?: string;
   replacedComponentIds?: string[];
   onSaveInspection?: (data: any) => Promise<void> | void;
   onSaveReplacement?: (data: any) => Promise<void> | void;
@@ -99,6 +126,11 @@ export default function Vehicle3DViewer({
   vehicleLabel = "Veículo",
   realPhotoUrl,
   workOrderId,
+  vehicleKey,
+  brand,
+  model,
+  generation,
+  initialGlbUrl,
   replacedComponentIds = [],
   onSaveInspection,
   onSaveReplacement,
@@ -140,25 +172,116 @@ export default function Vehicle3DViewer({
   const [isSplitView, setIsSplitView] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
 
-  // Tripo3D / Custom GLB Model state
+  // Specific 3D Model State & Manager
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [customModelLoaded, setCustomModelLoaded] = useState<string | null>(null);
   const [glbProgress, setGlbProgress] = useState<number | null>(null);
+  const [modelStatus, setModelStatus] = useState<ModelStatus>("verificando");
+  const [activeModelData, setActiveModelData] = useState<ActiveModelMetadata | null>(null);
+  const [showModelManagerModal, setShowModelManagerModal] = useState(false);
+  const [uploadingModel, setUploadingModel] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [selectedUploadType, setSelectedUploadType] = useState<"malha_externa_monobloco" | "modelo_com_pecas_segmentadas">("malha_externa_monobloco");
+  const [uploadScope, setUploadScope] = useState<"vehicle_model" | "work_order">("vehicle_model");
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
 
-  const handleGlbFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !sceneRef.current) return;
+  const recognition = recognizeVehicle("", vehicleLabel, bodyType);
+  const effectiveBodyType = recognition.isVolkswagen ? recognition.bodyType : bodyType;
+  const resolvedPhoto = realPhotoUrl || recognition.photoUrl;
+
+  const effectiveVehicleKey = useMemo(() => {
+    if (vehicleKey) return vehicleKey.toLowerCase().trim();
+    if (recognition.isVolkswagen && recognition.matchedModel) {
+      return `volkswagen_${recognition.matchedModel.id}`.toLowerCase();
+    }
+    return vehicleLabel.toLowerCase().trim().replace(/[^a-z0-9_-]+/g, "_");
+  }, [vehicleKey, recognition, vehicleLabel]);
+
+  // Upload and persist 3D model (GLB/GLTF)
+  const handleUploadAndBindModel = async (file: File) => {
+    if (!file) return;
+    setUploadingModel(true);
+    setUploadError(null);
     try {
-      setGlbProgress(0);
+      const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+      if (ext !== ".glb" && ext !== ".gltf") {
+        throw new Error("Formato não suportado. Envie um arquivo .GLB ou .GLTF.");
+      }
+
       playWorkshopAudio("scan", soundEnabled);
-      const url = URL.createObjectURL(file);
-      await sceneRef.current.loadGLBModel(url, (pct) => setGlbProgress(pct));
-      setCustomModelLoaded(file.name);
-      setGlbProgress(null);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("vehicle_key", effectiveVehicleKey);
+      formData.append("brand", brand || (recognition.isVolkswagen ? "Volkswagen" : vehicleLabel.split(" ")[0]));
+      formData.append("model", model || (recognition.matchedModel?.name || vehicleLabel));
+      formData.append("generation", generation || (recognition.matchedModel?.generation || ""));
+      if (uploadScope === "work_order" && workOrderId) {
+        formData.append("work_order_id", workOrderId);
+      }
+      formData.append("model_type", selectedUploadType);
+      formData.append("source", "importacao_tripo3d");
+
+      const res = await fetch("/api/models", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Erro ao salvar modelo 3D no servidor.");
+      }
+
+      // Carregar imediatamente na cena 3D
+      if (sceneRef.current) {
+        setModelStatus("carregando");
+        setGlbProgress(0);
+        await sceneRef.current.loadGLBModel(data.model.file_url, (pct) => setGlbProgress(pct));
+        setActiveModelData(data.model);
+        setCustomModelLoaded(data.model.file_name);
+        setModelStatus("especifico_carregado");
+        setGlbProgress(null);
+      }
+
       playWorkshopAudio("beep", soundEnabled);
-    } catch {
-      alert("Erro ao carregar modelo 3D GLB/Tripo3D.");
-      setGlbProgress(null);
+      setShowModelManagerModal(false);
+      alert(`Modelo 3D "${data.model.file_name}" associado e carregado com sucesso!`);
+    } catch (err: any) {
+      setUploadError(err.message || "Erro no upload do arquivo.");
+    } finally {
+      setUploadingModel(false);
+    }
+  };
+
+  const handleGlbFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleUploadAndBindModel(file);
+    }
+  };
+
+  // Desvincular modelo e restaurar representação ilustrativa genérica
+  const handleUnbindModel = async () => {
+    if (!activeModelData) return;
+    if (!confirm("Deseja realmente desvincular este modelo 3D? O visualizador retornará à representação ilustrativa genérica.")) return;
+
+    try {
+      const res = await fetch(`/api/models?id=${activeModelData.id || ""}&vehicle_key=${effectiveVehicleKey}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || data.error || "Erro ao desvincular modelo.");
+      }
+
+      sceneRef.current?.unloadCustomModel();
+      setActiveModelData(null);
+      setCustomModelLoaded(null);
+      setModelStatus("ausente_ilustrativo");
+      setShowModelManagerModal(false);
+      playWorkshopAudio("click", soundEnabled);
+      alert("Modelo desvinculado com sucesso. Sistema retornou à representação ilustrativa genérica.");
+    } catch (err: any) {
+      alert(`Erro ao desvincular: ${err.message}`);
     }
   };
 
@@ -206,10 +329,6 @@ export default function Vehicle3DViewer({
   const [hsDamageType, setHsDamageType] = useState("risco");
   const [hsDescription, setHsDescription] = useState("");
   const [hsPhotoUrl, setHsPhotoUrl] = useState("");
-
-  const recognition = recognizeVehicle("", vehicleLabel, bodyType);
-  const effectiveBodyType = recognition.isVolkswagen ? recognition.bodyType : bodyType;
-  const resolvedPhoto = realPhotoUrl || recognition.photoUrl;
 
   useEffect(() => {
     if (!containerRef.current || viewMode !== "3d") return;
@@ -305,6 +424,91 @@ export default function Vehicle3DViewer({
       sceneRef.current.setReplacedComponentIds(replacedComponentIds);
     }
   }, [replacedComponentIds]);
+
+  // Checagem e carregamento de modelo 3D específico (GLB/GLTF) ou fallback ilustrativo
+  useEffect(() => {
+    let isCancelled = false;
+
+    const checkAndLoadModel = async () => {
+      if (!sceneRef.current || viewMode !== "3d") return;
+
+      setModelStatus("verificando");
+      setGlbProgress(null);
+
+      // Se initialGlbUrl for passado explicitamente
+      if (initialGlbUrl) {
+        try {
+          setModelStatus("carregando");
+          await sceneRef.current.loadGLBModel(initialGlbUrl, (pct) => {
+            if (!isCancelled) setGlbProgress(pct);
+          });
+          if (!isCancelled) {
+            setModelStatus("especifico_carregado");
+            setActiveModelData({
+              file_name: initialGlbUrl.split("/").pop() || "modelo.glb",
+              file_url: initialGlbUrl,
+              model_type: "malha_externa_monobloco"
+            });
+            setGlbProgress(null);
+          }
+          return;
+        } catch {
+          if (!isCancelled) {
+            sceneRef.current?.unloadCustomModel();
+            setModelStatus("erro_carregamento");
+          }
+          return;
+        }
+      }
+
+      try {
+        const query = new URLSearchParams();
+        if (effectiveVehicleKey) query.set("vehicle_key", effectiveVehicleKey);
+        if (workOrderId) query.set("work_order_id", workOrderId);
+        if (brand) query.set("brand", brand);
+        if (model) query.set("model", model);
+
+        const res = await fetch(`/api/models?${query.toString()}`);
+        if (!res.ok) throw new Error("Falha na consulta do modelo 3D");
+        const data = await res.json();
+
+        if (isCancelled) return;
+
+        if (data.has_specific_model && data.model?.file_url) {
+          setModelStatus("carregando");
+          setActiveModelData(data.model);
+          setCustomModelLoaded(data.model.file_name);
+
+          await sceneRef.current.loadGLBModel(data.model.file_url, (pct) => {
+            if (!isCancelled) setGlbProgress(pct);
+          });
+
+          if (!isCancelled) {
+            setModelStatus("especifico_carregado");
+            setGlbProgress(null);
+          }
+        } else {
+          // Arquivo 3D específico ausente no repositório/banco
+          sceneRef.current.unloadCustomModel();
+          setActiveModelData(null);
+          setCustomModelLoaded(null);
+          setModelStatus("ausente_ilustrativo");
+        }
+      } catch (err: any) {
+        if (isCancelled) return;
+        console.warn("Aviso na checagem do modelo 3D:", err);
+        sceneRef.current?.unloadCustomModel();
+        setActiveModelData(null);
+        setModelStatus("erro_carregamento");
+      }
+    };
+
+    checkAndLoadModel();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [effectiveVehicleKey, workOrderId, brand, model, viewMode, initialGlbUrl]);
 
   // Telemetry real-time loop (4Hz)
   useEffect(() => {
@@ -524,17 +728,62 @@ export default function Vehicle3DViewer({
           <span className="text-[10px] text-cyan-400/80 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded font-mono">
             Carroceria: {effectiveBodyType.toUpperCase()}
           </span>
-          {recognition.isVolkswagen && (
-            <span className="text-[10px] text-emerald-300 bg-emerald-950/80 border border-emerald-500/50 px-2 py-0.5 rounded font-bold flex items-center gap-1 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              🚗 Reconhecido: {recognition.matchedModel?.name || "Volkswagen"} (Foto Real Homologada)
+
+          {/* Status Real do Modelo 3D */}
+          {modelStatus === "especifico_carregado" && activeModelData && (
+            <button
+              type="button"
+              onClick={() => setShowModelManagerModal(true)}
+              className="text-[10px] text-emerald-300 bg-emerald-950/80 border border-emerald-500/50 hover:bg-emerald-900/80 px-2 py-0.5 rounded font-bold flex items-center gap-1.5 shadow-sm transition"
+              title="Modelo 3D específico vinculado e carregado com sucesso. Clique para gerenciar."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              🎯 3D Específico: {activeModelData.file_name} ({activeModelData.model_type === "modelo_com_pecas_segmentadas" ? "Peças Técnicas" : "Malha Monobloco"})
+            </button>
+          )}
+
+          {modelStatus === "ausente_ilustrativo" && (
+            <button
+              type="button"
+              onClick={() => setShowModelManagerModal(true)}
+              className="text-[10px] text-amber-300 bg-amber-950/80 border border-amber-500/50 hover:bg-amber-900/80 px-2 py-0.5 rounded font-medium flex items-center gap-1.5 shadow-sm transition"
+              title="Nenhum arquivo 3D específico (.glb/.gltf) encontrado para este veículo. A cena exibe representação ilustrativa genérica. Clique para vincular um arquivo 3D real."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              ⚠️ Ilustrativo Genérico • Modelo 3D ausente
+              <span className="text-[9px] underline text-amber-200 font-bold ml-0.5">+ Vincular GLB</span>
+            </button>
+          )}
+
+          {modelStatus === "carregando" && (
+            <span className="text-[10px] text-cyan-300 bg-cyan-950/80 border border-cyan-500/50 px-2 py-0.5 rounded font-bold flex items-center gap-1.5 animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+              ⏳ Carregando 3D {glbProgress !== null ? `${glbProgress}%` : "..."}
             </span>
           )}
-          {customModelLoaded && (
-            <span className="text-[10px] text-purple-300 bg-purple-950/80 border border-purple-500/50 px-2 py-0.5 rounded font-bold flex items-center gap-1 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
-              ✨ Tripo3D: {customModelLoaded}
-            </span>
+
+          {modelStatus === "erro_carregamento" && (
+            <button
+              type="button"
+              onClick={() => setShowModelManagerModal(true)}
+              className="text-[10px] text-rose-300 bg-rose-950/80 border border-rose-500/50 hover:bg-rose-900/80 px-2 py-0.5 rounded font-medium flex items-center gap-1.5 transition"
+              title="Falha ao carregar a malha 3D. A cena retornou à representação ilustrativa genérica. Clique para tentar novamente."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+              Falha no Modelo 3D • Ilustrativo Ativo
+            </button>
+          )}
+
+          {/* Foto 2D de Referência (Separada explicitamente da malha 3D) */}
+          {resolvedPhoto && (
+            <button
+              type="button"
+              onClick={() => setShowPhotoModal(true)}
+              className="text-[10px] text-slate-300 bg-slate-900/90 border border-slate-700/80 hover:bg-slate-800 px-2 py-0.5 rounded font-mono flex items-center gap-1 transition"
+              title="Fotografia 2D de referência oficial. Clique para ver em alta definição."
+            >
+              📸 Foto 2D: {recognition.matchedModel?.name || vehicleLabel}
+            </button>
           )}
         </div>
 
@@ -981,22 +1230,21 @@ export default function Vehicle3DViewer({
                 <span className="font-mono text-[9px] ml-1">{isSplitView ? "ATIVO" : "SPLIT"}</span>
               </button>
 
-              {/* Import Tripo3D / GLB Model */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept=".glb,.gltf"
-                className="hidden"
-                onChange={handleGlbFileUpload}
-              />
+              {/* Gerenciador de Modelo 3D (GLB/GLTF) */}
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-2.5 py-1.5 rounded font-bold transition text-left flex items-center justify-between bg-gradient-to-r from-purple-950 to-indigo-950 text-purple-300 hover:from-purple-900 hover:to-indigo-900 border border-purple-500/40"
-                title="Carregar modelo 3D exportado do Tripo3D (.glb)"
+                onClick={() => setShowModelManagerModal(true)}
+                className={`px-2.5 py-1.5 rounded font-bold transition text-left flex items-center justify-between border ${
+                  modelStatus === "especifico_carregado"
+                    ? "bg-gradient-to-r from-emerald-950 to-teal-950 text-emerald-300 hover:from-emerald-900 hover:to-teal-900 border-emerald-500/50"
+                    : "bg-gradient-to-r from-purple-950 to-indigo-950 text-purple-300 hover:from-purple-900 hover:to-indigo-900 border-purple-500/40"
+                }`}
+                title="Abrir gerenciador de arquivos 3D do veículo (GLB/GLTF)"
               >
-                <span>🎨 Modelo Tripo3D</span>
-                <span className="font-mono text-[9px] ml-1">{customModelLoaded ? "ATIVO" : "+ GLB"}</span>
+                <span>📦 Modelo 3D Real</span>
+                <span className="font-mono text-[9px] ml-1">
+                  {modelStatus === "especifico_carregado" ? "ATIVO" : "+ GLB"}
+                </span>
               </button>
 
               <button
@@ -1996,6 +2244,303 @@ export default function Vehicle3DViewer({
                 <span className="text-[10px] text-slate-500 font-mono">Acervo G-Tech Paranaguá</span>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* GERENCIADOR DE MODELOS 3D ESPECÍFICOS (GLB/GLTF) MODAL    */}
+      {/* ========================================================= */}
+      {showModelManagerModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative max-w-2xl w-full bg-[#070e1b] border border-cyan-500/40 rounded-2xl overflow-hidden shadow-2xl flex flex-col my-8">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b border-cyan-500/20 bg-[#0a1529]">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">🛠️</span>
+                <div>
+                  <h3 className="font-bold text-sm text-white">Gerenciador de Modelos 3D do Veículo</h3>
+                  <p className="text-[11px] text-cyan-300/80">
+                    {vehicleLabel} • Chave: <span className="font-mono text-white">{effectiveVehicleKey}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModelManagerModal(false)}
+                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5 text-xs text-slate-300 max-h-[75vh] overflow-y-auto">
+              {/* Differentiating the 3 asset types */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 bg-[#050b16] p-3 rounded-xl border border-slate-800">
+                <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
+                  <div className="font-bold text-slate-200 text-[11px] mb-1 flex items-center gap-1.5">
+                    <span>📸</span> 1. Foto de Referência (2D)
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Fotografia real do veículo. Não é modelo 3D. Usada no telão showroom de fundo para comparação visual de lataria e peças.
+                  </p>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-purple-950/30 border border-purple-800/40">
+                  <div className="font-bold text-purple-300 text-[11px] mb-1 flex items-center gap-1.5">
+                    <span>🧊</span> 2. Malha Monobloco (3D)
+                  </div>
+                  <p className="text-[10px] text-purple-200/80 leading-relaxed">
+                    Arquivo .GLB contínuo (gerado por IA tipo Tripo3D ou scanner). Permite giro 360°, sem separação de peças internas mecânicas.
+                  </p>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40">
+                  <div className="font-bold text-emerald-300 text-[11px] mb-1 flex items-center gap-1.5">
+                    <span>⚙️</span> 3. Peças Segmentadas (3D)
+                  </div>
+                  <p className="text-[10px] text-emerald-200/80 leading-relaxed">
+                    Modelo técnico avançado com malhas independentes de motor, freios e suspensão para inspeção componente a componente na OS.
+                  </p>
+                </div>
+              </div>
+
+              {/* Status do Modelo Ativo */}
+              <div className="rounded-xl border p-4 bg-[#0a1426] border-slate-800 space-y-3">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center justify-between">
+                  <span>Situação Atual da Visualização 3D</span>
+                  <span className="text-[10px] font-mono font-normal text-slate-400">
+                    OS: {workOrderId || "Geral do Modelo"}
+                  </span>
+                </h4>
+
+                {modelStatus === "especifico_carregado" && activeModelData ? (
+                  <div className="space-y-2.5">
+                    <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-emerald-300 text-xs flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                          Modelo 3D Específico Vinculado e Ativo
+                        </span>
+                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">
+                          {activeModelData.model_type === "modelo_com_pecas_segmentadas" ? "Peças Segmentadas" : "Malha Monobloco"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Nome do Arquivo:</span>
+                          <span className="font-mono text-white truncate block">{activeModelData.file_name}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Tamanho:</span>
+                          <span className="font-mono text-slate-200">
+                            {activeModelData.file_size_bytes ? `${(activeModelData.file_size_bytes / (1024 * 1024)).toFixed(2)} MB` : "N/D"}
+                          </span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-slate-400 block text-[10px]">Caminho Público:</span>
+                          <span className="font-mono text-cyan-300 text-[10px]">{activeModelData.file_url}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleUnbindModel}
+                      className="w-full py-2 px-3 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-200 font-semibold text-xs flex items-center justify-center gap-2 transition"
+                    >
+                      <span>🗑️</span> Desvincular Modelo 3D (Restaurar Representação Ilustrativa)
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-lg bg-amber-950/30 border border-amber-500/40 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-300 font-bold text-xs">
+                      <span>⚠️</span>
+                      <span>Representação Ilustrativa Genérica em Exibição</span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                      Nenhum arquivo 3D específico (.GLB / .GLTF) foi vinculado a este modelo ({vehicleLabel}). O visualizador está exibindo uma carroceria geométrica procedural de segurança, com pneus e plataforma neutra.
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      Para exibir o modelo 3D real idêntico ao carro, envie o arquivo .GLB exportado do software CAD, scanner ou Tripo3D abaixo.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload e Associação de Novo Modelo 3D */}
+              <div className="rounded-xl border p-4 bg-[#0a1426] border-slate-800 space-y-4">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                  <span>📥</span> Vincular Arquivo 3D (.GLB / .GLTF)
+                </h4>
+
+                {uploadError && (
+                  <div className="p-2.5 rounded bg-rose-950/80 border border-rose-500 text-rose-200 text-xs">
+                    ❌ {uploadError}
+                  </div>
+                )}
+
+                {/* Tipo de Modelo */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] text-slate-300 font-semibold block">Tipo da Malha 3D Enviada:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label className={`p-2.5 rounded-lg border cursor-pointer flex items-start gap-2 transition ${
+                      selectedUploadType === "malha_externa_monobloco"
+                        ? "bg-purple-950/40 border-purple-500 text-purple-200"
+                        : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}>
+                      <input
+                        type="radio"
+                        name="model_type"
+                        checked={selectedUploadType === "malha_externa_monobloco"}
+                        onChange={() => setSelectedUploadType("malha_externa_monobloco")}
+                        className="mt-0.5 text-purple-500"
+                      />
+                      <div>
+                        <span className="font-bold text-xs block text-white">Malha Externa Monobloco</span>
+                        <span className="text-[10px] text-slate-400">Gerado por IA (Tripo3D) ou escaneamento externo 360°.</span>
+                      </div>
+                    </label>
+
+                    <label className={`p-2.5 rounded-lg border cursor-pointer flex items-start gap-2 transition ${
+                      selectedUploadType === "modelo_com_pecas_segmentadas"
+                        ? "bg-emerald-950/40 border-emerald-500 text-emerald-200"
+                        : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}>
+                      <input
+                        type="radio"
+                        name="model_type"
+                        checked={selectedUploadType === "modelo_com_pecas_segmentadas"}
+                        onChange={() => setSelectedUploadType("modelo_com_pecas_segmentadas")}
+                        className="mt-0.5 text-emerald-500"
+                      />
+                      <div>
+                        <span className="font-bold text-xs block text-white">Peças Segmentadas (CAD)</span>
+                        <span className="text-[10px] text-slate-400">Componentes individuais (motor, freios, suspensão).</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Escopo de Associação */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] text-slate-300 font-semibold block">Escopo do Vínculo:</span>
+                  <div className="flex flex-wrap gap-3">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="upload_scope"
+                        checked={uploadScope === "vehicle_model"}
+                        onChange={() => setUploadScope("vehicle_model")}
+                        className="text-cyan-500"
+                      />
+                      <span className="text-xs text-slate-200">
+                        Vincular ao modelo de carro (<strong>{vehicleLabel}</strong>) para toda a oficina
+                      </span>
+                    </label>
+
+                    {workOrderId && (
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="upload_scope"
+                          checked={uploadScope === "work_order"}
+                          onChange={() => setUploadScope("work_order")}
+                          className="text-cyan-500"
+                        />
+                        <span className="text-xs text-slate-200">
+                          Vincular apenas a esta Ordem de Serviço (<strong>{workOrderId}</strong>)
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Drag and Drop Dropzone */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDraggingFile(true);
+                  }}
+                  onDragLeave={() => setIsDraggingFile(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingFile(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleUploadAndBindModel(file);
+                  }}
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition ${
+                    isDraggingFile
+                      ? "border-cyan-400 bg-cyan-950/40"
+                      : "border-slate-700 bg-slate-900/50 hover:border-cyan-500/60"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".glb,.gltf"
+                    className="hidden"
+                    onChange={handleGlbFileUpload}
+                  />
+
+                  {uploadingModel ? (
+                    <div className="py-3 space-y-2">
+                      <span className="w-3 h-3 rounded-full bg-cyan-400 inline-block animate-ping"></span>
+                      <p className="font-bold text-cyan-300 text-xs">Enviando e processando arquivo 3D...</p>
+                      <p className="text-[10px] text-slate-400">Gravando associação persistente no banco de dados e preparando cena.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="text-3xl">📦</div>
+                      <p className="text-xs font-semibold text-slate-200">
+                        Arraste seu arquivo <span className="text-cyan-400 font-mono">.GLB</span> ou <span className="text-cyan-400 font-mono">.GLTF</span> aqui
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        Tamanho máximo: 60MB • Compatível com Tripo3D, Blender, 3ds Max e formatos glTF 2.0
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mt-2 px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg transition"
+                      >
+                        Selecionar Arquivo no Computador
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tripo3D Integration Assistant */}
+                <div className="p-3 rounded-lg bg-[#050b16] border border-purple-900/40 flex items-start gap-3">
+                  <span className="text-2xl">✨</span>
+                  <div className="space-y-1">
+                    <span className="font-bold text-purple-300 text-xs block">
+                      Integração com o Tripo3D Studio
+                    </span>
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      Você pode transformar a fotografia real do veículo em um modelo 3D (.GLB) no <strong>Tripo3D</strong>. Basta carregar a foto do veículo no Studio, gerar a malha tridimensional e exportar em .GLB.
+                    </p>
+                    <a
+                      href="https://studio.tripo3d.ai"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-purple-400 hover:text-purple-300 font-bold underline decoration-purple-600 pt-0.5"
+                    >
+                      Abrir Tripo3D Studio em nova guia ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-[#0a1529] border-t border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowModelManagerModal(false)}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
+              >
+                Concluir e Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -414,6 +414,23 @@ function initSchema(db: DatabaseSync) {
       replaced_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       FOREIGN KEY (work_order_id) REFERENCES work_orders(id)
     );
+
+    -- 21. Modelos 3D Específicos Vinculados (GLB/GLTF)
+    CREATE TABLE IF NOT EXISTS vehicle_3d_models (
+      id TEXT PRIMARY KEY,
+      vehicle_key TEXT NOT NULL,
+      brand TEXT NOT NULL,
+      model TEXT NOT NULL,
+      generation TEXT,
+      work_order_id TEXT,
+      file_name TEXT NOT NULL,
+      file_url TEXT NOT NULL,
+      file_size_bytes INTEGER NOT NULL,
+      model_type TEXT NOT NULL DEFAULT 'malha_externa_monobloco' CHECK(model_type IN ('malha_externa_monobloco', 'modelo_com_pecas_segmentadas')),
+      source TEXT NOT NULL DEFAULT 'importacao_tripo3d',
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    );
   `);
 
   seedInitialData(db);

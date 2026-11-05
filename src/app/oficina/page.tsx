@@ -818,11 +818,9 @@ export default function OficinaDashboardPage() {
                     <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/50 font-bold font-mono">
                       {selectedWo.work_order.vehicle_brand} {selectedWo.work_order.vehicle_model} ({selectedWo.work_order.vehicle_plate})
                     </span>
-                    {selectedWo.work_order.vehicle_brand === "Volkswagen" && (
-                      <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/50 text-[10px] font-bold">
-                        ✓ Foto Real Homologada no 3D
-                      </span>
-                    )}
+                    <span className="px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700 text-[10px] font-mono">
+                      📸 Foto Ref. 2D Ativa
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -846,6 +844,10 @@ export default function OficinaDashboardPage() {
                   hotspots={selectedWo.hotspots || []}
                   readOnly={false}
                   vehicleLabel={`${selectedWo.work_order.vehicle_brand} ${selectedWo.work_order.vehicle_model}`}
+                  vehicleKey={`${selectedWo.work_order.vehicle_brand.toLowerCase()}_${selectedWo.work_order.vehicle_model.toLowerCase().replace(/[^a-z0-9_-]+/g, '_')}`}
+                  brand={selectedWo.work_order.vehicle_brand}
+                  model={selectedWo.work_order.vehicle_model}
+                  generation={selectedWo.work_order.vehicle_generation || ""}
                   realPhotoUrl={techSpecs?.real_photo_url}
                   workOrderId={selectedWo.work_order.id}
                   replacedComponentIds={selectedWo.replaced_parts?.map((r: any) => r.component_id) || []}

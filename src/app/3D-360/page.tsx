@@ -607,6 +607,14 @@ export default function Vehicle3D360Page() {
           <Vehicle3DViewer
             bodyType={currentBodyType}
             vehicleLabel={currentLabel}
+            vehicleKey={
+              currentVwModel?.id
+                ? `volkswagen_${currentVwModel.id}`
+                : `${(scanState === "concluido_3d" ? confirmBrand : selectedBrand).toLowerCase()}_${(scanState === "concluido_3d" ? confirmModel : (currentVwModel?.name || customModelText || "veiculo")).toLowerCase().replace(/[^a-z0-9_-]+/g, '_')}`
+            }
+            brand={scanState === "concluido_3d" ? confirmBrand : selectedBrand}
+            model={scanState === "concluido_3d" ? confirmModel : (currentVwModel?.name || customModelText)}
+            generation={scanState === "concluido_3d" ? confirmGen : (currentVwModel?.generation || "")}
             realPhotoUrl={currentPhoto}
             readOnly={false}
           />

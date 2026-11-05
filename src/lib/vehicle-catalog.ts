@@ -252,3 +252,4 @@ export function searchCatalogVehicles(query: string): CatalogVehicle[] {
     v.body_type.toLowerCase().includes(q)
   );
 }
+
