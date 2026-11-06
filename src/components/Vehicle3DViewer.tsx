@@ -1180,7 +1180,7 @@ export default function Vehicle3DViewer({
 
             {/* Right Tools Bar (Laser Scan, Tripo3D Import, Explode, Transparency, Camera Angles) */}
             <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 bg-black/80 p-2 rounded-lg backdrop-blur-sm border border-cyan-500/25 text-[10px] shadow-xl">
-              {/* Laser Scan 360 Trigger */}
+              {/* Animação Gráfica de Varredura Visual */}
               <button
                 type="button"
                 onClick={handleStartLaserScan}
@@ -1190,10 +1190,10 @@ export default function Vehicle3DViewer({
                     ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30 animate-pulse"
                     : "bg-gradient-to-r from-cyan-950 to-blue-950 text-cyan-300 hover:from-cyan-900 hover:to-blue-900 border border-cyan-500/30"
                 }`}
-                title="Executar varredura a laser holográfica de geometria"
+                title="Executar animação gráfica ilustrativa de varredura visual sobre o veículo"
               >
-                <span>⚡ Laser Scan 360°</span>
-                <span className="font-mono text-[9px] ml-1">{isLaserScanning ? `${laserProgress}%` : "SCAN"}</span>
+                <span>✨ Varredura Visual</span>
+                <span className="font-mono text-[9px] ml-1">{isLaserScanning ? `${laserProgress}%` : "DEMO"}</span>
               </button>
 
               {/* Showroom Screen 3D Toggle */}

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { VW_MODELS_CATALOG, recognizeVehicle, VwModelData } from "@/lib/vw-recognition";
 import { BodyType } from "@/lib/vehicle3d";
+import fs from "node:fs";
+import path from "node:path";
 
 export interface VehicleScanResult {
   source: "ollama:gemma3:4b" | "fallback_catalogo";
@@ -79,16 +81,27 @@ export async function POST(req: NextRequest) {
 
     let aiResult: VehicleScanResult | null = null;
 
-    // Se tiver imagem em base64, extrai os bytes para a API do Ollama
+    // Obter imagem em base64 (seja upload de arquivo ou foto local do catálogo)
     let rawBase64 = "";
     if (typeof image === "string" && image.includes(";base64,")) {
       rawBase64 = image.split(";base64,")[1];
+    } else if (typeof image === "string" && (image.startsWith("/") || image.startsWith("img/"))) {
+      const cleanRel = image.startsWith("/") ? image.slice(1) : image;
+      const fullPath = path.join(process.cwd(), "public", cleanRel);
+      if (fs.existsSync(fullPath)) {
+        try {
+          rawBase64 = fs.readFileSync(fullPath).toString("base64");
+        } catch (readErr) {
+          console.warn("Aviso ao ler foto local do catálogo para análise:", readErr);
+        }
+      }
     }
 
     if (rawBase64) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000); // 12s timeout
+        // Timeout de 90s para acomodar o tempo de inferência real do modelo gemma3:4b em hardware local
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const res = await fetch(`${ollamaUrl}/api/generate`, {
           method: "POST",
@@ -126,8 +139,8 @@ export async function POST(req: NextRequest) {
                   body_type: bType as any,
                   color: String(parsed.color || "Identificada na foto"),
                   doubts: String(parsed.doubts || "Confirmar ano, motorização exata e opcionais no documento."),
-                  fidelity_level: parsed.suggested_model?.toLowerCase().includes("golf") ? "especifico_verificado" : "representativo_carroceria",
-                  confidence_note: "Identificação preliminar gerada pelo modelo local gemma3:4b. Sujeita a confirmação do operador."
+                  fidelity_level: parsed.suggested_model?.toLowerCase().includes("golf") || parsed.suggested_model?.toLowerCase().includes("jetta") ? "especifico_verificado" : "representativo_carroceria",
+                  confidence_note: "Identificação preliminar gerada pelo modelo local gemma3:4b através de visão computacional. Sujeita a confirmação do operador."
                 };
               }
             } catch {
@@ -135,8 +148,8 @@ export async function POST(req: NextRequest) {
             }
           }
         }
-      } catch {
-        // Ollama offline ou indisponível
+      } catch (err: any) {
+        console.warn("Aviso: chamada ao Ollama falhou ou excedeu timeout:", err?.message);
       }
     }
 

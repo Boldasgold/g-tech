@@ -438,8 +438,17 @@ export default function Vehicle3D360Page() {
                     Laudo Visual Assistido por IA
                   </span>
                   {aiScanResult && (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-                      Fonte: {aiScanResult.source}
+                    <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold flex items-center gap-1 border ${
+                      aiScanResult.source.startsWith("ollama:")
+                        ? "bg-emerald-950/90 text-emerald-300 border-emerald-500/50"
+                        : "bg-amber-950/90 text-amber-300 border-amber-500/50"
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        aiScanResult.source.startsWith("ollama:") ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                      }`} />
+                      {aiScanResult.source.startsWith("ollama:")
+                        ? `Visão Computacional: ${aiScanResult.source}`
+                        : "Busca Heurística por Catálogo/Nome"}
                     </span>
                   )}
                 </div>
