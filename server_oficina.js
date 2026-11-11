@@ -1,6 +1,6 @@
 const http = require('http');
 const path = require('path');
-,const next = require('next');
+const next = require('next');
 
 const rootDir = path.resolve(__dirname);
 const PORT = 3001;

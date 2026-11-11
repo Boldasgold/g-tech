@@ -1,5 +1,6 @@
 @import "tailwindcss";
-@source "../src";
+@source "C:/Users/tiujo/Desktop/g-tech/src";
+@source "../";
 
 @layer base {
   * {
