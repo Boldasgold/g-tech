@@ -1,0 +1,10 @@
+{
+  "name": "gtech-worker-ai-3d",
+  "version": "1.0.0",
+  "description": "Trabalhador independente de fila assíncrona de IA e Reconstrução 3D G-Tech V1 (Porta 3002)",
+  "main": "worker.js",
+  "scripts": {
+    "start": "node worker.js"
+  }
+}
+

@@ -117,6 +117,37 @@ export async function GET(
       ORDER BY i.inspected_at DESC
     `).all(woId);
 
+    // 11. Vehicle multi-visit inspection history (preserves previous visits and photos without overwriting)
+    const vehicleVisitsHistory = db.prepare(`
+      SELECT v.*, w.os_number, w.status as os_status
+      FROM wo_inspection_visits v
+      LEFT JOIN work_orders w ON v.work_order_id = w.id
+      WHERE v.vehicle_id = ?
+      ORDER BY v.visit_number DESC, v.created_at DESC
+    `).all(wo.vehicle_id);
+
+    // 12. WhatsApp Notification History
+    const notificationHistory = db.prepare(`
+      SELECT * FROM notification_history
+      WHERE work_order_id = ?
+      ORDER BY sent_at DESC
+    `).all(woId);
+
+    // 13. Uploaded Visit Photos with individual photo_id and file_sha256
+    const currentOsPhotos = db.prepare(`
+      SELECT * FROM wo_visit_photos
+      WHERE work_order_id = ?
+      ORDER BY created_at ASC
+    `).all(woId);
+
+    const vehicleVisitPhotos = db.prepare(`
+      SELECT p.*, w.os_number
+      FROM wo_visit_photos p
+      LEFT JOIN work_orders w ON p.work_order_id = w.id
+      WHERE p.vehicle_id = ?
+      ORDER BY p.visit_number DESC, p.created_at ASC
+    `).all(wo.vehicle_id);
+
     return NextResponse.json({
       success: true,
       work_order: wo,
@@ -128,7 +159,11 @@ export async function GET(
       exit_checklist: exitChecklist,
       timeline,
       replaced_parts: replacedParts,
-      component_inspections: componentInspections
+      component_inspections: componentInspections,
+      vehicle_visits_history: vehicleVisitsHistory,
+      notification_history: notificationHistory,
+      current_os_photos: currentOsPhotos,
+      vehicle_visit_photos: vehicleVisitPhotos
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

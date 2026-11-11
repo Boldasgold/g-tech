@@ -17,11 +17,21 @@ let dbInstance: DatabaseSync | null = null;
 export function getDb(): DatabaseSync {
   if (!dbInstance) {
     dbInstance = new DatabaseSync(DB_PATH);
+    dbInstance.exec("PRAGMA journal_mode = WAL;");
+    dbInstance.exec("PRAGMA busy_timeout = 10000;");
     dbInstance.exec("PRAGMA foreign_keys = ON;");
     initSchema(dbInstance);
   }
   return dbInstance;
 }
+
+export const db: DatabaseSync = new Proxy({} as any, {
+  get: (_, prop) => {
+    const inst = getDb() as any;
+    const val = inst[prop];
+    return typeof val === "function" ? val.bind(inst) : val;
+  }
+});
 
 export function generateHash(data: unknown): string {
   return crypto.createHash("sha256").update(JSON.stringify(data)).digest("hex");
@@ -431,12 +441,308 @@ function initSchema(db: DatabaseSync) {
       created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
     );
+
+    -- 22. Histórico e Controle de Disparos WhatsApp Exclusivos da Oficina (Anti-duplicidade)
+    CREATE TABLE IF NOT EXISTS notification_history (
+      id TEXT PRIMARY KEY,
+      work_order_id TEXT NOT NULL,
+      customer_id TEXT NOT NULL,
+      recipient_phone TEXT NOT NULL,
+      notification_type TEXT NOT NULL CHECK(notification_type IN ('pronto_para_retirada', 'orcamento_disponivel', 'vistoria_concluida', 'agendamento_confirmado')),
+      status TEXT NOT NULL CHECK(status IN ('enviado', 'falha', 'duplicado_bloqueado')),
+      idempotency_hash TEXT NOT NULL UNIQUE,
+      payload TEXT NOT NULL,
+      sent_by_user_id TEXT,
+      error_message TEXT,
+      sent_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (work_order_id) REFERENCES work_orders(id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id)
+    );
+
+    -- 23. Fila de Sincronização e Tolerância a Falhas do Site Público (Buffer Offline)
+    CREATE TABLE IF NOT EXISTS site_pending_sync_queue (
+      id TEXT PRIMARY KEY,
+      idempotency_key TEXT NOT NULL UNIQUE,
+      request_type TEXT NOT NULL DEFAULT 'appointment_request',
+      payload TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente', 'sincronizado', 'falha_tentativa')),
+      attempts INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      last_attempt_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    );
+
+    -- 24. Fila Assíncrona de Processamento 3D e IA (Isolamento de Falhas com Limites)
+    CREATE TABLE IF NOT EXISTS processing_jobs_queue (
+      id TEXT PRIMARY KEY,
+      job_type TEXT NOT NULL CHECK(job_type IN ('ai_vision_scan', 'reconstruct_3d', 'mesh_optimization')),
+      work_order_id TEXT,
+      status TEXT NOT NULL DEFAULT 'enfileirado' CHECK(status IN ('enfileirado', 'processando', 'concluido', 'falha')),
+      input_payload TEXT NOT NULL,
+      result_payload TEXT,
+      error_message TEXT,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      started_at TEXT,
+      completed_at TEXT
+    );
+
+    -- 25. Sessões Autenticadas da Oficina (Controle de Acesso RBAC)
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      session_token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      user_name TEXT NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('mecanico', 'adm', 'gestor')),
+      ip_address TEXT,
+      user_agent TEXT,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    -- 26. Tokens Individuais Protegidos do Portal do Cliente
+    CREATE TABLE IF NOT EXISTS customer_portal_tokens (
+      token TEXT PRIMARY KEY,
+      work_order_id TEXT NOT NULL UNIQUE,
+      customer_id TEXT NOT NULL,
+      phone_hash TEXT NOT NULL,
+      access_count INTEGER NOT NULL DEFAULT 0,
+      last_accessed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (work_order_id) REFERENCES work_orders(id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id)
+    );
   `);
 
   seedInitialData(db);
   seedTechSpecs(db);
   seedComponentsAndReplacements(db);
   seedVolkswagenModels(db);
+  seedVerified3DModels(db);
+  seedPortalTokens(db);
+}
+
+function seedVerified3DModels(db: DatabaseSync) {
+  try {
+    const safeAlter = (sql: string) => {
+      try { db.exec(sql); } catch (_) {}
+    };
+    safeAlter("ALTER TABLE vehicle_3d_models ADD COLUMN file_sha256 TEXT;");
+    safeAlter("ALTER TABLE vehicle_3d_models ADD COLUMN audit_status TEXT DEFAULT 'aprovado';");
+    safeAlter("ALTER TABLE vehicle_3d_models ADD COLUMN origin_type TEXT DEFAULT 'acervo_preexistente';");
+    safeAlter("ALTER TABLE vehicle_3d_models ADD COLUMN audit_notes TEXT;");
+
+    const upsertModel = db.prepare(`
+      INSERT OR REPLACE INTO vehicle_3d_models (
+        id, vehicle_key, brand, model, generation, work_order_id,
+        file_name, file_url, file_size_bytes, file_sha256,
+        model_type, source, audit_status, origin_type, audit_notes,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, 'malha_externa_monobloco', 'modelo_especifico_verificado', 'aprovado_verificado', 'acervo_preexistente', ?, datetime('now', 'localtime'), datetime('now', 'localtime'))
+    `);
+
+    // 1. Volkswagen Arteon Shooting Brake (Salvo Permanente)
+    upsertModel.run(
+      "v3d-arteon-01",
+      "volkswagen_arteon",
+      "Volkswagen",
+      "Arteon Shooting Brake",
+      "Shooting Brake (3H9)",
+      "volkswagen_arteon_shooting_brake.glb",
+      "/models/vehicles/volkswagen_arteon_shooting_brake.glb",
+      20261336,
+      "29543f894fc6985fad0f60a589983384abca004fbd0959a2a9828ffefa0a80b4",
+      "Modelo 3D oficial Volkswagen Arteon Shooting Brake (Draco + WebP) salvo no acervo permanente."
+    );
+
+    // 2. Volkswagen Beetle / Novo Fusca TSI (Salvo Permanente)
+    upsertModel.run(
+      "v3d-beetle-01",
+      "volkswagen_beetle",
+      "Volkswagen",
+      "Beetle / Novo Fusca TSI",
+      "A5 (2012 - 2019)",
+      "volkswagen_beetle.glb",
+      "/models/vehicles/volkswagen_beetle.glb",
+      20143380,
+      "d6e72645c7d915fbf578d6b962a18065a82e6d368a7a0067ea9ebff144472244",
+      "Modelo 3D oficial Volkswagen Beetle / Novo Fusca TSI (Draco + WebP) salvo no acervo permanente."
+    );
+
+    // 3. Volkswagen Tiguan / Allspace / R-Line (Salvo Permanente)
+    upsertModel.run(
+      "v3d-tiguan-01",
+      "volkswagen_tiguan",
+      "Volkswagen",
+      "Tiguan / Allspace / R-Line",
+      "Geração II (2016 - 2024)",
+      "volkswagen_tiguan.glb",
+      "/models/vehicles/volkswagen_tiguan.glb",
+      20786984,
+      "30fc23d2ce9e044a8265a8a61ef54da91dfb1235a1f593d364c9d9c9048e9c5a",
+      "Modelo 3D oficial Volkswagen Tiguan (Draco + WebP) salvo no acervo permanente."
+    );
+
+    // 4. Volkswagen Tiguan 5N (Variante do catálogo também vinculada ao Tiguan GLB)
+    upsertModel.run(
+      "v3d-tiguan-5n-01",
+      "volkswagen_tiguan-5n-referencia-para-limited",
+      "Volkswagen",
+      "Tiguan 5N (Primeira Geração / Limited)",
+      "Geração 5N (2007 - 2016)",
+      "volkswagen_tiguan.glb",
+      "/models/vehicles/volkswagen_tiguan.glb",
+      20786984,
+      "30fc23d2ce9e044a8265a8a61ef54da91dfb1235a1f593d364c9d9c9048e9c5a",
+      "Modelo 3D oficial Volkswagen Tiguan salvo no acervo permanente."
+    );
+
+    // 5. Volkswagen Bora Sedã (Salvo Permanente)
+    upsertModel.run(
+      "v3d-bora-01",
+      "volkswagen_bora",
+      "Volkswagen",
+      "Bora Sedã",
+      "1J (1998 - 2005)",
+      "volkswagen_bora.glb",
+      "/models/vehicles/volkswagen_bora.glb",
+      19267484,
+      "8b42c732ca4b39574fe9d3699741dfa91face852e1121d185e0138e660c107a1",
+      "Modelo 3D oficial Volkswagen Bora Sedã (Draco + WebP) salvo no acervo permanente."
+    );
+
+    // 6. Volkswagen Bora Variant (Salvo Permanente)
+    upsertModel.run(
+      "v3d-bora-variant-01",
+      "volkswagen_bora-variant",
+      "Volkswagen",
+      "Bora Variant",
+      "1J (1999 - 2006)",
+      "volkswagen_bora.glb",
+      "/models/vehicles/volkswagen_bora.glb",
+      19267484,
+      "8b42c732ca4b39574fe9d3699741dfa91face852e1121d185e0138e660c107a1",
+      "Modelo 3D oficial Volkswagen Bora Variant salvo no acervo permanente."
+    );
+
+    // 7. Chevrolet Celta (Salvo Permanente)
+    upsertModel.run(
+      "v3d-celta-01",
+      "chevrolet_celta",
+      "Chevrolet",
+      "Celta 1.0 VHC-E",
+      "Geração Única (2000 - 2015)",
+      "chevrolet_celta.glb",
+      "/models/vehicles/chevrolet_celta.glb",
+      19767136,
+      "e1ac0ac6606c60c5f0f1ee3bd56f5b0cfd1bb3ed610c4f67ab16685f4800c0a2",
+      "Modelo 3D oficial Chevrolet Celta (Draco + WebP) salvo no acervo permanente."
+    );
+
+    // 8. Volkswagen Celta Alias (compatibilidade com catálogo)
+    upsertModel.run(
+      "v3d-celta-vw-alias",
+      "volkswagen_celta",
+      "Chevrolet",
+      "Celta 1.0 VHC-E",
+      "Geração Única (2000 - 2015)",
+      "chevrolet_celta.glb",
+      "/models/vehicles/chevrolet_celta.glb",
+      19767136,
+      "e1ac0ac6606c60c5f0f1ee3bd56f5b0cfd1bb3ed610c4f67ab16685f4800c0a2",
+      "Alias de compatibilidade do catálogo para Chevrolet Celta."
+    );
+
+    // 9. Volkswagen Polo (Salvo Permanente)
+    upsertModel.run(
+      "v3d-polo-01",
+      "volkswagen_polo",
+      "Volkswagen",
+      "Polo",
+      "MK6 (2018 - 2024)",
+      "volkswagen_polo.glb",
+      "/models/vehicles/volkswagen_polo.glb",
+      19723192,
+      "5c541c1213473202502b5ba69e484f7cfb5ad8091dc9ac1dac5ae349d8076fec",
+      "Modelo 3D oficial Volkswagen Polo (Draco + WebP) salvo no acervo permanente."
+    );
+
+    // 10. Volkswagen Polo Hatch (Salvo Permanente)
+    upsertModel.run(
+      "v3d-polo-hatch-01",
+      "volkswagen_polo-hatch",
+      "Volkswagen",
+      "Polo Hatch / Track / GTS",
+      "MK6 (2018 - 2024)",
+      "volkswagen_polo.glb",
+      "/models/vehicles/volkswagen_polo.glb",
+      19723192,
+      "5c541c1213473202502b5ba69e484f7cfb5ad8091dc9ac1dac5ae349d8076fec",
+      "Modelo 3D oficial Volkswagen Polo Hatch salvo no acervo permanente."
+    );
+
+    // 11. Chevrolet Corsa Hatch (Salvo Permanente)
+    upsertModel.run(
+      "v3d-corsa-01",
+      "chevrolet_corsa",
+      "Chevrolet",
+      "Corsa Hatch 1.0 / 1.6",
+      "Geração B (1994 - 2002)",
+      "chevrolet_corsa_hatch.glb",
+      "/models/vehicles/chevrolet_corsa_hatch.glb",
+      19817240,
+      "b089a45358f2e1c9ff910edece96a3c10b5b305e725bdac43dd1e3b861476df5",
+      "Modelo 3D oficial Chevrolet Corsa Hatch (Draco + WebP) salvo no acervo permanente."
+    );
+
+    // 12. Chevrolet Corsa Hatch Variant Key
+    upsertModel.run(
+      "v3d-corsa-hatch-01",
+      "chevrolet_corsa_hatch",
+      "Chevrolet",
+      "Corsa Hatch 1.0 / 1.6",
+      "Geração B (1994 - 2002)",
+      "chevrolet_corsa_hatch.glb",
+      "/models/vehicles/chevrolet_corsa_hatch.glb",
+      19817240,
+      "b089a45358f2e1c9ff910edece96a3c10b5b305e725bdac43dd1e3b861476df5",
+      "Modelo 3D oficial Chevrolet Corsa Hatch salvo no acervo permanente."
+    );
+
+    // 13. Volkswagen Corsa Alias (compatibilidade com catálogo)
+    upsertModel.run(
+      "v3d-corsa-vw-alias",
+      "volkswagen_corsa-hatch",
+      "Chevrolet",
+      "Corsa Hatch 1.0 / 1.6",
+      "Geração B (1994 - 2002)",
+      "chevrolet_corsa_hatch.glb",
+      "/models/vehicles/chevrolet_corsa_hatch.glb",
+      19817240,
+      "b089a45358f2e1c9ff910edece96a3c10b5b305e725bdac43dd1e3b861476df5",
+      "Alias de compatibilidade do catálogo para Chevrolet Corsa Hatch."
+    );
+  } catch (err) {
+    console.warn("Aviso ao semear modelos 3D verificados:", err);
+  }
+}
+
+function seedPortalTokens(db: DatabaseSync) {
+  try {
+    const wos = db.prepare("SELECT id, customer_id FROM work_orders").all() as { id: string; customer_id: string }[];
+    for (const wo of wos) {
+      const existing = db.prepare("SELECT token FROM customer_portal_tokens WHERE work_order_id = ?").get(wo.id);
+      if (!existing) {
+        const token = crypto.createHash("sha256").update(`gtech-portal-${wo.id}-token`).digest("hex").slice(0, 32);
+        db.prepare(`
+          INSERT INTO customer_portal_tokens (token, work_order_id, customer_id, phone_hash)
+          VALUES (?, ?, ?, ?)
+        `).run(token, wo.id, wo.customer_id, "demo_secure_hash");
+      }
+    }
+  } catch (err) {
+    console.warn("Aviso ao semear portal tokens:", err);
+  }
 }
 
 function seedInitialData(db: DatabaseSync) {
@@ -1523,6 +1829,72 @@ function seedVolkswagenModels(db: DatabaseSync) {
       gap: 0.8,
       common: [
         { symptom: "Vazamento na junta da bomba d'água", cause: "Empenamento leve na carcaça plástica.", procedure: "Trocar carcaça e anéis de vedação." }
+      ]
+    },
+    {
+      id: "spec-vw-bora",
+      brand: "Volkswagen",
+      model: "Bora",
+      years: "1998-2005",
+      engine: "2.0 8V EA113 (116 cv)",
+      body_type: "sedan",
+      real_photo_url: "/img/vehicles/volkswagen/fotos/bora.jpg",
+      oil_viscosity: "5W40 / 10W40 Semi-Sintético / Sintético",
+      oil_capacity_liters: 4.5,
+      oilNorm: "VW 502 00",
+      coolant_type: "Aditivo G12 Rosa",
+      coolant_capacity_liters: 5.5,
+      brake_fluid: "DOT 4",
+      tire_front: 30,
+      tire_rear: 30,
+      tire_loaded: 34,
+      gap: 0.8,
+      common: [
+        { symptom: "Oscilação de marcha lenta", cause: "Carbonização do corpo de borboleta (TBI).", procedure: "Limpeza química do TBI e adaptação eletrônica via scanner." }
+      ]
+    },
+    {
+      id: "spec-gm-celta",
+      brand: "Chevrolet",
+      model: "Celta",
+      years: "2000-2015",
+      engine: "1.0 8V VHC-E Flex (78 cv)",
+      body_type: "hatch",
+      real_photo_url: "/img/vehicles/chevrolet-celta.jpg",
+      oil_viscosity: "5W30 Sintético Dexos 1",
+      oil_capacity_liters: 3.5,
+      oilNorm: "Dexos 1 Gen 2 / API SN",
+      coolant_type: "Aditivo Orgânico Rosa ACDelco",
+      coolant_capacity_liters: 5.4,
+      brake_fluid: "DOT 4",
+      tire_front: 30,
+      tire_rear: 28,
+      tire_loaded: 32,
+      gap: 0.8,
+      common: [
+        { symptom: "Ruído metálico na dianteira", cause: "Desgaste nos tensores da correia dentada ou amortecedores dianteiros.", procedure: "Troca preventiva do kit de correia e batentes." }
+      ]
+    },
+    {
+      id: "spec-gm-corsa",
+      brand: "Chevrolet",
+      model: "Corsa Hatch",
+      years: "1994-2002",
+      engine: "1.0 / 1.6 8V MPFI (60-92cv)",
+      body_type: "hatch",
+      real_photo_url: "/img/vehicles/chevrolet-corsa.jpg",
+      oil_viscosity: "15W40 / 5W30 Mineral / Semissintético",
+      oil_capacity_liters: 3.5,
+      oilNorm: "API SJ/SL / Dexos 1",
+      coolant_type: "Aditivo Orgânico Rosa ACDelco",
+      coolant_capacity_liters: 5.6,
+      brake_fluid: "DOT 4",
+      tire_front: 28,
+      tire_rear: 28,
+      tire_loaded: 32,
+      gap: 0.8,
+      common: [
+        { symptom: "Engasgos em retomadas de aceleração", cause: "Desgaste ou carbonização no sensor de posição da borboleta (TPS) ou cabos de vela.", procedure: "Troca do jogo de cabos e velas NGK e calibração do atuador de marcha lenta." }
       ]
     }
   ];

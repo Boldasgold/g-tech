@@ -12,7 +12,7 @@ export async function GET(
     }
 
     const db = getDb();
-    const quote = db.prepare(`
+    let quote = db.prepare(`
       SELECT q.*, wo.os_number, wo.customer_complaint, wo.status as wo_status,
              c.name as customer_name, c.phone as customer_phone,
              v.brand, v.model, v.plate, v.year, v.km, v.body_type
@@ -22,6 +22,53 @@ export async function GET(
       JOIN vehicles v ON wo.vehicle_id = v.id
       WHERE q.public_token = ?
     `).get(token) as any;
+
+    if (!quote) {
+      // Fallback: verificar tabela de tokens individuais protegidos (Arquitetura V1)
+      const portalTokenRecord = db.prepare(`
+        SELECT t.*, wo.id as work_order_id, wo.os_number, wo.customer_complaint, wo.status as wo_status,
+               c.name as customer_name, c.phone as customer_phone,
+               v.brand, v.model, v.plate, v.year, v.km, v.body_type
+        FROM customer_portal_tokens t
+        JOIN work_orders wo ON t.work_order_id = wo.id
+        LEFT JOIN customers c ON wo.customer_id = c.id
+        LEFT JOIN vehicles v ON wo.vehicle_id = v.id
+        WHERE t.token = ?
+      `).get(token) as any;
+
+      if (portalTokenRecord) {
+        db.prepare(`
+          UPDATE customer_portal_tokens 
+          SET access_count = access_count + 1, last_accessed_at = ?
+          WHERE token = ?
+        `).run(new Date().toISOString(), token);
+
+        const existingQuote = db.prepare(`SELECT * FROM wo_quotes WHERE work_order_id = ?`).get(portalTokenRecord.work_order_id) as any;
+        if (existingQuote) {
+          quote = { ...portalTokenRecord, ...existingQuote, id: existingQuote.id };
+        } else {
+          quote = {
+            id: `quote-${portalTokenRecord.work_order_id}`,
+            work_order_id: portalTokenRecord.work_order_id,
+            os_number: portalTokenRecord.os_number,
+            customer_name: portalTokenRecord.customer_name,
+            customer_phone: portalTokenRecord.customer_phone,
+            brand: portalTokenRecord.brand,
+            model: portalTokenRecord.model,
+            plate: portalTokenRecord.plate,
+            year: portalTokenRecord.year,
+            km: portalTokenRecord.km,
+            body_type: portalTokenRecord.body_type,
+            wo_status: portalTokenRecord.wo_status,
+            customer_complaint: portalTokenRecord.customer_complaint,
+            total_services: 0,
+            total_parts: 0,
+            total_amount: 0,
+            status: "rascunho"
+          };
+        }
+      }
+    }
 
     if (!quote) {
       return NextResponse.json({ success: false, error: "Orçamento não localizado ou link expirado." }, { status: 404 });

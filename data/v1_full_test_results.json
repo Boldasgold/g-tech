@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-11-08T13:08:32.693Z",
+  "totalPassed": 19,
+  "totalTests": 19,
+  "siteHealth": {
+    "service": "gtech-site-publico",
+    "process_pid": 20440,
+    "port": 3000,
+    "workshop_target_url": "http://localhost:3001",
+    "outbox_database": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\site_outbox.db",
+    "threejs_or_glb_loaded": false,
+    "outbox_summary": [
+      {
+        "sync_status": "sincronizado_oficina",
+        "total": 4
+      }
+    ]
+  },
+  "workerHealth": {
+    "service": "gtech-worker-ai-3d",
+    "process_pid": 10232,
+    "port": 3002,
+    "max_concurrent_jobs": 2,
+    "active_workers": 0,
+    "real_photo_to_3d_engine_configured": false,
+    "photo_to_3d_status": "PENDENTE",
+    "queue_stats": [
+      {
+        "status": "concluido",
+        "count": 6
+      }
+    ]
+  },
+  "outboxAfter": {
+    "id": "outbox-1794142333799-803",
+    "idempotency_key": "outage-test-v1-1794142333782",
+    "protocol_temp": "SITE-333799",
+    "customer_name": "Carlos Eduardo Rocha (Teste Outage)",
+    "customer_phone": "(41) 99876-5432",
+    "vehicle_brand": "Volkswagen",
+    "vehicle_model": "Golf IV 2.0",
+    "vehicle_plate": "GLF-4004",
+    "scheduled_date": "2026-12-28",
+    "scheduled_time": "15:30",
+    "issue_description": "Agendamento enviado com o serviço da oficina parado",
+    "dashboard_alert": null,
+    "payload_json": "{\"customer_name\":\"Carlos Eduardo Rocha (Teste Outage)\",\"customer_phone\":\"(41) 99876-5432\",\"vehicle_brand\":\"Volkswagen\",\"vehicle_model\":\"Golf IV 2.0\",\"vehicle_plate\":\"GLF-4004\",\"scheduled_date\":\"2026-12-28\",\"scheduled_time\":\"15:30\",\"issue_description\":\"Agendamento enviado com o serviço da oficina parado\",\"idempotency_key\":\"outage-test-v1-1794142333782\"}",
+    "sync_status": "sincronizado_oficina",
+    "workshop_protocol": "GT-2026-4826",
+    "workshop_appointment_id": "apt-1794142349320-383",
+    "attempts": 5,
+    "last_error": null,
+    "created_at": "2026-11-08T12:52:13.798Z",
+    "synced_at": "2026-11-08T12:52:29.343Z"
+  },
+  "wo1Id": "wo-1794143311475",
+  "wo2Id": "wo-1794143311748",
+  "waData1": {
+    "success": true,
+    "status": "enviado",
+    "notificationId": "notif-1794143311694-46276554",
+    "message": "Notificação registrada (Simulação Auditada). Mensagem aceita para envio; OS mantida como 'Pronto para retirada' (finalizada), aguardando entrega física ao cliente.",
+    "recipientPhone": "+554196522715",
+    "clientPortalUrl": "/cliente/22f90943afc6e45ae5a369878772e60b",
+    "providerName": "Simulador Local Auditado G-Tech (Sandbox Determinístico)",
+    "isSimulation": true,
+    "deliveryStatus": "aceito_provedor_pendente_confirmacao",
+    "workOrderStatusAfterDispatch": "finalizada",
+    "releaseEventKey": "liberacao_visita_1",
+    "dispatchDetails": {
+      "vehicleDescription": "Volkswagen Golf IV (VWG-4411)",
+      "customerName": "Roberto Almeida (Fluxo V1)",
+      "sentAt": "2026-11-08T13:08:31.694Z"
+    }
+  },
+  "waDupData": {
+    "success": false,
+    "status": "duplicado_bloqueado",
+    "message": "Aviso de retirada já foi disparado para a OS GT-OS-000138 (evento: liberacao_visita_1) em 2026-11-08T13:08:31.694Z. Duplicidade bloqueada.",
+    "notificationId": "notif-1794143311694-46276554",
+    "recipientPhone": "+554196522715",
+    "clientPortalUrl": "/cliente/22f90943afc6e45ae5a369878772e60b",
+    "providerName": "Simulador Local Auditado G-Tech (Sandbox Determinístico)",
+    "isSimulation": true,
+    "deliveryStatus": "aceito_provedor_pendente_confirmacao",
+    "workOrderStatusAfterDispatch": "finalizada",
+    "releaseEventKey": "liberacao_visita_1"
+  },
+  "reconResult": {
+    "work_order_id": "wo-1794143311475",
+    "vehicle_key": "volkswagen_golf-iv",
+    "source_photos": [
+      "/img/vehicles/volkswagen/fotos/golf-iv.jpg?visita=1_frente",
+      "/img/vehicles/volkswagen/fotos/golf-iv.jpg?visita=1_traseira"
+    ],
+    "processing_worker_pid": 10232,
+    "processing_worker_port": 3002,
+    "real_3d_reconstruction_integrated": false,
+    "generated_glb_file": null,
+    "generated_glb_sha256": null,
+    "origin_category": "B. Representação aproximada gerada a partir das fotos",
+    "reconstruction_status": "PENDENTE",
+    "checklist_impact": "NENHUM — O checklist de entrada/saída e o registro de avarias funcionam normalmente mesmo com a reconstrução 3D pendente.",
+    "technical_requirements_note": "Não há motor de fotogrametria/reconstrução 3D real integrado no ambiente atual (ausência de GPU local com TripoSR/Hunyuan3D-2 ou chave de API comercial Tripo3D/Meshy). Nenhum GLB pré-instalado do acervo foi carregado como se fosse gerado pelas fotos."
+  },
+  "golfIvAudit": {
+    "audit_id": "msal-1794143312580-b83b699d",
+    "selected_vehicle_id": "volkswagen_golf-iv",
+    "work_order_id": null,
+    "photo_used": "/img/vehicles/volkswagen/fotos/golf-iv.jpg",
+    "glb_url_loaded": null,
+    "glb_sha256": null,
+    "association_origin": "sem_modelo_3d"
+  },
+  "jettaAudit": {
+    "audit_id": "msal-1794143312600-f9ea423f",
+    "selected_vehicle_id": "volkswagen_jetta-gli",
+    "work_order_id": null,
+    "photo_used": "/img/vehicles/volkswagen/fotos/jetta-gli.jpg",
+    "glb_url_loaded": null,
+    "blocked_file_url": "/models/vehicles/volkswagen_jetta_gli.glb",
+    "glb_sha256": "cafe3f48da6797aa9bde75ca768bc5b57db366575fd233e90df186ae988a876e",
+    "association_origin": "bloqueado_auditoria_sha256",
+    "reason": "Arquivo GLB com SHA-256 cafe3f48... (Ferrari 458 Italia) foi bloqueado pela auditoria para impedir representação incorreta."
+  },
+  "arteonAudit": {
+    "audit_id": "msal-1794143312665-6c8529e8",
+    "selected_vehicle_id": "volkswagen_arteon",
+    "work_order_id": "wo-demo-132",
+    "photo_used": "/img/vehicles/volkswagen/fotos/arteon.jpg",
+    "glb_url_loaded": "/models/vehicles/volkswagen_arteon_shooting_brake.glb",
+    "glb_sha256": "29543f894fc6985fad0f60a589983384abca004fbd0959a2a9828ffefa0a80b4",
+    "association_origin": "acervo_preexistente"
+  }
+}

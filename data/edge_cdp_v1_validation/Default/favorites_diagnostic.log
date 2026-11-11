@@ -1,0 +1,46 @@
+2026-11-09 14:16:36.816: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_v1_validation\Default
+2026-11-09 14:16:36.816: [INFO] Profiles total count: 1
+2026-11-09 14:16:36.816: [INFO] Profile: name=Perfil 1 path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_v1_validation\Default lastActive=null
+2026-11-09 14:16:36.816: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_v1_validation\Default
+2026-11-09 14:16:36.816: [INFO] VisibilityChanged: 0
+2026-11-09 14:16:36.840: [INFO] OnDoneLoading sync enabled: 0
+2026-11-09 14:16:36.840: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-09 14:16:36.840: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-09 14:16:36.840: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-09 14:16:37.005: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-09 14:16:39.294: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-09 14:16:39.301: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:16:39.313: [INFO] Primary account changed.
+2026-11-09 14:16:39.313: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-09 14:16:39.323: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:16:39.352: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:16:44.840: [INFO] BookmarkNodeAdded, ABU: 0
+2026-11-09 14:29:27.556: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_v1_validation\Default
+2026-11-09 14:29:27.556: [INFO] Profiles total count: 1
+2026-11-09 14:29:27.556: [INFO] Profile: name=Perfil 1 path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_v1_validation\Default lastActive=null
+2026-11-09 14:29:27.556: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_v1_validation\Default
+2026-11-09 14:29:27.556: [INFO] VisibilityChanged: 0
+2026-11-09 14:29:27.578: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:27.578: [INFO] OnDoneLoading sync enabled: 0
+2026-11-09 14:29:27.578: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-09 14:29:27.578: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-09 14:29:27.578: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-09 14:29:27.587: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:27.643: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:29.070: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:29.071: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:29.072: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:29.076: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:29.077: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:29.078: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 14:29:29.079: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 5
+2026-11-09 14:29:29.081: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 5
+2026-11-09 14:29:29.459: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 5
+2026-11-09 14:29:29.460: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 5
+2026-11-09 14:29:30.048: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 5
+2026-11-09 14:29:30.444: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 5
+2026-11-09 14:29:30.447: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 6
+2026-11-09 14:29:30.452: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 6
+2026-11-09 14:29:32.033: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 6
+2026-11-09 14:29:32.035: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 6
+2026-11-09 14:29:32.364: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 6

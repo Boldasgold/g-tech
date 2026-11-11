@@ -1,0 +1,48 @@
+{
+  "idempotency_key": "outage-test-v1-1794142333782",
+  "payload": {
+    "customer_name": "Carlos Eduardo Rocha (Teste Outage)",
+    "customer_phone": "(41) 99876-5432",
+    "vehicle_brand": "Volkswagen",
+    "vehicle_model": "Golf IV 2.0",
+    "vehicle_plate": "GLF-4004",
+    "scheduled_date": "2026-12-28",
+    "scheduled_time": "15:30",
+    "issue_description": "Agendamento enviado com o serviço da oficina parado",
+    "idempotency_key": "outage-test-v1-1794142333782"
+  },
+  "phase1_response": {
+    "success": true,
+    "queued_offline": true,
+    "outbox_id": "outbox-1794142333799-803",
+    "idempotency_key": "outage-test-v1-1794142333782",
+    "protocol": "SITE-333799",
+    "storage_db": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\site_outbox.db",
+    "storage_table": "site_outbox_queue",
+    "status": "solicitacao_preservada_fila_site",
+    "status_label": "Solicitação Recebida na Fila do Site — Aguardando Confirmação da Oficina",
+    "message": "O serviço da oficina está temporariamente indisponível, mas sua solicitação foi preservada com segurança no banco de fila do site (data/site_outbox.db) e será sincronizada automaticamente sem duplicação assim que a oficina retornar."
+  },
+  "phase1_row": {
+    "id": "outbox-1794142333799-803",
+    "idempotency_key": "outage-test-v1-1794142333782",
+    "protocol_temp": "SITE-333799",
+    "customer_name": "Carlos Eduardo Rocha (Teste Outage)",
+    "customer_phone": "(41) 99876-5432",
+    "vehicle_brand": "Volkswagen",
+    "vehicle_model": "Golf IV 2.0",
+    "vehicle_plate": "GLF-4004",
+    "scheduled_date": "2026-12-28",
+    "scheduled_time": "15:30",
+    "issue_description": "Agendamento enviado com o serviço da oficina parado",
+    "dashboard_alert": null,
+    "payload_json": "{\"customer_name\":\"Carlos Eduardo Rocha (Teste Outage)\",\"customer_phone\":\"(41) 99876-5432\",\"vehicle_brand\":\"Volkswagen\",\"vehicle_model\":\"Golf IV 2.0\",\"vehicle_plate\":\"GLF-4004\",\"scheduled_date\":\"2026-12-28\",\"scheduled_time\":\"15:30\",\"issue_description\":\"Agendamento enviado com o serviço da oficina parado\",\"idempotency_key\":\"outage-test-v1-1794142333782\"}",
+    "sync_status": "pendente_oficina_offline",
+    "workshop_protocol": null,
+    "workshop_appointment_id": null,
+    "attempts": 1,
+    "last_error": "fetch failed",
+    "created_at": "2026-11-08T12:52:13.798Z",
+    "synced_at": null
+  }
+}

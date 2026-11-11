@@ -1,0 +1,741 @@
+{
+  "step1_initial_golf_v_models_api": {
+    "success": true,
+    "has_specific_model": false,
+    "has_representative_mesh": false,
+    "projection_available": false,
+    "model": null,
+    "status_message": "Projeção 3D deste veículo ainda não disponível",
+    "message": "Projeção 3D deste veículo ainda não disponível",
+    "audit_trace": {
+      "audit_id": "msal-1794156614410-26d59fa1",
+      "selected_vehicle_id": "volkswagen_golf-v",
+      "work_order_id": null,
+      "photo_used": "/img/vehicles/volkswagen/fotos/golf-v.jpg",
+      "glb_url_loaded": null,
+      "glb_sha256": null,
+      "association_origin": "sem_modelo_3d"
+    }
+  },
+  "step1_initial_golf_v_trace": {
+    "ui_selected_identifier": "volkswagen_golf-v",
+    "canonical_vehicle_key": "volkswagen_golf-v",
+    "catalog_id": "golf-v",
+    "brand": "Volkswagen",
+    "model_name": "Golf V (MK5)",
+    "selection_mode": "apenas_fotografia_catalogo",
+    "interruption_stage": "ETAPA 1 INTERROMPIDA: Seleção é apenas uma fotografia do catálogo (sem veículo cadastrado, sem OS e sem vistoria em wo_inspection_visits).",
+    "status_explanation": "O item selecionado (Volkswagen Golf V (MK5) • volkswagen_golf-v) possui apenas a fotografia estática do catálogo (/img/vehicles/volkswagen/fotos/golf-v.jpg) e não possui Ordem de Serviço nem vistoria vinculada. Ele NÃO é associado silenciosamente à OS de outro veículo.",
+    "catalog_photo_url": "/img/vehicles/volkswagen/fotos/golf-v.jpg",
+    "vehicle_record": null,
+    "work_order": null,
+    "inspection_visit": null,
+    "available_visit_photos_count": 0,
+    "available_visit_photos": [],
+    "latest_generation_job": null,
+    "resulting_3d_model": null,
+    "previous_versions_history": [],
+    "local_generator_audit": {
+      "builder_file": "services/worker-ai-3d/photo_to_glb_builder.js",
+      "geometry_determination": "Formas geométricas predefinidas (prismas retangulares fixos em createBoxGeometryData + planos 2D em createPhotoPlaneGeometryData)",
+      "reconstructs_car_features": false,
+      "mandatory_label": "modelo ilustrativo texturizado"
+    }
+  },
+  "step2_validation_error_without_os": {
+    "catalogWarning": "⚠️ Seleção atual é apenas uma fotografia do catálogo: O veículo volkswagen_golf-v (Volkswagen Golf V (MK5)) ainda não possui Ordem de Serviço nem vistoria vinculada. Ele não utiliza a OS de outro veículo (ex.: Golf IV). Para gerar seu modelo ilustrativo texturizado, clique em “1. Abrir Vistoria Própria para Este Veículo”, anexe as fotos reais da vistoria e clique em “Gerar projeção 3D”.",
+    "feedbackText": "❌ A seleção atual (Volkswagen Golf V (MK5) • volkswagen_golf-v) é apenas uma fotografia do catálogo e não possui Ordem de Serviço nem vistoria vinculada. Clique em 'Abrir Vistoria para Este Veículo' e anexe as fotos antes de gerar a projeção 3D.\n✕",
+    "topBadge": "Projeção 3D deste veículo ainda não disponível",
+    "overlayVisible": true
+  },
+  "step2_validation_error_without_photos": "❌ Validação de fotos reprovada: A vistoria da OS GT-OS-GOLF-V-21513 (Volkswagen Golf V (MK5) • volkswagen_golf-v) possui 0 fotografia(s) anexada(s). Anexe pelo menos 2 fotografias reais distintas (ex.: Vista Dianteira e Vista Traseira/Lateral) antes de clicar em 'Gerar projeção 3D'.\n✕",
+  "step2_golf_v_photos_uploaded": [
+    {
+      "slot": "photo_front",
+      "fullPath": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\tmp_ui_test_photos\\golf_v_front.jpg",
+      "size": 123028,
+      "sha256": "24a6c2ad45db5b285b8641d3a08fa9f73b374d0b7c4172b4e8a66f6950a11c7d"
+    },
+    {
+      "slot": "photo_rear",
+      "fullPath": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\tmp_ui_test_photos\\golf_v_rear.jpg",
+      "size": 232523,
+      "sha256": "763312f3be8ba7e1315a10f6a9d46d9a9bf15a857b91087306dd08d7584cba04"
+    },
+    {
+      "slot": "photo_left",
+      "fullPath": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\tmp_ui_test_photos\\golf_v_left.jpg",
+      "size": 202561,
+      "sha256": "ed74be02eec434a6032c0eebbde5393bc43fa39d7da080487fe1580a46494eb5"
+    },
+    {
+      "slot": "photo_right",
+      "fullPath": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\tmp_ui_test_photos\\golf_v_right.jpg",
+      "size": 156989,
+      "sha256": "63833502a3bb8882383b4cbf0cd1973344ad5589f88621059ce570117135ded2"
+    }
+  ],
+  "step2_golf_v_after_generation": {
+    "ui_state": {
+      "feedbackText": "✅ Concluído! Modelo ilustrativo texturizado gerado (ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb) • SHA-256: 3f6bab500606ca3c... • Vinculado a volkswagen_golf-v, OS GT-OS-GOLF-V-21513 e Visita vis-in-golf-v-v1-21513. Carregando no visualizador 3D!\n✕",
+      "topBadge": "B. Modelo ilustrativo texturizado (ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb)",
+      "verifiedAuditBadge": "🎨 MODELO ILUSTRATIVO TEXTURIZADO (FORMA PREDEFINIDA)\nNão é reconstrução 3D\nID Veículo: volkswagen_golf-v (veh-golf-v-21513)\nOS / Vistoria: wo-golf-v-21513 • Visita: vis-in-golf-v-v1-21513\nFotos de Origem: 4 fotos reais da vistoria\nGLB: /api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb\nSHA-256: 3f6bab500606ca3c83640d63b9d427a6...\nClassificação: Modelo ilustrativo texturizado (forma predefinida com fotografias)",
+      "no3dOverlayVisible": false
+    },
+    "trace": {
+      "ui_selected_identifier": "volkswagen_golf-v",
+      "canonical_vehicle_key": "volkswagen_golf-v",
+      "catalog_id": "golf-v",
+      "brand": "Volkswagen",
+      "model_name": "Golf V (MK5)",
+      "selection_mode": "modelo_ilustrativo_texturizado_disponivel",
+      "interruption_stage": "NENHUMA — Modelo ilustrativo texturizado gerado e vinculado.",
+      "status_explanation": "Modelo ilustrativo texturizado (ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb) vinculado ao veículo volkswagen_golf-v, OS wo-golf-v-21513 e vistoria vis-in-golf-v-v1-21513.",
+      "catalog_photo_url": "/img/vehicles/volkswagen/fotos/golf-v.jpg",
+      "vehicle_record": {
+        "id": "veh-golf-v-21513",
+        "vehicle_key": "volkswagen_golf-v",
+        "brand": "Volkswagen",
+        "model": "Golf V (MK5)",
+        "plate": "VW-GOLF13",
+        "year": "2020",
+        "body_type": "hatch"
+      },
+      "work_order": {
+        "id": "wo-golf-v-21513",
+        "os_number": "GT-OS-GOLF-V-21513",
+        "status": "vistoria",
+        "vehicle_id": "veh-golf-v-21513",
+        "customer_id": "cust-golf-v-21513"
+      },
+      "inspection_visit": {
+        "id": "vis-in-golf-v-v1-21513",
+        "work_order_id": "wo-golf-v-21513",
+        "vehicle_id": "veh-golf-v-21513",
+        "visit_number": 1,
+        "inspection_stage": "entrada",
+        "generated_3d_model_id": "v3d-ilust-1794156628475-7336e9",
+        "generated_3d_glb_url": "/api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+        "generated_3d_sha256": "3f6bab500606ca3c83640d63b9d427a6ba6ec539cb6d34c92321de2b241c7f54"
+      },
+      "available_visit_photos_count": 4,
+      "available_visit_photos": [
+        {
+          "photo_id": "pho-v1-front-623847-b80f",
+          "work_order_id": "wo-golf-v-21513",
+          "visit_id": "vis-in-golf-v-v1-21513",
+          "vehicle_id": "veh-golf-v-21513",
+          "visit_number": 1,
+          "slot_name": "photo_front",
+          "original_filename": "golf_v_front.jpg",
+          "stored_path": "public/uploads/visits/visita_1_wo-golf-v-21513_photo_front_pho-v1-front-623847-b80f.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_front_pho-v1-front-623847-b80f.jpg",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 123028,
+          "file_sha256": "24a6c2ad45db5b285b8641d3a08fa9f73b374d0b7c4172b4e8a66f6950a11c7d",
+          "uploaded_by": "Giovane Ribeiro",
+          "created_at": "2026-11-08T16:50:23.851Z"
+        },
+        {
+          "photo_id": "pho-v1-rear-625305-a5ce",
+          "work_order_id": "wo-golf-v-21513",
+          "visit_id": "vis-in-golf-v-v1-21513",
+          "vehicle_id": "veh-golf-v-21513",
+          "visit_number": 1,
+          "slot_name": "photo_rear",
+          "original_filename": "golf_v_rear.jpg",
+          "stored_path": "public/uploads/visits/visita_1_wo-golf-v-21513_photo_rear_pho-v1-rear-625305-a5ce.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_rear_pho-v1-rear-625305-a5ce.jpg",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 232523,
+          "file_sha256": "763312f3be8ba7e1315a10f6a9d46d9a9bf15a857b91087306dd08d7584cba04",
+          "uploaded_by": "Giovane Ribeiro",
+          "created_at": "2026-11-08T16:50:25.316Z"
+        },
+        {
+          "photo_id": "pho-v1-left-626235-634a",
+          "work_order_id": "wo-golf-v-21513",
+          "visit_id": "vis-in-golf-v-v1-21513",
+          "vehicle_id": "veh-golf-v-21513",
+          "visit_number": 1,
+          "slot_name": "photo_left",
+          "original_filename": "golf_v_left.jpg",
+          "stored_path": "public/uploads/visits/visita_1_wo-golf-v-21513_photo_left_pho-v1-left-626235-634a.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_left_pho-v1-left-626235-634a.jpg",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 202561,
+          "file_sha256": "ed74be02eec434a6032c0eebbde5393bc43fa39d7da080487fe1580a46494eb5",
+          "uploaded_by": "Giovane Ribeiro",
+          "created_at": "2026-11-08T16:50:26.260Z"
+        },
+        {
+          "photo_id": "pho-v1-right-627214-f852",
+          "work_order_id": "wo-golf-v-21513",
+          "visit_id": "vis-in-golf-v-v1-21513",
+          "vehicle_id": "veh-golf-v-21513",
+          "visit_number": 1,
+          "slot_name": "photo_right",
+          "original_filename": "golf_v_right.jpg",
+          "stored_path": "public/uploads/visits/visita_1_wo-golf-v-21513_photo_right_pho-v1-right-627214-f852.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_right_pho-v1-right-627214-f852.jpg",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 156989,
+          "file_sha256": "63833502a3bb8882383b4cbf0cd1973344ad5589f88621059ce570117135ded2",
+          "uploaded_by": "Giovane Ribeiro",
+          "created_at": "2026-11-08T16:50:27.218Z"
+        }
+      ],
+      "latest_generation_job": {
+        "job_id": "job-1794156628198-3d8298",
+        "job_type": "reconstruct_3d",
+        "work_order_id": "wo-golf-v-21513",
+        "status": "concluido",
+        "attempts": 1,
+        "error_message": null,
+        "created_at": "2026-11-08T16:50:28.198Z",
+        "started_at": "2026-11-08T16:50:28.202Z",
+        "completed_at": "2026-11-08T16:50:28.464Z",
+        "result": {
+          "work_order_id": "wo-golf-v-21513",
+          "os_number": "GT-OS-GOLF-V-21513",
+          "visit_id": "vis-in-golf-v-v1-21513",
+          "visit_number": 1,
+          "vehicle_id": "veh-golf-v-21513",
+          "vehicle_key": "volkswagen_golf-v",
+          "processing_worker_pid": 12244,
+          "processing_worker_port": 3002,
+          "engine_used": "photo_to_glb_builder.js (Gerador Local de Modelo Ilustrativo Texturizado)",
+          "classification": "modelo ilustrativo texturizado",
+          "geometry_method": "Forma predefinida (createBoxGeometryData + createPhotoPlaneGeometryData) com aplicação de fotografias da vistoria",
+          "is_car_geometry_reconstruction": false,
+          "external_cloud_neural_engine_active": false,
+          "external_photo_transmission": false,
+          "is_approximate_representation": true,
+          "fidelidade": "MODELO_ILUSTRATIVO_TEXTURIZADO",
+          "origin_category": "B. Modelo ilustrativo texturizado (forma predefinida com fotografias da vistoria)",
+          "generated_model_id": "v3d-ilust-1794156628475-7336e9",
+          "generated_glb_file": "/api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+          "generated_glb_filename": "ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+          "generated_glb_size_bytes": 742912,
+          "generated_glb_sha256": "3f6bab500606ca3c83640d63b9d427a6ba6ec539cb6d34c92321de2b241c7f54",
+          "source_photos_count": 4,
+          "source_photos": [
+            {
+              "photo_id": "pho-v1-front-623847-b80f",
+              "slot_name": "photo_front",
+              "original_filename": "golf_v_front.jpg",
+              "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_front_pho-v1-front-623847-b80f.jpg",
+              "file_size_bytes": 123028,
+              "file_sha256": "24a6c2ad45db5b285b8641d3a08fa9f73b374d0b7c4172b4e8a66f6950a11c7d"
+            },
+            {
+              "photo_id": "pho-v1-rear-625305-a5ce",
+              "slot_name": "photo_rear",
+              "original_filename": "golf_v_rear.jpg",
+              "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_rear_pho-v1-rear-625305-a5ce.jpg",
+              "file_size_bytes": 232523,
+              "file_sha256": "763312f3be8ba7e1315a10f6a9d46d9a9bf15a857b91087306dd08d7584cba04"
+            },
+            {
+              "photo_id": "pho-v1-left-626235-634a",
+              "slot_name": "photo_left",
+              "original_filename": "golf_v_left.jpg",
+              "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_left_pho-v1-left-626235-634a.jpg",
+              "file_size_bytes": 202561,
+              "file_sha256": "ed74be02eec434a6032c0eebbde5393bc43fa39d7da080487fe1580a46494eb5"
+            },
+            {
+              "photo_id": "pho-v1-right-627214-f852",
+              "slot_name": "photo_right",
+              "original_filename": "golf_v_right.jpg",
+              "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_right_pho-v1-right-627214-f852.jpg",
+              "file_size_bytes": 156989,
+              "file_sha256": "63833502a3bb8882383b4cbf0cd1973344ad5589f88621059ce570117135ded2"
+            }
+          ],
+          "reconstruction_status": "CONCLUIDO_MODELO_ILUSTRATIVO_TEXTURIZADO"
+        }
+      },
+      "resulting_3d_model": {
+        "id": "v3d-ilust-1794156628475-7336e9",
+        "vehicle_key": "volkswagen_golf-v",
+        "vehicle_id": "veh-golf-v-21513",
+        "work_order_id": "wo-golf-v-21513",
+        "visit_id": "vis-in-golf-v-v1-21513",
+        "file_name": "ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+        "file_url": "/api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+        "file_size_bytes": 742912,
+        "file_sha256": "3f6bab500606ca3c83640d63b9d427a6ba6ec539cb6d34c92321de2b241c7f54",
+        "source": "modelo_ilustrativo_texturizado",
+        "origin_type": "gerado_por_fotos",
+        "classification": "modelo ilustrativo texturizado",
+        "source_photos": [
+          {
+            "photo_id": "pho-v1-front-623847-b80f",
+            "slot_name": "photo_front",
+            "original_filename": "golf_v_front.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_front_pho-v1-front-623847-b80f.jpg",
+            "file_size_bytes": 123028,
+            "file_sha256": "24a6c2ad45db5b285b8641d3a08fa9f73b374d0b7c4172b4e8a66f6950a11c7d"
+          },
+          {
+            "photo_id": "pho-v1-rear-625305-a5ce",
+            "slot_name": "photo_rear",
+            "original_filename": "golf_v_rear.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_rear_pho-v1-rear-625305-a5ce.jpg",
+            "file_size_bytes": 232523,
+            "file_sha256": "763312f3be8ba7e1315a10f6a9d46d9a9bf15a857b91087306dd08d7584cba04"
+          },
+          {
+            "photo_id": "pho-v1-left-626235-634a",
+            "slot_name": "photo_left",
+            "original_filename": "golf_v_left.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_left_pho-v1-left-626235-634a.jpg",
+            "file_size_bytes": 202561,
+            "file_sha256": "ed74be02eec434a6032c0eebbde5393bc43fa39d7da080487fe1580a46494eb5"
+          },
+          {
+            "photo_id": "pho-v1-right-627214-f852",
+            "slot_name": "photo_right",
+            "original_filename": "golf_v_right.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_right_pho-v1-right-627214-f852.jpg",
+            "file_size_bytes": 156989,
+            "file_sha256": "63833502a3bb8882383b4cbf0cd1973344ad5589f88621059ce570117135ded2"
+          }
+        ],
+        "created_at": "2026-11-08 13:50:28"
+      },
+      "previous_versions_history": [],
+      "local_generator_audit": {
+        "builder_file": "services/worker-ai-3d/photo_to_glb_builder.js",
+        "geometry_determination": "Formas geométricas predefinidas (prismas retangulares fixos em createBoxGeometryData + planos 2D em createPhotoPlaneGeometryData)",
+        "reconstructs_car_features": false,
+        "mandatory_label": "modelo ilustrativo texturizado"
+      }
+    },
+    "models_api": {
+      "success": true,
+      "has_specific_model": true,
+      "has_representative_mesh": false,
+      "projection_available": true,
+      "model": {
+        "id": "v3d-ilust-1794156628475-7336e9",
+        "vehicle_key": "volkswagen_golf-v",
+        "vehicle_id": "veh-golf-v-21513",
+        "brand": "Volkswagen",
+        "model": "Golf V (MK5)",
+        "generation": "2020",
+        "work_order_id": "wo-golf-v-21513",
+        "visit_id": "vis-in-golf-v-v1-21513",
+        "file_name": "ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+        "file_url": "/api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+        "file_size_bytes": 742912,
+        "file_sha256": "3f6bab500606ca3c83640d63b9d427a6ba6ec539cb6d34c92321de2b241c7f54",
+        "model_type": "malha_externa_monobloco",
+        "source": "modelo_ilustrativo_texturizado",
+        "classification": "modelo ilustrativo texturizado",
+        "origin_type": "gerado_por_fotos",
+        "is_approximate": true,
+        "source_photos": [
+          {
+            "photo_id": "pho-v1-front-623847-b80f",
+            "slot_name": "photo_front",
+            "original_filename": "golf_v_front.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_front_pho-v1-front-623847-b80f.jpg",
+            "file_size_bytes": 123028,
+            "file_sha256": "24a6c2ad45db5b285b8641d3a08fa9f73b374d0b7c4172b4e8a66f6950a11c7d"
+          },
+          {
+            "photo_id": "pho-v1-rear-625305-a5ce",
+            "slot_name": "photo_rear",
+            "original_filename": "golf_v_rear.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_rear_pho-v1-rear-625305-a5ce.jpg",
+            "file_size_bytes": 232523,
+            "file_sha256": "763312f3be8ba7e1315a10f6a9d46d9a9bf15a857b91087306dd08d7584cba04"
+          },
+          {
+            "photo_id": "pho-v1-left-626235-634a",
+            "slot_name": "photo_left",
+            "original_filename": "golf_v_left.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_left_pho-v1-left-626235-634a.jpg",
+            "file_size_bytes": 202561,
+            "file_sha256": "ed74be02eec434a6032c0eebbde5393bc43fa39d7da080487fe1580a46494eb5"
+          },
+          {
+            "photo_id": "pho-v1-right-627214-f852",
+            "slot_name": "photo_right",
+            "original_filename": "golf_v_right.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_right_pho-v1-right-627214-f852.jpg",
+            "file_size_bytes": 156989,
+            "file_sha256": "63833502a3bb8882383b4cbf0cd1973344ad5589f88621059ce570117135ded2"
+          }
+        ],
+        "created_at": "2026-11-08 13:50:28",
+        "fidelity_disclaimer": "MODELO ILUSTRATIVO TEXTURIZADO: Forma predefinida com aplicação das fotografias da vistoria (não constitui reconstrução 3D da geometria do carro)."
+      },
+      "previous_versions": [],
+      "status_message": "Modelo ilustrativo texturizado (forma predefinida com fotografias da vistoria)",
+      "message": "Modelo ilustrativo texturizado associado ao veículo, à OS, à vistoria e às fotos de origem.",
+      "audit_trace": {
+        "audit_id": "msal-1794156639982-3dc98560",
+        "selected_vehicle_id": "volkswagen_golf-v",
+        "work_order_id": "wo-golf-v-21513",
+        "visit_id": "vis-in-golf-v-v1-21513",
+        "vehicle_id": "veh-golf-v-21513",
+        "photo_used": null,
+        "glb_url_loaded": "/api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+        "glb_sha256": "3f6bab500606ca3c83640d63b9d427a6ba6ec539cb6d34c92321de2b241c7f54",
+        "association_origin": "modelo_ilustrativo_texturizado",
+        "classification": "modelo ilustrativo texturizado",
+        "is_approximate": true
+      }
+    }
+  },
+  "step3_golf_v_second_version_history_preserved": {
+    "active_model": {
+      "id": "v3d-ilust-1794156646354-2a55e6",
+      "vehicle_key": "volkswagen_golf-v",
+      "vehicle_id": "veh-golf-v-21513",
+      "work_order_id": "wo-golf-v-21513",
+      "visit_id": "vis-in-golf-v-v1-21513",
+      "file_name": "ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156645811.glb",
+      "file_url": "/api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156645811.glb",
+      "file_size_bytes": 742912,
+      "file_sha256": "a8a8ab020b5d14c228b607c48c6fd914b2b4dfacbd46d7889082274a42f15c90",
+      "source": "modelo_ilustrativo_texturizado",
+      "origin_type": "gerado_por_fotos",
+      "classification": "modelo ilustrativo texturizado",
+      "source_photos": [
+        {
+          "photo_id": "pho-v1-front-623847-b80f",
+          "slot_name": "photo_front",
+          "original_filename": "golf_v_front.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_front_pho-v1-front-623847-b80f.jpg",
+          "file_size_bytes": 123028,
+          "file_sha256": "24a6c2ad45db5b285b8641d3a08fa9f73b374d0b7c4172b4e8a66f6950a11c7d"
+        },
+        {
+          "photo_id": "pho-v1-rear-625305-a5ce",
+          "slot_name": "photo_rear",
+          "original_filename": "golf_v_rear.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_rear_pho-v1-rear-625305-a5ce.jpg",
+          "file_size_bytes": 232523,
+          "file_sha256": "763312f3be8ba7e1315a10f6a9d46d9a9bf15a857b91087306dd08d7584cba04"
+        },
+        {
+          "photo_id": "pho-v1-left-626235-634a",
+          "slot_name": "photo_left",
+          "original_filename": "golf_v_left.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_left_pho-v1-left-626235-634a.jpg",
+          "file_size_bytes": 202561,
+          "file_sha256": "ed74be02eec434a6032c0eebbde5393bc43fa39d7da080487fe1580a46494eb5"
+        },
+        {
+          "photo_id": "pho-v1-right-627214-f852",
+          "slot_name": "photo_right",
+          "original_filename": "golf_v_right.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-v-21513_photo_right_pho-v1-right-627214-f852.jpg",
+          "file_size_bytes": 156989,
+          "file_sha256": "63833502a3bb8882383b4cbf0cd1973344ad5589f88621059ce570117135ded2"
+        }
+      ],
+      "created_at": "2026-11-08 13:50:46"
+    },
+    "previous_versions_history": [
+      {
+        "id": "v3d-ilust-1794156628475-7336e9",
+        "vehicle_key": "volkswagen_golf-v",
+        "vehicle_id": "veh-golf-v-21513",
+        "work_order_id": "wo-golf-v-21513",
+        "visit_id": "vis-in-golf-v-v1-21513",
+        "file_name": "ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+        "file_url": "/api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156628472.glb",
+        "file_size_bytes": 742912,
+        "file_sha256": "3f6bab500606ca3c83640d63b9d427a6ba6ec539cb6d34c92321de2b241c7f54",
+        "source": "modelo_ilustrativo_texturizado",
+        "origin_type": "gerado_por_fotos",
+        "audit_status": "substituido_nova_geracao",
+        "created_at": "2026-11-08 13:50:28"
+      }
+    ]
+  },
+  "step5_golf_vii_photos_uploaded": [
+    {
+      "slot": "photo_front",
+      "fullPath": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\tmp_ui_test_photos\\golf_vii_front.jpg",
+      "size": 273302,
+      "sha256": "85917a3f088c3e46c09d430aafd46b7a9b68153deacb8f383dd9604f55719a78"
+    },
+    {
+      "slot": "photo_rear",
+      "fullPath": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\tmp_ui_test_photos\\golf_vii_rear.jpg",
+      "size": 124637,
+      "sha256": "fb87cf130356449d535b0263140e92a78db4122896b694fe8b7d8534b12f02e4"
+    },
+    {
+      "slot": "photo_left",
+      "fullPath": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\tmp_ui_test_photos\\golf_vii_left.jpg",
+      "size": 227834,
+      "sha256": "d0a29809b1b17e00be5db903d68cc501ea6987a7c1549f176eeaf93f0860b257"
+    },
+    {
+      "slot": "photo_right",
+      "fullPath": "C:\\Users\\tiujo\\Desktop\\g-tech\\data\\tmp_ui_test_photos\\golf_vii_right.jpg",
+      "size": 190710,
+      "sha256": "cb386885d0943d055656cbf97339c8c76096219cbbb0d2a7444b0bbcf1c0e655"
+    }
+  ],
+  "step5_golf_vii_after_generation": {
+    "ui_state": {
+      "feedbackText": "✅ Concluído! Modelo ilustrativo texturizado gerado (ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb) • SHA-256: f5127ef9386ee97f... • Vinculado a volkswagen_golf-vii, OS GT-OS-GOLF-V-64495 e Visita vis-in-golf-vii-v1-64495. Carregando no visualizador 3D!\n✕",
+      "topBadge": "B. Modelo ilustrativo texturizado (ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb)",
+      "verifiedAuditBadge": "🎨 MODELO ILUSTRATIVO TEXTURIZADO (FORMA PREDEFINIDA)\nNão é reconstrução 3D\nID Veículo: volkswagen_golf-vii (veh-golf-vii-64495)\nOS / Vistoria: wo-golf-vii-64495 • Visita: vis-in-golf-vii-v1-64495\nFotos de Origem: 4 fotos reais da vistoria\nGLB: /api/models/file/ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb\nSHA-256: f5127ef9386ee97f51c629287571ea18...\nClassificação: Modelo ilustrativo texturizado (forma predefinida com fotografias)",
+      "no3dOverlayVisible": false
+    },
+    "trace": {
+      "ui_selected_identifier": "volkswagen_golf-vii",
+      "canonical_vehicle_key": "volkswagen_golf-vii",
+      "catalog_id": "golf-vii",
+      "brand": "Volkswagen",
+      "model_name": "Golf VII (MK7)",
+      "selection_mode": "modelo_ilustrativo_texturizado_disponivel",
+      "interruption_stage": "NENHUMA — Modelo ilustrativo texturizado gerado e vinculado.",
+      "status_explanation": "Modelo ilustrativo texturizado (ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb) vinculado ao veículo volkswagen_golf-vii, OS wo-golf-vii-64495 e vistoria vis-in-golf-vii-v1-64495.",
+      "catalog_photo_url": "/img/vehicles/volkswagen/fotos/golf-vii.jpg",
+      "vehicle_record": {
+        "id": "veh-golf-vii-64495",
+        "vehicle_key": "volkswagen_golf-vii",
+        "brand": "Volkswagen",
+        "model": "Golf VII (MK7)",
+        "plate": "VW-GOLF95",
+        "year": "2020",
+        "body_type": "hatch"
+      },
+      "work_order": {
+        "id": "wo-golf-vii-64495",
+        "os_number": "GT-OS-GOLF-V-64495",
+        "status": "vistoria",
+        "vehicle_id": "veh-golf-vii-64495",
+        "customer_id": "cust-golf-vii-64495"
+      },
+      "inspection_visit": {
+        "id": "vis-in-golf-vii-v1-64495",
+        "work_order_id": "wo-golf-vii-64495",
+        "vehicle_id": "veh-golf-vii-64495",
+        "visit_number": 1,
+        "inspection_stage": "entrada",
+        "generated_3d_model_id": "v3d-ilust-1794156708560-55faac",
+        "generated_3d_glb_url": "/api/models/file/ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb",
+        "generated_3d_sha256": "f5127ef9386ee97f51c629287571ea183eaddfa3e6d364b482cb49d49997a3c6"
+      },
+      "available_visit_photos_count": 4,
+      "available_visit_photos": [
+        {
+          "photo_id": "pho-v1-front-702938-5588",
+          "work_order_id": "wo-golf-vii-64495",
+          "visit_id": "vis-in-golf-vii-v1-64495",
+          "vehicle_id": "veh-golf-vii-64495",
+          "visit_number": 1,
+          "slot_name": "photo_front",
+          "original_filename": "golf_vii_front.jpg",
+          "stored_path": "public/uploads/visits/visita_1_wo-golf-vii-64495_photo_front_pho-v1-front-702938-5588.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_front_pho-v1-front-702938-5588.jpg",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 273302,
+          "file_sha256": "85917a3f088c3e46c09d430aafd46b7a9b68153deacb8f383dd9604f55719a78",
+          "uploaded_by": "Giovane Ribeiro",
+          "created_at": "2026-11-08T16:51:42.942Z"
+        },
+        {
+          "photo_id": "pho-v1-rear-705092-3495",
+          "work_order_id": "wo-golf-vii-64495",
+          "visit_id": "vis-in-golf-vii-v1-64495",
+          "vehicle_id": "veh-golf-vii-64495",
+          "visit_number": 1,
+          "slot_name": "photo_rear",
+          "original_filename": "golf_vii_rear.jpg",
+          "stored_path": "public/uploads/visits/visita_1_wo-golf-vii-64495_photo_rear_pho-v1-rear-705092-3495.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_rear_pho-v1-rear-705092-3495.jpg",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 124637,
+          "file_sha256": "fb87cf130356449d535b0263140e92a78db4122896b694fe8b7d8534b12f02e4",
+          "uploaded_by": "Giovane Ribeiro",
+          "created_at": "2026-11-08T16:51:45.275Z"
+        },
+        {
+          "photo_id": "pho-v1-left-705771-5957",
+          "work_order_id": "wo-golf-vii-64495",
+          "visit_id": "vis-in-golf-vii-v1-64495",
+          "vehicle_id": "veh-golf-vii-64495",
+          "visit_number": 1,
+          "slot_name": "photo_left",
+          "original_filename": "golf_vii_left.jpg",
+          "stored_path": "public/uploads/visits/visita_1_wo-golf-vii-64495_photo_left_pho-v1-left-705771-5957.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_left_pho-v1-left-705771-5957.jpg",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 227834,
+          "file_sha256": "d0a29809b1b17e00be5db903d68cc501ea6987a7c1549f176eeaf93f0860b257",
+          "uploaded_by": "Giovane Ribeiro",
+          "created_at": "2026-11-08T16:51:45.775Z"
+        },
+        {
+          "photo_id": "pho-v1-right-706947-7c7a",
+          "work_order_id": "wo-golf-vii-64495",
+          "visit_id": "vis-in-golf-vii-v1-64495",
+          "vehicle_id": "veh-golf-vii-64495",
+          "visit_number": 1,
+          "slot_name": "photo_right",
+          "original_filename": "golf_vii_right.jpg",
+          "stored_path": "public/uploads/visits/visita_1_wo-golf-vii-64495_photo_right_pho-v1-right-706947-7c7a.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_right_pho-v1-right-706947-7c7a.jpg",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 190710,
+          "file_sha256": "cb386885d0943d055656cbf97339c8c76096219cbbb0d2a7444b0bbcf1c0e655",
+          "uploaded_by": "Giovane Ribeiro",
+          "created_at": "2026-11-08T16:51:46.951Z"
+        }
+      ],
+      "latest_generation_job": {
+        "job_id": "job-1794156708102-ca89e6",
+        "job_type": "reconstruct_3d",
+        "work_order_id": "wo-golf-vii-64495",
+        "status": "concluido",
+        "attempts": 1,
+        "error_message": null,
+        "created_at": "2026-11-08T16:51:48.102Z",
+        "started_at": "2026-11-08T16:51:48.106Z",
+        "completed_at": "2026-11-08T16:51:48.394Z",
+        "result": {
+          "work_order_id": "wo-golf-vii-64495",
+          "os_number": "GT-OS-GOLF-V-64495",
+          "visit_id": "vis-in-golf-vii-v1-64495",
+          "visit_number": 1,
+          "vehicle_id": "veh-golf-vii-64495",
+          "vehicle_key": "volkswagen_golf-vii",
+          "processing_worker_pid": 12244,
+          "processing_worker_port": 3002,
+          "engine_used": "photo_to_glb_builder.js (Gerador Local de Modelo Ilustrativo Texturizado)",
+          "classification": "modelo ilustrativo texturizado",
+          "geometry_method": "Forma predefinida (createBoxGeometryData + createPhotoPlaneGeometryData) com aplicação de fotografias da vistoria",
+          "is_car_geometry_reconstruction": false,
+          "external_cloud_neural_engine_active": false,
+          "external_photo_transmission": false,
+          "is_approximate_representation": true,
+          "fidelidade": "MODELO_ILUSTRATIVO_TEXTURIZADO",
+          "origin_category": "B. Modelo ilustrativo texturizado (forma predefinida com fotografias da vistoria)",
+          "generated_model_id": "v3d-ilust-1794156708560-55faac",
+          "generated_glb_file": "/api/models/file/ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb",
+          "generated_glb_filename": "ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb",
+          "generated_glb_size_bytes": 844320,
+          "generated_glb_sha256": "f5127ef9386ee97f51c629287571ea183eaddfa3e6d364b482cb49d49997a3c6",
+          "source_photos_count": 4,
+          "source_photos": [
+            {
+              "photo_id": "pho-v1-front-702938-5588",
+              "slot_name": "photo_front",
+              "original_filename": "golf_vii_front.jpg",
+              "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_front_pho-v1-front-702938-5588.jpg",
+              "file_size_bytes": 273302,
+              "file_sha256": "85917a3f088c3e46c09d430aafd46b7a9b68153deacb8f383dd9604f55719a78"
+            },
+            {
+              "photo_id": "pho-v1-rear-705092-3495",
+              "slot_name": "photo_rear",
+              "original_filename": "golf_vii_rear.jpg",
+              "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_rear_pho-v1-rear-705092-3495.jpg",
+              "file_size_bytes": 124637,
+              "file_sha256": "fb87cf130356449d535b0263140e92a78db4122896b694fe8b7d8534b12f02e4"
+            },
+            {
+              "photo_id": "pho-v1-left-705771-5957",
+              "slot_name": "photo_left",
+              "original_filename": "golf_vii_left.jpg",
+              "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_left_pho-v1-left-705771-5957.jpg",
+              "file_size_bytes": 227834,
+              "file_sha256": "d0a29809b1b17e00be5db903d68cc501ea6987a7c1549f176eeaf93f0860b257"
+            },
+            {
+              "photo_id": "pho-v1-right-706947-7c7a",
+              "slot_name": "photo_right",
+              "original_filename": "golf_vii_right.jpg",
+              "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_right_pho-v1-right-706947-7c7a.jpg",
+              "file_size_bytes": 190710,
+              "file_sha256": "cb386885d0943d055656cbf97339c8c76096219cbbb0d2a7444b0bbcf1c0e655"
+            }
+          ],
+          "reconstruction_status": "CONCLUIDO_MODELO_ILUSTRATIVO_TEXTURIZADO"
+        }
+      },
+      "resulting_3d_model": {
+        "id": "v3d-ilust-1794156708560-55faac",
+        "vehicle_key": "volkswagen_golf-vii",
+        "vehicle_id": "veh-golf-vii-64495",
+        "work_order_id": "wo-golf-vii-64495",
+        "visit_id": "vis-in-golf-vii-v1-64495",
+        "file_name": "ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb",
+        "file_url": "/api/models/file/ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb",
+        "file_size_bytes": 844320,
+        "file_sha256": "f5127ef9386ee97f51c629287571ea183eaddfa3e6d364b482cb49d49997a3c6",
+        "source": "modelo_ilustrativo_texturizado",
+        "origin_type": "gerado_por_fotos",
+        "classification": "modelo ilustrativo texturizado",
+        "source_photos": [
+          {
+            "photo_id": "pho-v1-front-702938-5588",
+            "slot_name": "photo_front",
+            "original_filename": "golf_vii_front.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_front_pho-v1-front-702938-5588.jpg",
+            "file_size_bytes": 273302,
+            "file_sha256": "85917a3f088c3e46c09d430aafd46b7a9b68153deacb8f383dd9604f55719a78"
+          },
+          {
+            "photo_id": "pho-v1-rear-705092-3495",
+            "slot_name": "photo_rear",
+            "original_filename": "golf_vii_rear.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_rear_pho-v1-rear-705092-3495.jpg",
+            "file_size_bytes": 124637,
+            "file_sha256": "fb87cf130356449d535b0263140e92a78db4122896b694fe8b7d8534b12f02e4"
+          },
+          {
+            "photo_id": "pho-v1-left-705771-5957",
+            "slot_name": "photo_left",
+            "original_filename": "golf_vii_left.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_left_pho-v1-left-705771-5957.jpg",
+            "file_size_bytes": 227834,
+            "file_sha256": "d0a29809b1b17e00be5db903d68cc501ea6987a7c1549f176eeaf93f0860b257"
+          },
+          {
+            "photo_id": "pho-v1-right-706947-7c7a",
+            "slot_name": "photo_right",
+            "original_filename": "golf_vii_right.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-golf-vii-64495_photo_right_pho-v1-right-706947-7c7a.jpg",
+            "file_size_bytes": 190710,
+            "file_sha256": "cb386885d0943d055656cbf97339c8c76096219cbbb0d2a7444b0bbcf1c0e655"
+          }
+        ],
+        "created_at": "2026-11-08 13:51:48"
+      },
+      "previous_versions_history": [],
+      "local_generator_audit": {
+        "builder_file": "services/worker-ai-3d/photo_to_glb_builder.js",
+        "geometry_determination": "Formas geométricas predefinidas (prismas retangulares fixos em createBoxGeometryData + planos 2D em createPhotoPlaneGeometryData)",
+        "reconstructs_car_features": false,
+        "mandatory_label": "modelo ilustrativo texturizado"
+      }
+    }
+  },
+  "step5_reload_verification": {
+    "golf_v_after_reload": {
+      "url": "http://localhost:3001/3D-360?vehicle=golf-v",
+      "topBadge": "B. Modelo ilustrativo texturizado (ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156645811.glb)",
+      "verifiedAuditBadge": "🎨 MODELO ILUSTRATIVO TEXTURIZADO (FORMA PREDEFINIDA)\nNão é reconstrução 3D\nID Veículo: volkswagen_golf-v (veh-golf-v-21513)\nOS / Vistoria: wo-golf-v-21513 • Visita: vis-in-golf-v-v1-21513\nFotos de Origem: 4 fotos reais da vistoria\nGLB: /api/models/file/ilustrativo_tex_volkswagen_golf-v_wo-golf-v-21513_v1_1794156645811.glb\nSHA-256: a8a8ab020b5d14c228b607c48c6fd914...\nClassificação: Modelo ilustrativo texturizado (forma predefinida com fotografias)",
+      "no3dOverlayVisible": false
+    },
+    "golf_vii_after_reload": {
+      "url": "http://localhost:3001/3D-360?vehicle=golf-vii",
+      "topBadge": "B. Modelo ilustrativo texturizado (ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb)",
+      "verifiedAuditBadge": "🎨 MODELO ILUSTRATIVO TEXTURIZADO (FORMA PREDEFINIDA)\nNão é reconstrução 3D\nID Veículo: volkswagen_golf-vii (veh-golf-vii-64495)\nOS / Vistoria: wo-golf-vii-64495 • Visita: vis-in-golf-vii-v1-64495\nFotos de Origem: 4 fotos reais da vistoria\nGLB: /api/models/file/ilustrativo_tex_volkswagen_golf-vii_wo-golf-vii-64495_v1_1794156708514.glb\nSHA-256: f5127ef9386ee97f51c629287571ea18...\nClassificação: Modelo ilustrativo texturizado (forma predefinida com fotografias)",
+      "no3dOverlayVisible": false
+    }
+  }
+}

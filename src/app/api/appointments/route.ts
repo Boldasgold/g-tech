@@ -83,7 +83,8 @@ export async function POST(req: NextRequest) {
       period,
       issue_description,
       dashboard_alert,
-      mobility
+      mobility,
+      idempotency_key
     } = body;
 
     if (!customer_name || !customer_phone || !vehicle_brand || !vehicle_model || !scheduled_date || !scheduled_time) {
@@ -93,7 +94,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const cleanPhone = customer_phone.trim();
+    const effectiveIdempotencyKey = idempotency_key || generateHash({
+      phone: cleanPhone,
+      date: scheduled_date,
+      time: scheduled_time,
+      plate: vehicle_plate || ""
+    });
+
+    // 1. Resiliência Offline: Se o serviço da oficina estiver simulando queda ou indisponível
+    if (process.env.SIMULATE_WORKSHOP_OUTAGE === "true") {
+      const db = getDb();
+      const syncId = `sync-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      db.prepare(`
+        INSERT INTO site_pending_sync_queue (
+          sync_id, idempotency_key, entity_type, payload_json,
+          status, attempt_count, last_attempt_at, error_log, created_at
+        ) VALUES (?, ?, 'appointment', ?, 'pending', 1, ?, 'Oficina temporariamente indisponível - fila local', ?)
+      `).run(syncId, effectiveIdempotencyKey, JSON.stringify(body), new Date().toISOString(), new Date().toISOString());
+
+      return NextResponse.json({
+        success: true,
+        status: "preservado_offline_fila",
+        protocol: `OFFLINE-${syncId.slice(-6)}`,
+        message: "A oficina está temporariamente sem conexão externa, mas sua solicitação foi armazenada na fila segura com sucesso e será confirmada pela equipe assim que restabelecida."
+      }, { status: 202 });
+    }
+
     const db = getDb();
+
+    // 2. Verificação de Idempotência: Evita cadastros e solicitações duplicadas
+    const existingByIdempotency = db.prepare(`
+      SELECT protocol, scheduled_date, scheduled_time, status 
+      FROM appointments 
+      WHERE idempotency_key = ?
+    `).get(effectiveIdempotencyKey) as any;
+
+    if (existingByIdempotency) {
+      return NextResponse.json({
+        success: true,
+        duplicate_prevented: true,
+        protocol: existingByIdempotency.protocol,
+        status_label: "Solicitação Recebida — Aguardando Confirmação",
+        message: "Sua solicitação de agendamento já foi registrada anteriormente e está aguardando confirmação da equipe da oficina."
+      });
+    }
 
     // Check concurrency slot collision
     const existing = db.prepare(`
@@ -116,14 +161,15 @@ export async function POST(req: NextRequest) {
         id, company_id, protocol, customer_name, customer_phone,
         vehicle_brand, vehicle_model, vehicle_plate,
         scheduled_date, scheduled_time, period,
-        issue_description, dashboard_alert, mobility, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        issue_description, dashboard_alert, mobility, status,
+        idempotency_key
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       appointmentId,
       "gtech-paranagua",
       protocol,
       customer_name.trim(),
-      customer_phone.trim(),
+      cleanPhone,
       vehicle_brand.trim(),
       vehicle_model.trim(),
       vehicle_plate ? vehicle_plate.trim().toUpperCase() : null,
@@ -133,7 +179,8 @@ export async function POST(req: NextRequest) {
       issue_description ? issue_description.trim() : "Avaliação geral e diagnóstico",
       dashboard_alert || null,
       mobility || "Vou levar o veículo até a oficina",
-      "pendente"
+      "pendente",
+      effectiveIdempotencyKey
     );
 
     // Audit log
@@ -145,27 +192,27 @@ export async function POST(req: NextRequest) {
       "gtech-paranagua",
       "appointments",
       appointmentId,
-      "BOOK_APPOINTMENT",
+      "REQUEST_APPOINTMENT",
       customer_name,
       "cliente_web",
-      JSON.stringify({ protocol, date: scheduled_date, time: scheduled_time, vehicle: `${vehicle_brand} ${vehicle_model}` }),
-      generateHash({ protocol, customer_phone, scheduled_date, scheduled_time })
+      JSON.stringify({ protocol, date: scheduled_date, time: scheduled_time, vehicle: `${vehicle_brand} ${vehicle_model}`, idempotency_key: effectiveIdempotencyKey }),
+      generateHash({ protocol, customer_phone: cleanPhone, scheduled_date, scheduled_time })
     );
 
-    // Formatted WhatsApp message
+    // Formatted WhatsApp message: Solicitação recebida — NUNCA declarado confirmado prematuramente
     const alertText = dashboard_alert ? `\n⚠️ *Alerta no Painel:* ${dashboard_alert}` : "";
     const plateText = vehicle_plate ? ` (${vehicle_plate.toUpperCase()})` : "";
     const whatsAppMessage = 
       `*G-TECH SERVIÇOS AUTOMOTIVOS*\n` +
-      `*Novo Agendamento Confirmado no Site*\n\n` +
+      `*Solicitação de Agendamento Recebida no Site*\n\n` +
       `📋 *Protocolo:* ${protocol}\n` +
       `👤 *Cliente:* ${customer_name}\n` +
       `📱 *Telefone:* ${customer_phone}\n` +
       `🚗 *Veículo:* ${vehicle_brand} ${vehicle_model}${plateText}\n` +
-      `📅 *Data:* ${scheduled_date} às ${scheduled_time} (${period || "Horário Marcado"})\n` +
+      `📅 *Data Solicitada:* ${scheduled_date} às ${scheduled_time} (${period || "Horário Desejado"})\n` +
       `📍 *Locomoção:* ${mobility || "Vou levar até a oficina"}${alertText}\n` +
       `🔧 *Relato do Cliente:* ${issue_description || "Avaliação técnica"}\n\n` +
-      `_Solicitação registrada no sistema com garantia de vaga. Aguardo instruções da oficina!_`;
+      `_Solicitação recebida no sistema. Aguardando confirmação oficial da oficina G-Tech!_`;
 
     const encodedMsg = encodeURIComponent(whatsAppMessage);
     const whatsappUrl = `https://wa.me/554196522715?text=${encodedMsg}`;
@@ -177,7 +224,9 @@ export async function POST(req: NextRequest) {
       scheduled_date,
       scheduled_time,
       whatsapp_url: whatsappUrl,
-      message: "Agendamento registrado com sucesso no banco de dados da G-Tech!"
+      status: "solicitado",
+      status_label: "Solicitação Recebida — Aguardando Confirmação da Oficina",
+      message: "Solicitação de agendamento recebida com sucesso! A equipe da oficina G-Tech entrará em contato para confirmação oficial."
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

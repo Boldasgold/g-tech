@@ -72,33 +72,39 @@ export async function GET(
       });
     }
 
-    // Check if the user entered an OS Number (e.g. GT-OS-000127)
-    const workOrder = db.prepare(`
-      SELECT wo.id, wo.os_number, wo.status, wo.created_at, wo.updated_at,
+    // 2. Verificação de Token de Portal Individual (Arquitetura V1: link seguro)
+    const tokenRecord = db.prepare(`
+      SELECT t.*, wo.id as work_order_id, wo.os_number, wo.status as wo_status, wo.created_at, wo.updated_at,
              v.brand, v.model, v.plate
-      FROM work_orders wo
-      JOIN vehicles v ON wo.vehicle_id = v.id
-      WHERE UPPER(wo.os_number) = ?
-    `).get(cleanProto) as any;
+      FROM customer_portal_tokens t
+      JOIN work_orders wo ON t.work_order_id = wo.id
+      LEFT JOIN vehicles v ON wo.vehicle_id = v.id
+      WHERE t.token = ?
+    `).get(protocol) as any;
 
-    if (workOrder) {
-      // Fetch public milestone events from timeline
+    if (tokenRecord) {
+      db.prepare(`
+        UPDATE customer_portal_tokens 
+        SET access_count = access_count + 1, last_accessed_at = ?
+        WHERE token = ?
+      `).run(new Date().toISOString(), protocol);
+
       const events = db.prepare(`
         SELECT title, description, created_at 
         FROM wo_timeline_events 
         WHERE work_order_id = ? 
         ORDER BY created_at ASC
-      `).all(workOrder.id) as any[];
+      `).all(tokenRecord.work_order_id) as any[];
 
-      const maskedPlate = workOrder.plate ? `***-${workOrder.plate.slice(-4)}` : "";
+      const maskedPlate = tokenRecord.plate ? `***-${tokenRecord.plate.slice(-4)}` : "";
 
       return NextResponse.json({
         success: true,
-        type: "work_order",
-        protocol: workOrder.os_number,
-        vehicle: `${workOrder.brand} ${workOrder.model} ${maskedPlate}`.trim(),
-        status_code: workOrder.status,
-        status_label: getFriendlyOsStatus(workOrder.status),
+        type: "work_order_secure",
+        protocol: tokenRecord.os_number,
+        vehicle: `${tokenRecord.brand} ${tokenRecord.model} ${maskedPlate}`.trim(),
+        status_code: tokenRecord.wo_status,
+        status_label: getFriendlyOsStatus(tokenRecord.wo_status),
         is_in_workshop: true,
         timeline: events.map(e => ({
           timestamp: e.created_at,
@@ -108,8 +114,73 @@ export async function GET(
       });
     }
 
+    // 3. Regra de Segurança V1: Bloqueio de Enumeração Sequencial de OS / Placa
+    // Número sequencial da OS (ex: GT-OS-000127) não pode servir sozinho como autorização
+    if (cleanProto.startsWith("GT-OS-") || cleanProto.startsWith("OS-")) {
+      const searchParams = req.nextUrl.searchParams;
+      const phoneParam = searchParams.get("phone") || searchParams.get("tel");
+      const tokenParam = searchParams.get("token");
+
+      if (!phoneParam && !tokenParam) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            protected: true,
+            error: "Acesso protegido pela política de privacidade G-Tech. O número sequencial da OS ou placa não autoriza acesso isolado. Utilize o link individual enviado pelo WhatsApp ou informe o telefone do titular (?phone=...)." 
+          },
+          { status: 403 }
+        );
+      }
+
+      // Se forneceu telefone, valida titularidade
+      if (phoneParam) {
+        const cleanPhone = phoneParam.replace(/\D/g, "");
+        const woAuth = db.prepare(`
+          SELECT wo.id, wo.os_number, wo.status, wo.created_at, wo.updated_at,
+                 v.brand, v.model, v.plate, c.phone as customer_phone
+          FROM work_orders wo
+          JOIN vehicles v ON wo.vehicle_id = v.id
+          LEFT JOIN customers c ON wo.customer_id = c.id
+          WHERE UPPER(wo.os_number) = ?
+        `).get(cleanProto) as any;
+
+        if (!woAuth) {
+          return NextResponse.json({ success: false, error: "Ordem de Serviço não localizada." }, { status: 404 });
+        }
+
+        const registeredPhoneClean = (woAuth.customer_phone || "").replace(/\D/g, "");
+        if (!registeredPhoneClean.includes(cleanPhone) && !cleanPhone.includes(registeredPhoneClean)) {
+          return NextResponse.json({ success: false, error: "Telefone não confere com o cadastro desta Ordem de Serviço." }, { status: 403 });
+        }
+
+        const events = db.prepare(`
+          SELECT title, description, created_at 
+          FROM wo_timeline_events 
+          WHERE work_order_id = ? 
+          ORDER BY created_at ASC
+        `).all(woAuth.id) as any[];
+
+        const maskedPlate = woAuth.plate ? `***-${woAuth.plate.slice(-4)}` : "";
+
+        return NextResponse.json({
+          success: true,
+          type: "work_order",
+          protocol: woAuth.os_number,
+          vehicle: `${woAuth.brand} ${woAuth.model} ${maskedPlate}`.trim(),
+          status_code: woAuth.status,
+          status_label: getFriendlyOsStatus(woAuth.status),
+          is_in_workshop: true,
+          timeline: events.map(e => ({
+            timestamp: e.created_at,
+            title: e.title,
+            description: e.description
+          }))
+        });
+      }
+    }
+
     return NextResponse.json(
-      { success: false, error: "Protocolo não encontrado. Verifique se o código foi digitado corretamente (Ex: GT-2026-0001 ou GT-OS-000127)." },
+      { success: false, error: "Protocolo não encontrado ou inválido. Verifique o código de agendamento (Ex: GT-2026-0001) ou acesse pelo link seguro enviado no seu WhatsApp." },
       { status: 404 }
     );
   } catch (error: any) {

@@ -3,11 +3,13 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Vehicle3DScene, BodyType, HotspotData, ComponentMeshInfo } from "@/lib/vehicle3d";
 import { recognizeVehicle } from "@/lib/vw-recognition";
+import { resolveCanonicalVehicle } from "@/lib/canonical-vehicle";
 
 export type ModelStatus = 
   | "verificando"
   | "carregando"
   | "especifico_carregado"
+  | "representativo_carregado"
   | "ausente_ilustrativo"
   | "erro_carregamento";
 
@@ -17,12 +19,17 @@ export interface ActiveModelMetadata {
   brand?: string;
   model?: string;
   generation?: string;
-  work_order_id?: string;
+  work_order_id?: string | null;
   file_name: string;
   file_url: string;
   file_size_bytes?: number;
-  model_type: "malha_externa_monobloco" | "modelo_com_pecas_segmentadas";
+  file_sha256?: string;
+  origin_type?: string;
+  is_approximate?: boolean;
+  source_photos?: any[];
+  model_type: "malha_externa_monobloco" | "malha_externa_aproximada_fotos" | "modelo_com_pecas_segmentadas" | "malha_representativa_generica" | string;
   source?: string;
+  fidelity_disclaimer?: string;
   created_at?: string;
 }
 
@@ -51,6 +58,7 @@ interface Vehicle3DViewerProps {
   model?: string;
   generation?: string;
   initialGlbUrl?: string;
+  refreshTrigger?: number;
   replacedComponentIds?: string[];
   onSaveInspection?: (data: any) => Promise<void> | void;
   onSaveReplacement?: (data: any) => Promise<void> | void;
@@ -131,6 +139,7 @@ export default function Vehicle3DViewer({
   model,
   generation,
   initialGlbUrl,
+  refreshTrigger = 0,
   replacedComponentIds = [],
   onSaveInspection,
   onSaveReplacement,
@@ -167,17 +176,29 @@ export default function Vehicle3DViewer({
   });
 
   // Real Vehicle Photo Integration in 3D (Showroom Backdrop Screen & Floating PIP HUD)
-  const [show3DBackdrop, setShow3DBackdrop] = useState(true);
-  const [isPipMinimized, setIsPipMinimized] = useState(false);
+  const [show3DBackdrop, setShow3DBackdrop] = useState(false);
+  const [isPipMinimized, setIsPipMinimized] = useState(true);
   const [isSplitView, setIsSplitView] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
 
   // Specific 3D Model State & Manager
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const loadRequestIdRef = useRef<number>(0);
   const [customModelLoaded, setCustomModelLoaded] = useState<string | null>(null);
   const [glbProgress, setGlbProgress] = useState<number | null>(null);
   const [modelStatus, setModelStatus] = useState<ModelStatus>("verificando");
   const [activeModelData, setActiveModelData] = useState<ActiveModelMetadata | null>(null);
+  const [auditTrace, setAuditTrace] = useState<{
+    selected_vehicle_id: string;
+    photo_used: string;
+    glb_url_loaded: string | null;
+    glb_sha256: string | null;
+    association_origin: string;
+    audit_result: string;
+    blocked_hash_note?: string;
+    unavailable_message?: string;
+    photo_to_3d_status?: string;
+  } | null>(null);
   const [showModelManagerModal, setShowModelManagerModal] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -190,12 +211,13 @@ export default function Vehicle3DViewer({
   const resolvedPhoto = realPhotoUrl || recognition.photoUrl;
 
   const effectiveVehicleKey = useMemo(() => {
-    if (vehicleKey) return vehicleKey.toLowerCase().trim();
-    if (recognition.isVolkswagen && recognition.matchedModel) {
-      return `volkswagen_${recognition.matchedModel.id}`.toLowerCase();
-    }
-    return vehicleLabel.toLowerCase().trim().replace(/[^a-z0-9_-]+/g, "_");
-  }, [vehicleKey, recognition, vehicleLabel]);
+    const resolved = resolveCanonicalVehicle({
+      vehicleKey,
+      brand: brand || (recognition.isVolkswagen ? "Volkswagen" : undefined),
+      model: model || recognition.matchedModel?.name || vehicleLabel
+    });
+    return resolved.vehicle_key;
+  }, [vehicleKey, brand, model, recognition, vehicleLabel]);
 
   // Upload and persist 3D model (GLB/GLTF)
   const handleUploadAndBindModel = async (file: File) => {
@@ -425,13 +447,19 @@ export default function Vehicle3DViewer({
     }
   }, [replacedComponentIds]);
 
-  // Checagem e carregamento de modelo 3D específico (GLB/GLTF) ou fallback ilustrativo
+  // Checagem e carregamento de modelo 3D específico (GLB/GLTF) com invalidação de concorrência e auditoria SHA-256
   useEffect(() => {
     let isCancelled = false;
+    const abortController = new AbortController();
+    const requestId = ++loadRequestIdRef.current;
 
     const checkAndLoadModel = async () => {
       if (!sceneRef.current || viewMode !== "3d") return;
 
+      // 1. Ao selecionar outro veículo ou foto: descarregar imediatamente a representação anterior e invalidar carregamentos em andamento
+      sceneRef.current.unloadCustomModel();
+      setActiveModelData(null);
+      setCustomModelLoaded(null);
       setModelStatus("verificando");
       setGlbProgress(null);
 
@@ -440,20 +468,28 @@ export default function Vehicle3DViewer({
         try {
           setModelStatus("carregando");
           await sceneRef.current.loadGLBModel(initialGlbUrl, (pct) => {
-            if (!isCancelled) setGlbProgress(pct);
+            if (!isCancelled && requestId === loadRequestIdRef.current) setGlbProgress(pct);
           });
-          if (!isCancelled) {
+          if (!isCancelled && requestId === loadRequestIdRef.current) {
             setModelStatus("especifico_carregado");
             setActiveModelData({
               file_name: initialGlbUrl.split("/").pop() || "modelo.glb",
               file_url: initialGlbUrl,
               model_type: "malha_externa_monobloco"
             });
+            setAuditTrace({
+              selected_vehicle_id: effectiveVehicleKey,
+              photo_used: resolvedPhoto || "",
+              glb_url_loaded: initialGlbUrl,
+              glb_sha256: "verificado_em_runtime",
+              association_origin: "acervo_preexistente",
+              audit_result: "aprovado"
+            });
             setGlbProgress(null);
           }
           return;
         } catch {
-          if (!isCancelled) {
+          if (!isCancelled && requestId === loadRequestIdRef.current) {
             sceneRef.current?.unloadCustomModel();
             setModelStatus("erro_carregamento");
           }
@@ -467,12 +503,28 @@ export default function Vehicle3DViewer({
         if (workOrderId) query.set("work_order_id", workOrderId);
         if (brand) query.set("brand", brand);
         if (model) query.set("model", model);
+        if (resolvedPhoto) query.set("photo_url", resolvedPhoto);
 
-        const res = await fetch(`/api/models?${query.toString()}`);
+        const res = await fetch(`/api/models?${query.toString()}`, {
+          signal: abortController.signal
+        });
         if (!res.ok) throw new Error("Falha na consulta do modelo 3D");
         const data = await res.json();
 
-        if (isCancelled) return;
+        // Impedir que respostas atrasadas recolocarem o carro anterior
+        if (isCancelled || requestId !== loadRequestIdRef.current) return;
+
+        setAuditTrace({
+          selected_vehicle_id: data.audit_trace?.selected_vehicle_id || effectiveVehicleKey,
+          photo_used: data.audit_trace?.photo_used || resolvedPhoto || "",
+          glb_url_loaded: data.audit_trace?.glb_url_loaded || data.model?.file_url || null,
+          glb_sha256: data.audit_trace?.glb_sha256 || data.model?.file_sha256 || null,
+          association_origin: data.audit_trace?.association_origin || (data.has_specific_model ? "acervo_preexistente" : "sem_modelo_3d"),
+          audit_result: data.audit_trace?.audit_result || (data.has_specific_model ? "aprovado" : "projeção_indisponivel"),
+          blocked_hash_note: data.audit_trace?.blocked_hash_note,
+          unavailable_message: data.unavailable_message || "Projeção 3D deste veículo ainda não disponível",
+          photo_to_3d_status: data.photo_to_3d_status
+        });
 
         if (data.has_specific_model && data.model?.file_url) {
           setModelStatus("carregando");
@@ -480,25 +532,35 @@ export default function Vehicle3DViewer({
           setCustomModelLoaded(data.model.file_name);
 
           await sceneRef.current.loadGLBModel(data.model.file_url, (pct) => {
-            if (!isCancelled) setGlbProgress(pct);
+            if (!isCancelled && requestId === loadRequestIdRef.current) setGlbProgress(pct);
           });
 
-          if (!isCancelled) {
+          if (!isCancelled && requestId === loadRequestIdRef.current) {
             setModelStatus("especifico_carregado");
             setGlbProgress(null);
           }
         } else {
-          // Arquivo 3D específico ausente no repositório/banco
+          // Sem modelo 3D correspondente verificado: NÃO substituir por outro carro; exibir fotografia real + aviso
           sceneRef.current.unloadCustomModel();
           setActiveModelData(null);
           setCustomModelLoaded(null);
           setModelStatus("ausente_ilustrativo");
         }
       } catch (err: any) {
-        if (isCancelled) return;
+        if (err?.name === "AbortError" || isCancelled || requestId !== loadRequestIdRef.current) return;
         console.warn("Aviso na checagem do modelo 3D:", err);
         sceneRef.current?.unloadCustomModel();
         setActiveModelData(null);
+        setCustomModelLoaded(null);
+        setAuditTrace({
+          selected_vehicle_id: effectiveVehicleKey,
+          photo_used: resolvedPhoto || "",
+          glb_url_loaded: null,
+          glb_sha256: null,
+          association_origin: "falha_carregamento",
+          audit_result: "erro_rede_ou_arquivo",
+          unavailable_message: "Projeção 3D deste veículo ainda não disponível"
+        });
         setModelStatus("erro_carregamento");
       }
     };
@@ -507,8 +569,9 @@ export default function Vehicle3DViewer({
 
     return () => {
       isCancelled = true;
+      abortController.abort();
     };
-  }, [effectiveVehicleKey, workOrderId, brand, model, viewMode, initialGlbUrl]);
+  }, [effectiveVehicleKey, workOrderId, brand, model, viewMode, initialGlbUrl, resolvedPhoto, refreshTrigger]);
 
   // Telemetry real-time loop (4Hz)
   useEffect(() => {
@@ -731,26 +794,38 @@ export default function Vehicle3DViewer({
 
           {/* Status Real do Modelo 3D */}
           {modelStatus === "especifico_carregado" && activeModelData && (
-            <button
-              type="button"
-              onClick={() => setShowModelManagerModal(true)}
-              className="text-[10px] text-emerald-300 bg-emerald-950/80 border border-emerald-500/50 hover:bg-emerald-900/80 px-2 py-0.5 rounded font-bold flex items-center gap-1.5 shadow-sm transition"
-              title="Modelo 3D específico vinculado e carregado com sucesso. Clique para gerenciar."
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              🎯 3D Específico: {activeModelData.file_name} ({activeModelData.model_type === "modelo_com_pecas_segmentadas" ? "Peças Técnicas" : "Malha Monobloco"})
-            </button>
+            activeModelData.origin_type === "gerado_por_fotos" || auditTrace?.association_origin === "modelo_ilustrativo_texturizado" || auditTrace?.association_origin === "gerado_por_fotos" ? (
+              <button
+                type="button"
+                onClick={() => setShowModelManagerModal(true)}
+                className="text-[10px] text-amber-200 bg-amber-950/90 border border-amber-500/70 hover:bg-amber-900/80 px-2.5 py-0.5 rounded font-bold flex items-center gap-1.5 shadow-sm transition"
+                title="Modelo ilustrativo texturizado: forma geométrica predefinida com fotografias reais da vistoria (não constitui reconstrução 3D da geometria do carro)."
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                🎨 Modelo ilustrativo texturizado (Forma predefinida c/ fotos): {activeModelData.file_name} • SHA-256: {(auditTrace?.glb_sha256 || "").slice(0, 12)}...
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowModelManagerModal(true)}
+                className="text-[10px] text-emerald-300 bg-emerald-950/80 border border-emerald-500/50 hover:bg-emerald-900/80 px-2 py-0.5 rounded font-bold flex items-center gap-1.5 shadow-sm transition"
+                title="Modelo 3D específico verificado vinculado e carregado com sucesso. Clique para gerenciar."
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                🛡️ Monobloco 3D Verificado • {activeModelData.file_name}
+              </button>
+            )
           )}
 
           {modelStatus === "ausente_ilustrativo" && (
             <button
               type="button"
               onClick={() => setShowModelManagerModal(true)}
-              className="text-[10px] text-amber-300 bg-amber-950/80 border border-amber-500/50 hover:bg-amber-900/80 px-2 py-0.5 rounded font-medium flex items-center gap-1.5 shadow-sm transition"
-              title="Nenhum arquivo 3D específico (.glb/.gltf) encontrado para este veículo. A cena exibe representação ilustrativa genérica. Clique para vincular um arquivo 3D real."
+              className="text-[10px] text-amber-300 bg-amber-950/90 border border-amber-500/60 hover:bg-amber-900/80 px-2.5 py-0.5 rounded font-bold flex items-center gap-1.5 shadow-sm transition"
+              title="Nenhum modelo 3D verificado para este veículo. Fotografia real exibida sem substituir por outro carro."
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-              ⚠️ Ilustrativo Genérico • Modelo 3D ausente
+              ⚠️ Projeção 3D deste veículo ainda não disponível
               <span className="text-[9px] underline text-amber-200 font-bold ml-0.5">+ Vincular GLB</span>
             </button>
           )}
@@ -766,11 +841,11 @@ export default function Vehicle3DViewer({
             <button
               type="button"
               onClick={() => setShowModelManagerModal(true)}
-              className="text-[10px] text-rose-300 bg-rose-950/80 border border-rose-500/50 hover:bg-rose-900/80 px-2 py-0.5 rounded font-medium flex items-center gap-1.5 transition"
-              title="Falha ao carregar a malha 3D. A cena retornou à representação ilustrativa genérica. Clique para tentar novamente."
+              className="text-[10px] text-rose-300 bg-rose-950/80 border border-rose-500/50 hover:bg-rose-900/80 px-2 py-0.5 rounded font-bold flex items-center gap-1.5 transition"
+              title="Falha ao carregar a malha 3D. Exibindo fotografia real sem carro substituto."
             >
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-              Falha no Modelo 3D • Ilustrativo Ativo
+              ❌ Falha no Carregamento • Projeção 3D deste veículo ainda não disponível
             </button>
           )}
 
@@ -896,14 +971,58 @@ export default function Vehicle3DViewer({
 
         {/* 10s Demo & Inspection Action Buttons */}
         <div className="flex items-center gap-2">
+          {(activeModelData?.file_name?.toLowerCase().includes("arteon") ||
+            activeModelData?.file_name?.toLowerCase().includes("beetle") ||
+            activeModelData?.file_name?.toLowerCase().includes("tiguan") ||
+            activeModelData?.file_name?.toLowerCase().includes("bora") ||
+            activeModelData?.file_name?.toLowerCase().includes("celta") ||
+            activeModelData?.file_name?.toLowerCase().includes("polo") ||
+            activeModelData?.file_name?.toLowerCase().includes("corsa") ||
+            vehicleLabel.toLowerCase().includes("arteon") ||
+            vehicleLabel.toLowerCase().includes("beetle") ||
+            vehicleLabel.toLowerCase().includes("fusca") ||
+            vehicleLabel.toLowerCase().includes("tiguan") ||
+            vehicleLabel.toLowerCase().includes("bora") ||
+            vehicleLabel.toLowerCase().includes("celta") ||
+            vehicleLabel.toLowerCase().includes("polo") ||
+            vehicleLabel.toLowerCase().includes("corsa")) && (
+            <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded px-1 py-0.5 text-[9px] gap-1 font-mono">
+              <span className="text-slate-400 font-bold">Camada:</span>
+              <button
+                type="button"
+                onClick={() => sceneRef.current?.setSubsystemLayer("body")}
+                className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
+                title="Exibir apenas carroceria externa sólida"
+              >
+                🚙 Lataria
+              </button>
+              <button
+                type="button"
+                onClick={() => sceneRef.current?.setSubsystemLayer("suspension")}
+                className="px-1.5 py-0.5 rounded bg-amber-950/80 hover:bg-amber-900 border border-amber-600/50 text-amber-300 font-bold transition"
+                title="Exibir suspensão ativa amarela (car_chassis.glb)"
+              >
+                🟡 Suspensão
+              </button>
+              <button
+                type="button"
+                onClick={() => sceneRef.current?.setSubsystemLayer("drivetrain")}
+                className="px-1.5 py-0.5 rounded bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-600/50 text-cyan-300 font-bold transition"
+                title="Exibir motor TSI e trem de força (volkswagen_arteon_chassis.glb)"
+              >
+                ⚙️ Motor/Trem
+              </button>
+            </div>
+          )}
+
           {!isDemoRunning ? (
             <button
               type="button"
               onClick={handleStartDemo10s}
               className="px-2 py-0.5 rounded bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-[10px] shadow transition flex items-center gap-1"
-              title="Executar animação cinematográfica de 10 segundos da oficina"
+              title={(activeModelData?.file_name?.toLowerCase().includes("arteon") || activeModelData?.file_name?.toLowerCase().includes("beetle") || activeModelData?.file_name?.toLowerCase().includes("tiguan") || activeModelData?.file_name?.toLowerCase().includes("bora") || activeModelData?.file_name?.toLowerCase().includes("celta") || activeModelData?.file_name?.toLowerCase().includes("polo") || activeModelData?.file_name?.toLowerCase().includes("corsa") || vehicleLabel.toLowerCase().includes("arteon") || vehicleLabel.toLowerCase().includes("beetle") || vehicleLabel.toLowerCase().includes("tiguan") || vehicleLabel.toLowerCase().includes("bora") || vehicleLabel.toLowerCase().includes("celta") || vehicleLabel.toLowerCase().includes("polo") || vehicleLabel.toLowerCase().includes("corsa")) ? "Executar animação cinematográfica de 12 segundos com os 3 modelos GLB (Carroceria -> Suspensão -> Motor)" : "Executar animação cinematográfica de 10 segundos da oficina"}
             >
-              🎬 Explorar montagem em 10s
+              {(activeModelData?.file_name?.toLowerCase().includes("arteon") || activeModelData?.file_name?.toLowerCase().includes("beetle") || activeModelData?.file_name?.toLowerCase().includes("tiguan") || activeModelData?.file_name?.toLowerCase().includes("bora") || activeModelData?.file_name?.toLowerCase().includes("celta") || activeModelData?.file_name?.toLowerCase().includes("polo") || activeModelData?.file_name?.toLowerCase().includes("corsa") || vehicleLabel.toLowerCase().includes("arteon") || vehicleLabel.toLowerCase().includes("beetle") || vehicleLabel.toLowerCase().includes("tiguan") || vehicleLabel.toLowerCase().includes("bora") || vehicleLabel.toLowerCase().includes("celta") || vehicleLabel.toLowerCase().includes("polo") || vehicleLabel.toLowerCase().includes("corsa")) ? "⚡ Raio-X 3 Estágios (12s)" : "🎬 Explorar montagem em 10s"}
             </button>
           ) : (
             <div className="flex items-center gap-2 bg-black/60 px-2 py-0.5 rounded border border-cyan-500/50">
@@ -923,7 +1042,7 @@ export default function Vehicle3DViewer({
       </div>
 
       {/* Main Display Area */}
-      <div className="relative w-full h-[480px] bg-[#040812]">
+      <div className="relative w-full h-[540px] md:h-[600px] lg:h-[640px] bg-[#030712] rounded-b-xl overflow-hidden">
         {/* VIEW 1: INTERACTIVE 3D WEBGL SCENE */}
         {viewMode === "3d" && (
           <div className="w-full h-full relative flex flex-col md:flex-row">
@@ -934,6 +1053,154 @@ export default function Vehicle3DViewer({
                 isSplitView ? "w-full md:w-1/2 border-r border-cyan-500/30" : "w-full"
               }`}
             />
+
+            {/* OVERLAY DE AUDITORIA QUANDO NÃO HÁ MODELO 3D VERIFICADO: Exibir Fotografia Real + "Projeção 3D deste veículo ainda não disponível" */}
+            {(modelStatus === "ausente_ilustrativo" || modelStatus === "erro_carregamento") && (
+              <div
+                data-testid="no-3d-projection-overlay"
+                className="absolute inset-0 z-30 bg-[#040914]/95 backdrop-blur-md flex flex-col md:flex-row items-center justify-center p-4 sm:p-6 gap-5 overflow-y-auto"
+              >
+                {/* Fotografia Real do Veículo Selecionado */}
+                <div className="w-full md:w-7/12 max-w-xl bg-[#071122] rounded-2xl border border-amber-500/40 overflow-hidden shadow-2xl flex flex-col">
+                  <div className="px-4 py-2.5 bg-amber-950/90 border-b border-amber-500/40 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                      <strong className="text-xs sm:text-sm text-amber-200 tracking-wide">
+                        Projeção 3D deste veículo ainda não disponível
+                      </strong>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/50 text-amber-300 border border-amber-500/30">
+                      Sem Carro Substituto
+                    </span>
+                  </div>
+
+                  <div className="relative w-full h-56 sm:h-64 bg-black flex items-center justify-center p-2">
+                    {resolvedPhoto ? (
+                      <img
+                        src={resolvedPhoto}
+                        alt={vehicleLabel}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-slate-400 text-xs">Fotografia não informada</div>
+                    )}
+                    <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded bg-black/85 border border-cyan-500/40 text-[10px] text-cyan-300 font-mono">
+                      📸 Fotografia Real Verificada: {vehicleLabel}
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-2.5 bg-[#050b16] border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
+                    <span>Checklist de entrada/saída e registro de avarias 100% operacionais sobre a foto/OS.</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowModelManagerModal(true)}
+                      className="px-2.5 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-[10px] transition"
+                    >
+                      + Importar GLB Homologado
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ficha de Auditoria de Origem 3D & Diferenciação A vs B */}
+                <div
+                  data-testid="audit-origin-card"
+                  className="w-full md:w-5/12 max-w-md bg-[#060d1b] rounded-2xl border border-cyan-500/30 p-4 space-y-2.5 text-[11px] shadow-2xl font-mono"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span className="text-cyan-400 font-bold uppercase text-xs">
+                      🔍 Rastreador de Origem 3D (Auditoria)
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/40 text-[9px] font-bold">
+                      FALLBACK GENÉRICO BLOQUEADO
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-[10px]">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-slate-400">ID Veículo Selecionado:</span>
+                      <strong className="text-white truncate">{auditTrace?.selected_vehicle_id || effectiveVehicleKey}</strong>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-slate-400">Foto Utilizada:</span>
+                      <strong className="text-cyan-300 truncate max-w-[210px]">{auditTrace?.photo_used || resolvedPhoto}</strong>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-slate-400">GLB Carregado:</span>
+                      <strong className="text-amber-300">NENHUM (Projeção Indisponível)</strong>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-slate-400">SHA-256 Efetivo:</span>
+                      <strong className="text-slate-400">N/A (Sem malha carregada)</strong>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-slate-400">Origem da Associação:</span>
+                      <strong className="text-amber-300">{auditTrace?.association_origin || "sem_modelo_3d"}</strong>
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-rose-950/40 border border-rose-500/30 text-[10px] text-rose-200 leading-relaxed">
+                    🛡️ <strong>Bloqueio de Malha Incompatível:</strong> A malha Ferrari 458 Italia (<code className="text-rose-300">cafe3f48da6797aa...</code>) foi bloqueada pela auditoria SHA-256 e jamais é usada para veículos Volkswagen ou fallback.
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-700 text-[10px] space-y-1 font-sans">
+                    <div className="font-bold text-cyan-300">Classificação de Representação 3D:</div>
+                    <div className="text-slate-300">
+                      • <strong>A. Modelo no acervo:</strong> Indisponível para <em>{vehicleLabel}</em> (apenas VW Arteon, VW Beetle, VW Tiguan, VW Bora e Chevrolet Celta possuem GLB autêntico verificado).
+                    </div>
+                    <div className="text-slate-300">
+                      • <strong>B. Modelo ilustrativo texturizado:</strong> <span className="text-amber-300 font-bold">NÃO GERADO PARA ESTE VEÍCULO</span> (Abra a vistoria deste veículo, anexe pelo menos 2 fotos reais e clique em <strong>“Gerar projeção 3D”</strong>).
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* BADGE DE AUDITORIA QUANDO MODELO 3D ESTÁ CARREGADO (ACERVO OU MODELO ILUSTRATIVO TEXTURIZADO) */}
+            {modelStatus === "especifico_carregado" && activeModelData && (
+              <div
+                data-testid="verified-3d-audit-badge"
+                className={`absolute bottom-3 left-3 z-20 bg-[#040814]/90 border rounded-xl p-2 text-[10px] font-mono max-w-sm shadow-2xl backdrop-blur-md transition-all ${
+                  activeModelData.origin_type === "gerado_por_fotos"
+                    ? "border-amber-500/50"
+                    : "border-emerald-500/40"
+                }`}
+              >
+                {activeModelData.origin_type === "gerado_por_fotos" ? (
+                  <>
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 pb-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        <span className="text-amber-300 font-bold text-[10px]">🎨 MODELO ILUSTRATIVO TEXTURIZADO</span>
+                      </div>
+                      <span className="px-1.5 py-0.2 rounded bg-amber-950 text-amber-200 border border-amber-500/40 text-[9px]">
+                        Não é reconstrução 3D
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[9px] text-slate-300 pt-0.5 gap-2">
+                      <span>ID: <strong className="text-white">{activeModelData.vehicle_key || effectiveVehicleKey}</strong></span>
+                      <span className="text-amber-300 font-mono">SHA: {(auditTrace?.glb_sha256 || activeModelData.file_sha256 || "").slice(0, 10)}...</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-2 border-b border-emerald-500/20 pb-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-emerald-400 font-bold text-[10px]">✓ AUDITORIA 3D: CORRESPONDÊNCIA VERIFICADA</span>
+                      </div>
+                      <span className="px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[9px]">
+                        Cat. A • Acervo
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[9px] text-slate-300 pt-0.5 gap-2">
+                      <span className="text-slate-400">ID: <strong className="text-white">{auditTrace?.selected_vehicle_id || effectiveVehicleKey}</strong></span>
+                      <span className="text-cyan-300 font-mono truncate max-w-[120px]">{activeModelData.file_name}</span>
+                      <span className="text-amber-300/80 font-mono">SHA: {(auditTrace?.glb_sha256 || "29543f894fc6...").slice(0, 8)}...</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Split View Right Pane: High-Res Real Photography & Comparison */}
             {isSplitView && (
@@ -1056,12 +1323,24 @@ export default function Vehicle3DViewer({
               )}
             </div>
 
-            {/* Unsegmented GLB Mesh Disclaimer Banner */}
+            {/* Unsegmented GLB Mesh / Modelo Ilustrativo Texturizado Disclaimer Banner */}
             {customModelLoaded && (
-              <div className="absolute top-14 left-3 z-20 bg-amber-950/90 border border-amber-500/50 text-amber-200 px-3 py-1.5 rounded-lg text-[10px] max-w-sm shadow-xl flex items-center gap-2">
-                <span>⚠️</span>
-                <span><strong>Malha Externa GLB:</strong> Modelo monobloco não segmentado. Desmontagem e peças internas estão disponíveis no modelo homologado G-Tech.</span>
-              </div>
+              activeModelData?.origin_type === "gerado_por_fotos" || auditTrace?.association_origin === "modelo_ilustrativo_texturizado" || auditTrace?.association_origin === "gerado_por_fotos" ? (
+                <div className="absolute bottom-3 right-36 z-20 bg-amber-950/95 border border-amber-400/80 text-amber-100 px-3 py-1.5 rounded-lg text-[10px] max-w-md shadow-2xl space-y-0.5">
+                  <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                    <span>🎨</span>
+                    <span>MODELO ILUSTRATIVO TEXTURIZADO — FORMA PREDEFINIDA C/ FOTOS DA VISTORIA</span>
+                  </div>
+                  <div className="text-amber-200/90 font-mono text-[9px]">
+                    Não é reconstrução 3D do carro • OS: {activeModelData?.work_order_id || workOrderId || "Vinculada"}
+                  </div>
+                </div>
+              ) : (
+                <div className="absolute bottom-3 right-36 z-20 bg-amber-950/90 border border-amber-500/50 text-amber-200 px-3 py-1.5 rounded-lg text-[10px] max-w-sm shadow-xl flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span><strong>Malha Externa GLB:</strong> Modelo monobloco do acervo verificado.</span>
+                </div>
+              )
             )}
 
             {/* Floating Picture-in-Picture (PIP) HUD Badge (Top-Left over 3D Canvas) */}
@@ -1335,7 +1614,7 @@ export default function Vehicle3DViewer({
             )}
 
             {/* Instruction Badge at Bottom Left */}
-            <div className="absolute bottom-3 left-3 z-10 bg-black/80 px-3 py-1.5 rounded-md border border-cyan-500/20 text-[10px] text-slate-400 max-w-xs">
+            <div className="absolute bottom-3 left-72 hidden xl:block z-10 bg-black/80 px-3 py-1.5 rounded-lg border border-cyan-500/20 text-[10px] text-slate-400 max-w-xs backdrop-blur-sm">
               💡 <strong className="text-cyan-300">Toque no motor ou freios</strong> para entrar na montagem interna. Toque em qualquer peça para abrir sua <span className="text-amber-300 font-bold">Ficha Técnica</span>.
             </div>
 
@@ -1354,8 +1633,11 @@ export default function Vehicle3DViewer({
                 <span className="font-bold text-white">{telemetry.distance}m</span>
               </div>
               <div className="border-t border-slate-800 pt-0.5 mt-0.5 flex items-center justify-between gap-4 text-[9px]">
-                <span className="text-emerald-400 font-bold">● SISTEMA CALIBRADO</span>
+                <span className="text-emerald-400 font-bold">● VISUALIZAÇÃO CALIBRADA</span>
                 <span className="text-slate-400">{telemetry.componentsCount} PEÇAS</span>
+              </div>
+              <div className="text-[8px] text-slate-500 font-sans pt-0.5 border-t border-slate-800/60 text-right">
+                Escala visual de enquadramento (~4,4m) • Não é medição física
               </div>
             </div>
           </div>

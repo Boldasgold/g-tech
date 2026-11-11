@@ -967,6 +967,54 @@ export const VW_MODELS_CATALOG: VwModelData[] = [
     sourceUrl: "https://commons.wikimedia.org/wiki/File:2020_Volkswagen_ID.3_1st_Front.jpg",
     keywords: ["id.3", "id3", "vw id3", "id 3", "eletrico id3"]
   },
+  {
+    id: "celta",
+    name: "Celta 1.0 VHC-E",
+    variant: "1.0 8V Life / Spirit / Super",
+    generation: "Geração I & II (2000 - 2016)",
+    category: "Hatch",
+    bodyType: "hatch",
+    photoFile: "chevrolet-celta.jpg",
+    photoUrl: "/img/vehicles/chevrolet-celta.jpg",
+    years: "2000-2016",
+    engine: "1.0 8V VHC / VHC-E Flexpower (60-78cv)",
+    oilViscosity: "5W30 100% Sintético (ou 15W40 VHC)",
+    oilCapacityLiters: 3.5,
+    oilNorm: "GM Dexos 1 (API SM/SN)",
+    tirePressureFrontPsi: 28,
+    tirePressureRearPsi: 28,
+    tirePressureLoadedPsi: 32,
+    sparkPlugsGapMm: 0.8,
+    author: "Acervo G-Tech / Chevrolet",
+    license: "Homologado G-Tech",
+    licenseUrl: "",
+    sourceUrl: "/img/vehicles/chevrolet-celta.jpg",
+    keywords: ["celta", "gm celta", "chevrolet celta", "celta vhc", "celta 1.0", "celta spirit", "celta life"]
+  },
+  {
+    id: "corsa-hatch",
+    name: "Corsa Hatch 1.0 / 1.6",
+    variant: "Wind / Super / GL / MPFI",
+    generation: "Geração B (1994 - 2002)",
+    category: "Hatch",
+    bodyType: "hatch",
+    photoFile: "chevrolet-corsa.jpg",
+    photoUrl: "/img/vehicles/chevrolet-corsa.jpg",
+    years: "1994-2002",
+    engine: "1.0 / 1.4 / 1.6 8V MPFI (60-92cv)",
+    oilViscosity: "15W40 / 5W30 Mineral / Semissintético (API SJ/SL)",
+    oilCapacityLiters: 3.5,
+    oilNorm: "GM Dexos 1 / API SL",
+    tirePressureFrontPsi: 28,
+    tirePressureRearPsi: 28,
+    tirePressureLoadedPsi: 32,
+    sparkPlugsGapMm: 0.8,
+    author: "Acervo G-Tech / Chevrolet",
+    license: "Homologado G-Tech",
+    licenseUrl: "",
+    sourceUrl: "/img/vehicles/chevrolet-corsa.jpg",
+    keywords: ["corsa", "corsa hatch", "gm corsa", "chevrolet corsa", "corsa wind", "corsa super", "corsa mpfi", "corsa 1.0", "corsa 1.6"]
+  },
 
   // 38-42: SUVs & Crossovers
   {
@@ -1310,7 +1358,7 @@ export function recognizeVehicle(
     normBrand.includes("vw");
 
   const vwModelNames = [
-    "golf", "jetta", "passat", "polo", "up", "tiguan", "touareg",
+    "celta", "corsa", "golf", "jetta", "passat", "polo", "up", "tiguan", "touareg",
     "arteon", "bora", "scirocco", "beetle", "fusca", "crafter",
     "transporter", "caddy", "touran", "sharan", "lupo", "eos",
     "phaeton", "atlas", "id 3", "id3", "id 4", "id4", "virtus",
@@ -1343,6 +1391,12 @@ export function recognizeVehicle(
     } else if (l.includes("onix")) {
       fallbackPhoto = "/img/vehicles/chevrolet-onix.jpg";
       bType = "hatch";
+    } else if (l.includes("celta")) {
+      fallbackPhoto = "/img/vehicles/chevrolet-celta.jpg";
+      bType = "hatch";
+    } else if (l.includes("corsa")) {
+      fallbackPhoto = "/img/vehicles/chevrolet-corsa.jpg";
+      bType = "hatch";
     } else if (bType === "suv") {
       fallbackPhoto = "/img/vehicles/suv-real.jpg";
     } else if (bType === "sedan") {
@@ -1365,7 +1419,19 @@ export function recognizeVehicle(
     };
   }
 
-  // --- VOLKSWAGEN RECOGNITION (All 51 models) ---
+  // --- VOLKSWAGEN & ACERVO HOMOLOGADO RECOGNITION ---
+
+  // Celta
+  if (normModel.includes("celta") || combined.includes("celta")) {
+    const celta = VW_MODELS_CATALOG.find(m => m.id === "celta")!;
+    return buildVwResult(celta, "exact", "Chevrolet Celta 1.0 VHC-E");
+  }
+
+  // Corsa Hatch
+  if (normModel.includes("corsa") || combined.includes("corsa")) {
+    const corsa = VW_MODELS_CATALOG.find(m => m.id === "corsa-hatch")!;
+    return buildVwResult(corsa, "exact", "Chevrolet Corsa Hatch 1.0 / 1.6");
+  }
 
   // 1. Specific Variant Priority Matches
   // Golf GTI

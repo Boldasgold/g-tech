@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 export type BodyType = "hatch" | "sedan" | "suv" | "picape" | "van" | "outro";
 
@@ -39,6 +40,9 @@ export class Vehicle3DScene {
   private carGroup: THREE.Group;
   private proceduralBodyGroup: THREE.Group;
   private customMeshGroup: THREE.Group;
+  public suspensionGroup: THREE.Group;
+  public drivetrainGroup: THREE.Group;
+  public hasSubsystems: boolean = false;
   public hasLoadedCustomModel: boolean = false;
   public loadedModelName: string | null = null;
   private currentLoadToken: number = 0;
@@ -76,6 +80,7 @@ export class Vehicle3DScene {
   // 10s Demo state
   private isDemoRunning = false;
   private demoStartTime = 0;
+  private demoInitialTransparent = false;
   private onDemoPoseChangeCallback?: (poseIndex: number, label: string) => void;
   private onDemoCompleteCallback?: () => void;
 
@@ -162,8 +167,19 @@ export class Vehicle3DScene {
     this.customMeshGroup = new THREE.Group();
     this.customMeshGroup.name = "custom-mesh-group";
     this.customMeshGroup.visible = false;
+
+    this.suspensionGroup = new THREE.Group();
+    this.suspensionGroup.name = "suspension-group";
+    this.suspensionGroup.visible = false;
+
+    this.drivetrainGroup = new THREE.Group();
+    this.drivetrainGroup.name = "drivetrain-group";
+    this.drivetrainGroup.visible = false;
+
     this.carGroup.add(this.proceduralBodyGroup);
     this.carGroup.add(this.customMeshGroup);
+    this.carGroup.add(this.suspensionGroup);
+    this.carGroup.add(this.drivetrainGroup);
     this.scene.add(this.carGroup);
 
     this.internalGroup = new THREE.Group();
@@ -176,9 +192,11 @@ export class Vehicle3DScene {
     this.renderer.domElement.addEventListener("click", this.onClick.bind(this));
     window.addEventListener("resize", this.onWindowResize.bind(this));
 
-    // 9. Initial vehicle & internals
+    // 9. Initial vehicle & internals (ocultos até validação do GLB do veículo selecionado — nunca exibir carro substituto sem modelo correspondente)
     this.buildVehicle(this.currentBodyType);
     this.buildInternalComponents();
+    this.proceduralBodyGroup.visible = false;
+    this.internalGroup.visible = false;
 
     // 10. Start loop
     this.animate();
@@ -322,6 +340,7 @@ export class Vehicle3DScene {
     this.textureLoader.load(
       url,
       (tex) => {
+        if (url !== this.currentBackdropUrl) return;
         tex.colorSpace = THREE.SRGBColorSpace;
         if (this.showroomScreenMesh) {
           this.showroomScreenMesh.material = new THREE.MeshBasicMaterial({
@@ -384,9 +403,14 @@ export class Vehicle3DScene {
     const token = ++this.currentLoadToken;
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath("/draco/gltf/");
+      loader.setDRACOLoader(dracoLoader);
+
       loader.load(
         url,
         (gltf) => {
+          dracoLoader.dispose();
           // Descartar se uma requisição mais recente foi disparada durante o download
           if (token !== this.currentLoadToken) {
             console.log("Requisição de modelo GLB anterior descartada (concorrência prevenida).");
@@ -400,20 +424,49 @@ export class Vehicle3DScene {
 
           const model = gltf.scene;
 
-          // Normalização métrica com BoundingBox: ajusta para ~4.4m de comprimento (sedan/SUV padrão)
+          // Defesa em profundidade no cliente: impedir que a malha da Ferrari (steering_red_lights) seja exibida
+          let hasIncompatibleFerrariMesh = false;
+          model.traverse((n) => {
+            if (n.name === "steering_red_lights") {
+              hasIncompatibleFerrariMesh = true;
+            }
+          });
+          if (hasIncompatibleFerrariMesh) {
+            this.unloadCustomModel();
+            reject(new Error("Malha 3D incompatível bloqueada pela auditoria (Ferrari 458 Italia / cafe3f48...)."));
+            return;
+          }
+
+          // Se for o Arteon Shooting Brake, alinhar a frente (-X original) para +Z (frente padrão da plataforma 3D) e usar escala real (4.86m)
+          const isArteonGlb = url.toLowerCase().includes("arteon");
+          const isBeetleGlb = url.toLowerCase().includes("beetle") || url.toLowerCase().includes("fusca");
+          const isTiguanGlb = url.toLowerCase().includes("tiguan");
+          const isBoraGlb = url.toLowerCase().includes("bora");
+          const isCeltaGlb = url.toLowerCase().includes("celta");
+          const isPoloGlb = url.toLowerCase().includes("polo");
+          const isCorsaGlb = url.toLowerCase().includes("corsa");
+          if (isArteonGlb) {
+            model.rotation.y = Math.PI / 2;
+            model.updateMatrixWorld(true);
+          }
+
+          // Normalização métrica com BoundingBox: 4.86m (Arteon), 4.54m (Tiguan), 4.38m (Bora), 4.28m (Beetle/Fusca), 4.07m (Polo), 3.79m (Celta), 3.73m (Corsa) ou 4.4m de referência
+          const targetLengthM = isArteonGlb ? 4.86 : isTiguanGlb ? 4.54 : isBoraGlb ? 4.38 : isBeetleGlb ? 4.28 : isPoloGlb ? 4.07 : isCeltaGlb ? 3.79 : isCorsaGlb ? 3.73 : 4.4;
           const bbox = new THREE.Box3().setFromObject(model);
           const size = new THREE.Vector3();
           bbox.getSize(size);
           const maxDim = Math.max(size.x, size.y, size.z);
-          const targetScale = 4.4 / (maxDim || 1);
+          const targetScale = targetLengthM / (maxDim || 1);
           model.scale.set(targetScale, targetScale, targetScale);
+          model.updateMatrixWorld(true);
 
-          // Centralização precisa na plataforma de diagnóstico
-          const center = new THREE.Vector3();
-          bbox.getCenter(center);
-          model.position.x = -center.x * targetScale;
-          model.position.y = -bbox.min.y * targetScale; // Alinha os pneus perfeitamente com o piso
-          model.position.z = -center.z * targetScale;
+          // Recalcular BoundingBox após rotação e escala para centralização exata na plataforma
+          const scaledBox = new THREE.Box3().setFromObject(model);
+          const scaledCenter = new THREE.Vector3();
+          scaledBox.getCenter(scaledCenter);
+          model.position.x -= scaledCenter.x;
+          model.position.y -= scaledBox.min.y; // Alinha os pneus perfeitamente com o piso (y = 0)
+          model.position.z -= scaledCenter.z;
 
           // Habilitar sombras e materiais
           let hasInternalMeshes = false;
@@ -445,6 +498,11 @@ export class Vehicle3DScene {
           this.customMeshGroup.visible = true;
           this.isSegmentedModel = hasInternalMeshes;
 
+          // Se o modelo for o Arteon, Beetle, Tiguan, Bora, Celta, Polo ou Corsa do acervo, carregar subsistemas dedicados (suspensão amarela e trem de força)
+          if (isArteonGlb || isBeetleGlb || isTiguanGlb || isBoraGlb || isCeltaGlb || isPoloGlb || isCorsaGlb) {
+            this.loadArteonSubsystems(targetLengthM);
+          }
+
           // Enquadramento automático da câmera
           this.controls.target.set(0, 0.65, 0);
           this.camera.position.set(3.8, 2.2, 4.2);
@@ -459,10 +517,11 @@ export class Vehicle3DScene {
           }
         },
         (error) => {
+          dracoLoader.dispose();
           if (token !== this.currentLoadToken) return;
-          console.error("Erro ao carregar modelo GLB/Tripo3D:", error);
-          // Em caso de falha, manter a carroceria procedural ilustrativa visível
-          this.proceduralBodyGroup.visible = true;
+          console.error("Erro ao carregar modelo GLB:", error);
+          // Sem modelo correspondente, ocultar malha 3D (não substituir por outro carro)
+          this.proceduralBodyGroup.visible = false;
           this.customMeshGroup.visible = false;
           this.hasLoadedCustomModel = false;
           reject(error);
@@ -471,14 +530,118 @@ export class Vehicle3DScene {
     });
   }
 
-  // Descarregar modelo customizado e restaurar a representação procedural ilustrativa
+  // Subsistemas dedicados (Suspensão e Trem de Força em GLBs separados, normalizados pelo comprimento real do veículo)
+  private loadArteonSubsystems(targetLengthM: number) {
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("/draco/gltf/");
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+
+    // 1. Suspensão (car_chassis.glb - amarelo) -> frente original em -X rotacionada por +PI/2
+    loader.load(
+      "/models/vehicles/car_chassis.glb",
+      (gltf) => {
+        const susp = gltf.scene;
+        susp.rotation.y = Math.PI / 2;
+        susp.updateMatrixWorld(true);
+
+        const rawBox = new THREE.Box3().setFromObject(susp);
+        const rawSize = new THREE.Vector3();
+        rawBox.getSize(rawSize);
+        const rawMaxDim = Math.max(rawSize.x, rawSize.y, rawSize.z) || 1;
+
+        const suspScale = (targetLengthM * 0.94) / rawMaxDim;
+        susp.scale.set(suspScale, suspScale, suspScale);
+        susp.updateMatrixWorld(true);
+
+        const suspBox = new THREE.Box3().setFromObject(susp);
+        const suspCenter = new THREE.Vector3();
+        suspBox.getCenter(suspCenter);
+        susp.position.x -= suspCenter.x;
+        susp.position.y -= suspBox.min.y;
+        susp.position.z -= suspCenter.z;
+
+        this.suspensionGroup.clear();
+        this.suspensionGroup.add(susp);
+        this.suspensionGroup.visible = false;
+        this.hasSubsystems = true;
+      },
+      undefined,
+      (err) => console.warn("Aviso ao carregar suspensão secundária:", err)
+    );
+
+    // 2. Motor e Trem de Força (volkswagen_arteon_chassis.glb - cinza/preto)
+    loader.load(
+      "/models/vehicles/volkswagen_arteon_chassis.glb",
+      (gltf) => {
+        const drive = gltf.scene;
+        drive.rotation.y = 0;
+        drive.updateMatrixWorld(true);
+
+        const rawBox = new THREE.Box3().setFromObject(drive);
+        const rawSize = new THREE.Vector3();
+        rawBox.getSize(rawSize);
+        const rawMaxDim = Math.max(rawSize.x, rawSize.y, rawSize.z) || 1;
+
+        const driveScale = (targetLengthM * 0.94) / rawMaxDim;
+        drive.scale.set(driveScale, driveScale, driveScale);
+        drive.updateMatrixWorld(true);
+
+        const driveBox = new THREE.Box3().setFromObject(drive);
+        const driveCenter = new THREE.Vector3();
+        driveBox.getCenter(driveCenter);
+        drive.position.x -= driveCenter.x;
+        drive.position.y -= driveBox.min.y;
+        drive.position.z -= driveCenter.z;
+
+        this.drivetrainGroup.clear();
+        this.drivetrainGroup.add(drive);
+        this.drivetrainGroup.visible = false;
+        this.hasSubsystems = true;
+      },
+      undefined,
+      (err) => console.warn("Aviso ao carregar trem de força secundário:", err)
+    );
+  }
+
+  public setSubsystemLayer(layer: "all" | "body" | "suspension" | "drivetrain") {
+    if (layer === "all") {
+      this.customMeshGroup.visible = true;
+      this.suspensionGroup.visible = true;
+      this.drivetrainGroup.visible = false;
+    } else if (layer === "body") {
+      this.customMeshGroup.visible = true;
+      this.suspensionGroup.visible = false;
+      this.drivetrainGroup.visible = false;
+      this.setTransparentBody(false);
+    } else if (layer === "suspension") {
+      this.customMeshGroup.visible = true;
+      this.setTransparentBody(true);
+      this.suspensionGroup.visible = true;
+      this.drivetrainGroup.visible = false;
+    } else if (layer === "drivetrain") {
+      this.customMeshGroup.visible = true;
+      this.setTransparentBody(true);
+      this.suspensionGroup.visible = false;
+      this.drivetrainGroup.visible = true;
+    }
+  }
+
+  // Descarregar modelo anterior e invalidar downloads em andamento (Regra 3: sem modelo correspondente, não substituir por outro carro)
   public unloadCustomModel(): void {
+    ++this.currentLoadToken;
     while (this.customMeshGroup.children.length > 0) {
       this.customMeshGroup.remove(this.customMeshGroup.children[0]);
     }
+    this.suspensionGroup.clear();
+    this.drivetrainGroup.clear();
+    this.suspensionGroup.visible = false;
+    this.drivetrainGroup.visible = false;
+    this.hasSubsystems = false;
     this.hasLoadedCustomModel = false;
     this.loadedModelName = null;
-    this.proceduralBodyGroup.visible = true;
+    this.proceduralBodyGroup.visible = false;
+    this.internalGroup.visible = false;
     this.customMeshGroup.visible = false;
     this.isSegmentedModel = true;
     this.rebuildHotspots();
@@ -492,6 +655,10 @@ export class Vehicle3DScene {
       this.currentBodyType = valid;
       this.buildVehicle(valid);
       this.buildInternalComponents();
+      if (!this.hasLoadedCustomModel) {
+        this.proceduralBodyGroup.visible = false;
+        this.internalGroup.visible = false;
+      }
       this.rebuildHotspots();
     }
   }
@@ -533,7 +700,8 @@ export class Vehicle3DScene {
             const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
             mats.forEach((m) => {
               m.transparent = transparent;
-              m.opacity = transparent ? 0.28 : 1.0;
+              m.opacity = transparent ? 0.25 : 1.0;
+              m.depthWrite = !transparent;
               m.needsUpdate = true;
             });
           }
@@ -741,7 +909,7 @@ export class Vehicle3DScene {
 
     wheelPositions.forEach(pos => {
       const wheelGroup = new THREE.Group();
-      
+
       // Rubber Tire
       const tire = new THREE.Mesh(tireGeo, tireMat);
       tire.rotation.z = Math.PI / 2;
@@ -1084,7 +1252,7 @@ export class Vehicle3DScene {
     this.hotspots.forEach(hs => {
       const color =
         hs.hotspot_type === "servico_concluido" ? 0x22c55e :
-        hs.hotspot_type === "achado_tecnico" ? 0xef4444 : 0xf59e0b;
+          hs.hotspot_type === "achado_tecnico" ? 0xef4444 : 0xf59e0b;
 
       const sphereGeo = new THREE.SphereGeometry(0.1, 16, 16);
       const mat = new THREE.MeshStandardMaterial({
@@ -1280,6 +1448,7 @@ export class Vehicle3DScene {
     onComplete?: () => void
   ) {
     this.isDemoRunning = true;
+    this.demoInitialTransparent = this.isTransparentBody;
     this.demoStartTime = performance.now();
     this.onDemoPoseChangeCallback = onPoseChange;
     this.onDemoCompleteCallback = onComplete;
@@ -1288,6 +1457,9 @@ export class Vehicle3DScene {
   public stopDemo10s() {
     this.isDemoRunning = false;
     this.targetExplosionFactor = 0;
+    this.suspensionGroup.visible = false;
+    this.drivetrainGroup.visible = false;
+    this.setTransparentBody(this.demoInitialTransparent);
     this.zoomToSystem("reset");
   }
 
@@ -1295,13 +1467,77 @@ export class Vehicle3DScene {
     if (!this.isDemoRunning) return;
 
     const elapsedSec = (currentTime - this.demoStartTime) / 1000;
+    const isArteon3Part = this.hasSubsystems && this.suspensionGroup.children.length > 0;
+    const totalDuration = isArteon3Part ? 12.0 : 10.0;
 
-    if (elapsedSec >= 10.0) {
+    if (elapsedSec >= totalDuration) {
       this.isDemoRunning = false;
       this.targetExplosionFactor = 0;
+      this.setTransparentBody(this.demoInitialTransparent);
+      if (isArteon3Part) {
+        this.suspensionGroup.visible = false;
+        this.drivetrainGroup.visible = false;
+      }
       this.zoomToSystem("reset");
       if (this.onDemoCompleteCallback) this.onDemoCompleteCallback();
       return;
+    }
+
+    // Storyboard de 12s para os 3 modelos combinados (Carroceria -> Suspensão -> Motor -> Conclusão)
+    if (isArteon3Part) {
+      const poseIndex = Math.floor(elapsedSec * 2) + 1;
+      let poseLabel = "";
+
+      // Órbita fluida da câmera em 360 graus
+      const orbitAngle = (elapsedSec / totalDuration) * Math.PI * 2;
+      const camDist = 4.6;
+      const camHeight = 1.8 + Math.sin(orbitAngle * 2) * 0.25;
+      this.camera.position.set(
+        camDist * Math.cos(orbitAngle),
+        camHeight,
+        camDist * Math.sin(orbitAngle)
+      );
+      this.controls.target.set(0, 0.65, 0);
+
+      if (elapsedSec < 3.0) {
+        // 0-3s: Carroceria sólida girando 360°
+        this.setTransparentBody(false);
+        this.suspensionGroup.visible = false;
+        this.drivetrainGroup.visible = false;
+        poseLabel = "01-03s: Carroceria sólida • Giro 360° em volta do veículo";
+      } else if (elapsedSec < 6.0) {
+        // 3-6s: Carroceria fica transparente -> Suspensão (car_chassis.glb) aparece
+        this.setTransparentBody(true);
+        this.suspensionGroup.visible = true;
+        this.drivetrainGroup.visible = false;
+        poseLabel = "03-06s: Raio-X • Suspensão ativa & geometria de rodagem";
+      } else if (elapsedSec < 9.0) {
+        // 6-9s: Suspensão some enquanto motor/trem de força aparece (sem rodas duplicadas brigando)
+        this.setTransparentBody(true);
+        this.suspensionGroup.visible = false;
+        this.drivetrainGroup.visible = true;
+        poseLabel = "06-09s: Raio-X • Motor TSI, Câmbio DSG & Trem de Força 4Motion";
+      } else {
+        // 9-12s: Motor some e a carroceria volta ao acabamento original sólido
+        this.suspensionGroup.visible = false;
+        this.drivetrainGroup.visible = false;
+        this.setTransparentBody(false);
+        poseLabel = "09-12s: Recomposição Concluída • Veículo íntegro e verificado";
+      }
+
+      this.controls.update();
+
+      if (this.onDemoPoseChangeCallback) {
+        this.onDemoPoseChangeCallback(poseIndex, poseLabel);
+      }
+      return;
+    }
+
+    // Raio-X suave: torna lataria transparente dos 1.5s aos 8.0s para revelar mecânica interna
+    if (elapsedSec >= 1.5 && elapsedSec < 8.0 && !this.isTransparentBody) {
+      this.setTransparentBody(true);
+    } else if ((elapsedSec < 1.5 || elapsedSec >= 8.0) && this.isTransparentBody !== this.demoInitialTransparent) {
+      this.setTransparentBody(this.demoInitialTransparent);
     }
 
     // 20 Key Poses (0.5s each)

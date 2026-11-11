@@ -1,0 +1,10 @@
+{
+  "name": "gtech-site-publico",
+  "version": "1.0.0",
+  "description": "Servidor independente do Site Público G-Tech V1 com fila local (Outbox SQLite) resiliente à indisponibilidade da oficina",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
+

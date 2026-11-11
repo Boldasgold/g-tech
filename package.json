@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "start": "next start"
+    "start": "next start -p 3001",
+    "start:site": "node services/site-publico/server.js",
+    "start:oficina": "next start -p 3001",
+    "start:worker": "node services/worker-ai-3d/worker.js"
   },
   "dependencies": {
     "lucide-react": "^1.28.0",

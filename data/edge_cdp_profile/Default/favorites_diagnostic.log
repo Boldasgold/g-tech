@@ -1,0 +1,29 @@
+2026-11-08 13:11:39.664: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default
+2026-11-08 13:11:39.664: [INFO] Profiles total count: 1
+2026-11-08 13:11:39.664: [INFO] Profile: name=Perfil 1 path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default lastActive=null
+2026-11-08 13:11:39.664: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default
+2026-11-08 13:11:39.664: [INFO] VisibilityChanged: 0
+2026-11-08 13:11:39.694: [INFO] OnDoneLoading sync enabled: 0
+2026-11-08 13:11:39.694: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-08 13:11:39.694: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-08 13:11:39.694: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-08 13:11:39.738: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-08 13:11:42.050: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-08 13:11:42.056: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 13:11:42.062: [INFO] Primary account changed.
+2026-11-08 13:11:42.062: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-08 13:11:42.073: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 13:11:42.136: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 13:11:46.089: [INFO] BookmarkNodeAdded, ABU: 0
+2026-11-08 13:11:49.142: [INFO] Sync initialization duration: 6874ms
+2026-11-08 13:16:20.115: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default
+2026-11-08 13:16:20.115: [INFO] Profiles total count: 1
+2026-11-08 13:16:20.115: [INFO] Profile: name=Pessoal path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default lastActive=2026-11-08T13:11:39.676Z
+2026-11-08 13:16:20.115: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default
+2026-11-08 13:16:20.115: [INFO] MostRecentlyActiveProfile: name=Pessoal path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default lastActive=2026-11-08T13:11:39.676Z
+2026-11-08 13:16:20.115: [INFO] VisibilityChanged: 0
+2026-11-08 13:16:20.136: [INFO] OnDoneLoading sync enabled: 1
+2026-11-08 13:16:20.136: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-08 13:16:20.136: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-08 13:16:20.136: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-08 13:16:20.244: [INFO] Sync initialization duration: 102ms

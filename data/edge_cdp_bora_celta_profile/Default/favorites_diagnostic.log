@@ -1,0 +1,18 @@
+2026-11-09 01:53:28.121: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_bora_celta_profile\Default
+2026-11-09 01:53:28.121: [INFO] Profiles total count: 1
+2026-11-09 01:53:28.121: [INFO] Profile: name=Perfil 1 path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_bora_celta_profile\Default lastActive=null
+2026-11-09 01:53:28.121: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_bora_celta_profile\Default
+2026-11-09 01:53:28.121: [INFO] VisibilityChanged: 0
+2026-11-09 01:53:28.143: [INFO] OnDoneLoading sync enabled: 0
+2026-11-09 01:53:28.143: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-09 01:53:28.143: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-09 01:53:28.144: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-09 01:53:28.197: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-09 01:53:30.593: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-09 01:53:30.597: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 01:53:30.604: [INFO] Primary account changed.
+2026-11-09 01:53:30.604: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-09 01:53:30.615: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 01:53:30.666: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-09 01:53:35.146: [INFO] BookmarkNodeAdded, ABU: 0
+2026-11-09 01:53:37.990: [INFO] Sync initialization duration: 7109ms

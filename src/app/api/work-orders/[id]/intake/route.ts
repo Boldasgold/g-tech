@@ -10,27 +10,27 @@ export async function PUT(
     const body = await req.json();
     const db = getDb();
 
-    const wo = db.prepare("SELECT id, os_number FROM work_orders WHERE id = ? OR os_number = ?").get(id, id) as any;
+    const wo = db.prepare("SELECT id, os_number, vehicle_id, customer_id FROM work_orders WHERE id = ? OR os_number = ?").get(id, id) as any;
     if (!wo) {
       return NextResponse.json({ success: false, error: "Ordem de serviço não encontrada." }, { status: 404 });
     }
 
     const {
-      photo_front,
-      photo_rear,
-      photo_left,
-      photo_right,
-      photo_interior,
-      photo_dashboard,
-      video_url,
-      odometer_km,
-      fuel_pct,
-      panel_alerts_found,
-      observations,
-      client_acknowledged,
-      client_refused_signature,
-      refusal_reason,
-      witness_info,
+      photo_front = null,
+      photo_rear = null,
+      photo_left = null,
+      photo_right = null,
+      photo_interior = null,
+      photo_dashboard = null,
+      video_url = null,
+      odometer_km = null,
+      fuel_pct = 50,
+      panel_alerts_found = null,
+      observations = null,
+      client_acknowledged = false,
+      client_refused_signature = false,
+      refusal_reason = null,
+      witness_info = null,
       responsible_name = "Giovane Ribeiro"
     } = body;
 
@@ -78,6 +78,57 @@ export async function PUT(
       );
     }
 
+    // Registrar visita imutável na tabela wo_inspection_visits (preserva histórico de visitas anteriores do veículo sem sobrescrever fotos antigas)
+    const visitCountRow = db.prepare(`
+      SELECT COALESCE(MAX(visit_number), 0) as max_visit
+      FROM wo_inspection_visits
+      WHERE vehicle_id = ? AND work_order_id != ?
+    `).get(wo.vehicle_id, wo.id) as any;
+    const currentVisitNumber = (visitCountRow?.max_visit || 0) + 1;
+
+    const existingVisitEntry = db.prepare(`
+      SELECT id FROM wo_inspection_visits
+      WHERE work_order_id = ? AND inspection_stage = 'entrada'
+    `).get(wo.id) as any;
+
+    const photosPayload = JSON.stringify({
+      photo_front,
+      photo_rear,
+      photo_left,
+      photo_right,
+      photo_interior,
+      photo_dashboard
+    });
+
+    if (existingVisitEntry) {
+      db.prepare(`
+        UPDATE wo_inspection_visits SET
+          photos_json = ?,
+          odometer_km = COALESCE(?, odometer_km),
+          fuel_level = COALESCE(?, fuel_level),
+          notes = COALESCE(?, notes),
+          inspector_name = ?
+        WHERE id = ?
+      `).run(photosPayload, odometer_km || 0, `${fuel_pct || 50}%`, observations || "", responsible_name, existingVisitEntry.id);
+    } else {
+      db.prepare(`
+        INSERT INTO wo_inspection_visits (
+          id, work_order_id, vehicle_id, visit_number,
+          inspection_stage, odometer_km, fuel_level, photos_json, checklist_json, notes, inspector_name
+        ) VALUES (?, ?, ?, ?, 'entrada', ?, ?, ?, '[]', ?, ?)
+      `).run(
+        `vis-in-${Date.now()}`,
+        wo.id,
+        wo.vehicle_id,
+        currentVisitNumber,
+        odometer_km || 0,
+        `${fuel_pct || 50}%`,
+        photosPayload,
+        observations || "",
+        responsible_name
+      );
+    }
+
     // Timeline and audit
     db.prepare(`
       INSERT INTO wo_timeline_events (id, work_order_id, event_type, title, description, actor_name, actor_role)
@@ -115,4 +166,6 @@ export async function PUT(
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+export const POST = PUT;
 

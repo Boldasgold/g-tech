@@ -1,0 +1,105 @@
+[2026-11-09T12:37:46.642Z] === INICIANDO BUILD DE PRODUCAO NEXT.JS ===
+▲ Next.js 16.3.0 (webpack)
+✓ Running next.config.ts took 46ms
+
+  Creating an optimized production build ...
+Failed to compile.
+
+./src/lib/vehicle3d.ts
+Error:   x Expected ';', '}' or <eof>
+   ,-[C:\Users\tiujo\Desktop\g-tech\src\lib\vehicle3d.ts:1:1]
+ 1 | testeimport * as THREE from "three";
+   : ^^^^^^^^|^^^^^^^ ^^^^^
+   :         `-- This is the expression part of an expression statement
+ 2 | import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+ 3 | import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+ 4 | import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+   `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/lib/vehicle3d.ts
+./src/components/Vehicle3DViewer.tsx
+./src/app/oficina/page.tsx
+
+
+> Build failed because of webpack errors
+[2026-11-09T12:38:04.336Z] Build finalizado com código 1
+[2026-11-09T12:38:04.339Z] FALHA NO BUILD COM CODIGO 1
+[2026-11-09T12:39:48.803Z] === INICIANDO BUILD DE PRODUCAO NEXT.JS ===
+▲ Next.js 16.3.0 (webpack)
+✓ Running next.config.ts took 46ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 42s
+  Running TypeScript ...
+  Finished TypeScript in 9.0s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/22) ...
+  Generating static pages using 3 workers (5/22) 
+  Generating static pages using 3 workers (10/22) 
+  Generating static pages using 3 workers (16/22) 
+✓ Generating static pages using 3 workers (22/22) in 1060ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /3D-360
+├ ƒ /api/ai-chat
+├ ƒ /api/ai-scan
+├ ƒ /api/appointments
+├ ƒ /api/auth/staff/login
+├ ƒ /api/catalog
+├ ƒ /api/dashboard/metrics
+├ ƒ /api/health
+├ ƒ /api/models
+├ ƒ /api/models/file/[filename]
+├ ƒ /api/portal/[token]
+├ ƒ /api/tech-specs
+├ ƒ /api/tracking/[protocol]
+├ ƒ /api/uploads/visits/[filename]
+├ ƒ /api/work-orders
+├ ƒ /api/work-orders/[id]
+├ ƒ /api/work-orders/[id]/checklist
+├ ƒ /api/work-orders/[id]/components
+├ ƒ /api/work-orders/[id]/exit
+├ ƒ /api/work-orders/[id]/hotspots
+├ ƒ /api/work-orders/[id]/intake
+├ ƒ /api/work-orders/[id]/intake/upload
+├ ƒ /api/work-orders/[id]/pdf
+├ ƒ /api/work-orders/[id]/quotes
+├ ƒ /api/work-orders/[id]/replacements
+├ ƒ /api/workshop/appointments/convert-to-os
+├ ƒ /api/workshop/jobs/[jobId]
+├ ƒ /api/workshop/jobs/enqueue
+├ ƒ /api/workshop/notifications/send-ready
+├ ƒ /api/workshop/photo-to-3d
+├ ƒ /api/workshop/sync-pending
+├ ƒ /api/workshop/whatsapp
+├ ƒ /cliente/[token]
+├ ○ /logo-kinetic-reveal
+├ ○ /logo-liquid-swash
+└ ○ /oficina
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+[2026-11-09T12:40:59.069Z] Build finalizado com código 0
+[2026-11-09T12:40:59.070Z] Iniciando os 3 serviços em produção...
+[2026-11-09T12:40:59.076Z] Site público iniciado na porta 3000.
+[2026-11-09T12:40:59.082Z] Worker IA/3D iniciado na porta 3002.
+[2026-11-09T12:40:59.102Z] Oficina Next.js iniciada na porta 3001 em modo produção!
+[WORKER-AI-3D] Rodando em processo isolado PID=20180 na porta http://localhost:3002
+[SITE-PUBLICO] Rodando em processo isolado PID=19384 na porta http://localhost:3000
+[SITE-PUBLICO] Fila Outbox SQLite: C:\Users\tiujo\Desktop\g-tech\data\site_outbox.db
+[SITE-PUBLICO] API da Oficina alvo: http://localhost:3001
+▲ Next.js 16.3.0
+- Local:         http://localhost:3001
+- Network:       http://192.168.18.7:3001
+✓ Ready in 443ms
+✓ Running next.config.ts took 72ms

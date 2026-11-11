@@ -1,0 +1,11 @@
+{"logTime": "1108/184006", "correlationVector":"Jc2d2itcCaytNMCOLJtFXE","action":"Normal GetUpdate request", "result":"", "context":cV=Jc2d2itcCaytNMCOLJtFXE
+Nudged types: Sessions, History
+Notified types: Device Info
+Refresh requested types: Bookmarks, Preferences, Passwords, Autofill Profiles, Autofill, Extensions, Sessions, Extension settings, History Delete Directives, Device Info, User Consents, Send Tab To Self, Web Apps, History, Saved Tab Group, WebAuthn Credentials, Edge Hub App Usage, Edge Workspace, Encryption Keys}
+{"logTime": "1108/184007", "correlationVector":"Jc2d2itcCaytNMCOLJtFXE.1","action":"SyncServerConnectionManagerRequest", "result":"SYNC_SERVER_OK", "context":{"environment":"Prod_brazilsouth_prod-s01-001-sam-brazilsouth", "migrationStage":"NotStarted", "server":"akswtt0070000ve"}}
+{"logTime": "1108/184007", "correlationVector":"Jc2d2itcCaytNMCOLJtFXE.2","action":"ProcessGetUpdates", "result":"Done", "context":{"dataType":"Device Info", "deleted":"0", "process_failed_to_decrypt":"0", "process_pending_decryption":"0", "process_success":"1", "total":"1"}}
+{"logTime": "1108/184007", "correlationVector":"Jc2d2itcCaytNMCOLJtFXE.3","action":"GetUpdates Response", "result":"Success", "context":Received 1 update(s). cV=Jc2d2itcCaytNMCOLJtFXE.0;server=akswtt0070000ve;cloudType=Consumer;environment=Prod_brazilsouth_prod-s01-001-sam-brazilsouth;migrationStage=NotStarted}
+{"logTime": "1108/184007", "correlationVector":"lePYIMgG31welV5eOHMnPu","action":"Commit Request", "result":"", "context":Item count: 3
+Contributing types: Sessions, History}
+{"logTime": "1108/184008", "correlationVector":"lePYIMgG31welV5eOHMnPu.1","action":"SyncServerConnectionManagerRequest", "result":"SYNC_SERVER_OK", "context":{"environment":"Prod_brazilsouth_prod-s01-001-sam-brazilsouth", "migrationStage":"NotStarted", "server":"akswtt0070000ve"}}
+{"logTime": "1108/184008", "correlationVector":"lePYIMgG31welV5eOHMnPu.2","action":"Commit Response", "result":"Success", "context":Result: Success. cV=lePYIMgG31welV5eOHMnPu.0;server=akswtt0070000ve;cloudType=Consumer;environment=Prod_brazilsouth_prod-s01-001-sam-brazilsouth;migrationStage=NotStarted}

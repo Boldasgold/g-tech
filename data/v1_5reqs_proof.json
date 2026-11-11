@@ -1,0 +1,357 @@
+{
+  "executed_at": "2026-11-08T14:20:16.100Z",
+  "req1_photos_and_history": {
+    "total_photos_uploaded_across_2_visits": 8,
+    "unique_sha256_hashes_count": 8,
+    "all_hashes_strictly_distinct": true,
+    "duplicate_binary_rejected_http_status": 422,
+    "duplicate_binary_rejected_error": "Violação de integridade fotográfica: O arquivo enviado possui o mesmo hash SHA-256 (be3e65257a8261dd...) já utilizado no ângulo 'photo_front' (pho-v1-front-616264-d7fc). Cada ângulo deve receber uma fotografia genuinamente diferente.",
+    "reopened_os_recovered_photos_count": 4,
+    "visit_1_photos": [
+      {
+        "photo_id": "pho-v1-front-616264-d7fc",
+        "work_order_id": "wo-v1-fluxo-01",
+        "visit_id": "vis-in-1794147616265-edf1",
+        "vehicle_id": "VEH-V1-GOLF4",
+        "visit_number": 1,
+        "slot_name": "photo_front",
+        "original_filename": "visita1_golf4_frente_real.jpg",
+        "stored_path": "public/uploads/visits/visita_1_wo-v1-fluxo-01_photo_front_pho-v1-front-616264-d7fc.jpg",
+        "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_front_pho-v1-front-616264-d7fc.jpg",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 133381,
+        "file_sha256": "be3e65257a8261dd0e9f288959fd76b9cd8e9f9f3f626ef82b266d62d1e9aa5d",
+        "uploaded_by": "Giovane Ribeiro",
+        "created_at": "2026-11-08T14:20:16.269Z"
+      },
+      {
+        "photo_id": "pho-v1-rear-616312-0caf",
+        "work_order_id": "wo-v1-fluxo-01",
+        "visit_id": "vis-in-1794147616265-edf1",
+        "vehicle_id": "VEH-V1-GOLF4",
+        "visit_number": 1,
+        "slot_name": "photo_rear",
+        "original_filename": "visita1_golf4_traseira_real.jpg",
+        "stored_path": "public/uploads/visits/visita_1_wo-v1-fluxo-01_photo_rear_pho-v1-rear-616312-0caf.jpg",
+        "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_rear_pho-v1-rear-616312-0caf.jpg",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 129085,
+        "file_sha256": "09d2279dd4718fd39c531244e04896daffcca08af4d9f5aa34070db378293d1d",
+        "uploaded_by": "Giovane Ribeiro",
+        "created_at": "2026-11-08T14:20:16.317Z"
+      },
+      {
+        "photo_id": "pho-v1-left-616344-9f79",
+        "work_order_id": "wo-v1-fluxo-01",
+        "visit_id": "vis-in-1794147616265-edf1",
+        "vehicle_id": "VEH-V1-GOLF4",
+        "visit_number": 1,
+        "slot_name": "photo_left",
+        "original_filename": "visita1_golf4_lateral_esq_real.jpg",
+        "stored_path": "public/uploads/visits/visita_1_wo-v1-fluxo-01_photo_left_pho-v1-left-616344-9f79.jpg",
+        "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_left_pho-v1-left-616344-9f79.jpg",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 120213,
+        "file_sha256": "626047ec709406c514ce4f7993fe97c6a6fbf7cee165182c3fd7daba3f11ae6a",
+        "uploaded_by": "Giovane Ribeiro",
+        "created_at": "2026-11-08T14:20:16.348Z"
+      },
+      {
+        "photo_id": "pho-v1-right-616374-a481",
+        "work_order_id": "wo-v1-fluxo-01",
+        "visit_id": "vis-in-1794147616265-edf1",
+        "vehicle_id": "VEH-V1-GOLF4",
+        "visit_number": 1,
+        "slot_name": "photo_right",
+        "original_filename": "visita1_golf4_lateral_dir_real.jpg",
+        "stored_path": "public/uploads/visits/visita_1_wo-v1-fluxo-01_photo_right_pho-v1-right-616374-a481.jpg",
+        "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_right_pho-v1-right-616374-a481.jpg",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 154824,
+        "file_sha256": "f463e81b846525b7ff6a47068a1f30db0e88e6cd7089a4525d0ff73545b66b34",
+        "uploaded_by": "Giovane Ribeiro",
+        "created_at": "2026-11-08T14:20:16.378Z"
+      }
+    ],
+    "visit_2_photos": [
+      {
+        "photo_id": "pho-v2-front-616445-4901",
+        "work_order_id": "wo-v1-fluxo-02",
+        "visit_id": "vis-in-1794147616446-0593",
+        "vehicle_id": "VEH-V1-GOLF4",
+        "visit_number": 2,
+        "slot_name": "photo_front",
+        "original_filename": "visita2_golf4_frente_real.jpg",
+        "stored_path": "public/uploads/visits/visita_2_wo-v1-fluxo-02_photo_front_pho-v2-front-616445-4901.jpg",
+        "public_url": "/api/uploads/visits/visita_2_wo-v1-fluxo-02_photo_front_pho-v2-front-616445-4901.jpg",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 139834,
+        "file_sha256": "b58a93f021b0a71f198ea5263a55ec03e60ee44469f2459cc9b81e89126e6f82",
+        "uploaded_by": "Giovane Ribeiro",
+        "created_at": "2026-11-08T14:20:16.450Z"
+      },
+      {
+        "photo_id": "pho-v2-rear-616477-2657",
+        "work_order_id": "wo-v1-fluxo-02",
+        "visit_id": "vis-in-1794147616446-0593",
+        "vehicle_id": "VEH-V1-GOLF4",
+        "visit_number": 2,
+        "slot_name": "photo_rear",
+        "original_filename": "visita2_golf4_traseira_real.jpg",
+        "stored_path": "public/uploads/visits/visita_2_wo-v1-fluxo-02_photo_rear_pho-v2-rear-616477-2657.jpg",
+        "public_url": "/api/uploads/visits/visita_2_wo-v1-fluxo-02_photo_rear_pho-v2-rear-616477-2657.jpg",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 257863,
+        "file_sha256": "38a71bf1708ce8b94bafd114797b73e5765c81e0349b2480e30e81b6995034fd",
+        "uploaded_by": "Giovane Ribeiro",
+        "created_at": "2026-11-08T14:20:16.481Z"
+      },
+      {
+        "photo_id": "pho-v2-left-616506-8195",
+        "work_order_id": "wo-v1-fluxo-02",
+        "visit_id": "vis-in-1794147616446-0593",
+        "vehicle_id": "VEH-V1-GOLF4",
+        "visit_number": 2,
+        "slot_name": "photo_left",
+        "original_filename": "visita2_golf4_lateral_esq_real.jpg",
+        "stored_path": "public/uploads/visits/visita_2_wo-v1-fluxo-02_photo_left_pho-v2-left-616506-8195.jpg",
+        "public_url": "/api/uploads/visits/visita_2_wo-v1-fluxo-02_photo_left_pho-v2-left-616506-8195.jpg",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 128142,
+        "file_sha256": "cadc20f3b38db44c66f34a3363a5d0477a551e1c2ecddb47a2f26f51160c7f70",
+        "uploaded_by": "Giovane Ribeiro",
+        "created_at": "2026-11-08T14:20:16.511Z"
+      },
+      {
+        "photo_id": "pho-v2-right-616537-9edf",
+        "work_order_id": "wo-v1-fluxo-02",
+        "visit_id": "vis-in-1794147616446-0593",
+        "vehicle_id": "VEH-V1-GOLF4",
+        "visit_number": 2,
+        "slot_name": "photo_right",
+        "original_filename": "visita2_golf4_lateral_dir_real.jpg",
+        "stored_path": "public/uploads/visits/visita_2_wo-v1-fluxo-02_photo_right_pho-v2-right-616537-9edf.jpg",
+        "public_url": "/api/uploads/visits/visita_2_wo-v1-fluxo-02_photo_right_pho-v2-right-616537-9edf.jpg",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 142656,
+        "file_sha256": "7336b50281b1c5b2d99757490dc31c8814efa4de8a08cd696288203519d82ca7",
+        "uploaded_by": "Giovane Ribeiro",
+        "created_at": "2026-11-08T14:20:16.541Z"
+      }
+    ]
+  },
+  "req2_exit_sequence": {
+    "premature_pickup_blocked_status": 422,
+    "premature_pickup_blocked_error": "Sequência inválida: Não é permitido confirmar a retirada antes de concluir o checklist de saída e liberar o veículo para retirada.",
+    "step1_checklist_completed": {
+      "exit_stage": "pronto_para_retirada",
+      "work_order_status_after_checklist": "finalizada",
+      "is_delivered_after_checklist": false,
+      "checklist_completed_at": "2026-11-08T14:20:18.145Z",
+      "ready_for_pickup_at": "2026-11-08T14:20:18.145Z",
+      "ready_for_pickup_by": "Giovane Ribeiro"
+    },
+    "step2_whatsapp_failure_resilience": {
+      "http_status": 400,
+      "delivery_status": "falha",
+      "work_order_status_after_failure": "finalizada",
+      "vehicle_release_preserved": true
+    },
+    "step3_whatsapp_notification": {
+      "http_status": 200,
+      "notification_id": "notif-1794147618191-45ccc6c2",
+      "delivery_status": "simulado",
+      "work_order_status_after_whatsapp": "finalizada",
+      "is_delivered_after_whatsapp": false
+    },
+    "step4_pickup_confirmation_and_delivered": {
+      "http_status": 200,
+      "exit_stage": "retirada_confirmada_entregue",
+      "work_order_status_final": "entregue",
+      "pickup_confirmed_at": "2026-11-08T14:20:18.213Z",
+      "pickup_confirmed_by_staff_id": "usr-giovane-01",
+      "pickup_confirmed_by_staff_name": "Giovane Ribeiro",
+      "delivered_to_name": "Marcos Vinícius Leal"
+    }
+  },
+  "req3_photo_to_3d": {
+    "worker_job_id": "job-1794147616593-3b9f2c",
+    "worker_job_status": "concluido",
+    "worker_result": {
+      "work_order_id": "wo-v1-fluxo-01",
+      "os_number": "OS-2026-0901",
+      "visit_id": "vis-in-1794147616265-edf1",
+      "visit_number": 1,
+      "vehicle_id": "VEH-V1-GOLF4",
+      "vehicle_key": "volkswagen_golf-iv",
+      "processing_worker_pid": 11504,
+      "processing_worker_port": 3002,
+      "engine_used": "G-Tech Local Multi-View Photo-to-GLB Approximate Builder (CPU)",
+      "external_cloud_neural_engine_active": false,
+      "external_photo_transmission": false,
+      "is_approximate_representation": true,
+      "fidelidade": "APROXIMADO",
+      "origin_category": "B. Representação 3D aproximada gerada a partir das fotos da vistoria",
+      "generated_model_id": "v3d-approx-1794147616831-ac839a",
+      "generated_glb_file": "/api/models/file/approx_volkswagen_golf-iv_wo-v1-fluxo-01_v1_1794147616828.glb",
+      "generated_glb_filename": "approx_volkswagen_golf-iv_wo-v1-fluxo-01_v1_1794147616828.glb",
+      "generated_glb_size_bytes": 560944,
+      "generated_glb_sha256": "a86613c1b35d1b051e6f73193162de93167782639a0c7cdb5a6088df149882f3",
+      "source_photos_count": 4,
+      "source_photos": [
+        {
+          "photo_id": "pho-v1-front-616264-d7fc",
+          "slot_name": "photo_front",
+          "original_filename": "visita1_golf4_frente_real.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_front_pho-v1-front-616264-d7fc.jpg",
+          "file_size_bytes": 133381,
+          "file_sha256": "be3e65257a8261dd0e9f288959fd76b9cd8e9f9f3f626ef82b266d62d1e9aa5d"
+        },
+        {
+          "photo_id": "pho-v1-rear-616312-0caf",
+          "slot_name": "photo_rear",
+          "original_filename": "visita1_golf4_traseira_real.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_rear_pho-v1-rear-616312-0caf.jpg",
+          "file_size_bytes": 129085,
+          "file_sha256": "09d2279dd4718fd39c531244e04896daffcca08af4d9f5aa34070db378293d1d"
+        },
+        {
+          "photo_id": "pho-v1-left-616344-9f79",
+          "slot_name": "photo_left",
+          "original_filename": "visita1_golf4_lateral_esq_real.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_left_pho-v1-left-616344-9f79.jpg",
+          "file_size_bytes": 120213,
+          "file_sha256": "626047ec709406c514ce4f7993fe97c6a6fbf7cee165182c3fd7daba3f11ae6a"
+        },
+        {
+          "photo_id": "pho-v1-right-616374-a481",
+          "slot_name": "photo_right",
+          "original_filename": "visita1_golf4_lateral_dir_real.jpg",
+          "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_right_pho-v1-right-616374-a481.jpg",
+          "file_size_bytes": 154824,
+          "file_sha256": "f463e81b846525b7ff6a47068a1f30db0e88e6cd7089a4525d0ff73545b66b34"
+        }
+      ],
+      "reconstruction_status": "CONCLUIDO_APROXIMADO_LOCAL",
+      "checklist_impact": "NENHUM — Checklist e atendimento operam independentemente do processamento 3D."
+    },
+    "models_api_response": {
+      "projection_available": true,
+      "status_message": "Representação 3D APROXIMADA gerada pelas fotos da vistoria",
+      "model": {
+        "id": "v3d-approx-1794147616831-ac839a",
+        "vehicle_key": "volkswagen_golf-iv",
+        "brand": "Volkswagen",
+        "model": "Golf IV",
+        "generation": "2003",
+        "work_order_id": "wo-v1-fluxo-01",
+        "file_name": "approx_volkswagen_golf-iv_wo-v1-fluxo-01_v1_1794147616828.glb",
+        "file_url": "/api/models/file/approx_volkswagen_golf-iv_wo-v1-fluxo-01_v1_1794147616828.glb",
+        "file_size_bytes": 560944,
+        "file_sha256": "a86613c1b35d1b051e6f73193162de93167782639a0c7cdb5a6088df149882f3",
+        "model_type": "malha_externa_monobloco",
+        "source": "reconstrucao_aproximada_local_fotos_vistoria",
+        "origin_type": "gerado_por_fotos",
+        "is_approximate": true,
+        "source_photos": [
+          {
+            "photo_id": "pho-v1-front-616264-d7fc",
+            "slot_name": "photo_front",
+            "original_filename": "visita1_golf4_frente_real.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_front_pho-v1-front-616264-d7fc.jpg",
+            "file_size_bytes": 133381,
+            "file_sha256": "be3e65257a8261dd0e9f288959fd76b9cd8e9f9f3f626ef82b266d62d1e9aa5d"
+          },
+          {
+            "photo_id": "pho-v1-rear-616312-0caf",
+            "slot_name": "photo_rear",
+            "original_filename": "visita1_golf4_traseira_real.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_rear_pho-v1-rear-616312-0caf.jpg",
+            "file_size_bytes": 129085,
+            "file_sha256": "09d2279dd4718fd39c531244e04896daffcca08af4d9f5aa34070db378293d1d"
+          },
+          {
+            "photo_id": "pho-v1-left-616344-9f79",
+            "slot_name": "photo_left",
+            "original_filename": "visita1_golf4_lateral_esq_real.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_left_pho-v1-left-616344-9f79.jpg",
+            "file_size_bytes": 120213,
+            "file_sha256": "626047ec709406c514ce4f7993fe97c6a6fbf7cee165182c3fd7daba3f11ae6a"
+          },
+          {
+            "photo_id": "pho-v1-right-616374-a481",
+            "slot_name": "photo_right",
+            "original_filename": "visita1_golf4_lateral_dir_real.jpg",
+            "public_url": "/api/uploads/visits/visita_1_wo-v1-fluxo-01_photo_right_pho-v1-right-616374-a481.jpg",
+            "file_size_bytes": 154824,
+            "file_sha256": "f463e81b846525b7ff6a47068a1f30db0e88e6cd7089a4525d0ff73545b66b34"
+          }
+        ],
+        "created_at": "2026-11-08 11:20:16",
+        "fidelity_disclaimer": "RESULTADO APROXIMADO: Representação 3D gerada a partir das fotos reais da vistoria do veículo."
+      },
+      "audit_trace": {
+        "audit_id": "msal-1794147618125-00fca6e5",
+        "selected_vehicle_id": "volkswagen_golf-iv",
+        "work_order_id": "wo-v1-fluxo-01",
+        "photo_used": null,
+        "glb_url_loaded": "/api/models/file/approx_volkswagen_golf-iv_wo-v1-fluxo-01_v1_1794147616828.glb",
+        "glb_sha256": "a86613c1b35d1b051e6f73193162de93167782639a0c7cdb5a6088df149882f3",
+        "association_origin": "gerado_por_fotos",
+        "is_approximate": true
+      }
+    },
+    "visit_record_3d_link": {
+      "visit_id": "vis-in-1794147616265-edf1",
+      "generated_3d_model_id": "v3d-approx-1794147616831-ac839a",
+      "generated_3d_glb_url": "/api/models/file/approx_volkswagen_golf-iv_wo-v1-fluxo-01_v1_1794147616828.glb",
+      "generated_3d_sha256": "a86613c1b35d1b051e6f73193162de93167782639a0c7cdb5a6088df149882f3"
+    }
+  },
+  "req4_whatsapp_states": {
+    "simulator_recorded_state": "simulado",
+    "simulator_claims_external_provider_acceptance": false,
+    "authorized_test_recipient_used": "+554196522715",
+    "duplicate_request_blocked_http_status": 409,
+    "duplicate_request_blocked_status": "duplicado_bloqueado",
+    "provider_readiness": {
+      "real_provider_configured": false,
+      "active_mode": "SIMULADOR_LOCAL_AUDITADO",
+      "provider_name": "Simulador Local Auditado G-Tech (Sem Aceite de Provedor Externo)",
+      "authorized_test_recipient": "+554196522715",
+      "supported_delivery_states": [
+        "simulado",
+        "aceito pelo provedor",
+        "entregue"
+      ],
+      "missing_for_real_provider": [
+        {
+          "env_var": "WHATSAPP_API_TOKEN",
+          "configured": false,
+          "description": "Token de acesso permanente (System User Token) da Meta WhatsApp Cloud API com permissão whatsapp_business_messaging."
+        },
+        {
+          "env_var": "WHATSAPP_PHONE_NUMBER_ID",
+          "configured": false,
+          "description": "ID numérico do número de telefone remetente registrado no Meta App Dashboard (Phone Number ID)."
+        },
+        {
+          "env_var": "WHATSAPP_BUSINESS_ACCOUNT_ID",
+          "configured": false,
+          "description": "ID da Conta do WhatsApp Business (WABA ID) da G-Tech Serviços Automotivos."
+        },
+        {
+          "env_var": "WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+          "configured": false,
+          "description": "Token de verificação de Webhook HTTPS público para receber callbacks 'delivered'/'read' e transicionar de 'aceito pelo provedor' para 'entregue'."
+        }
+      ],
+      "activation_steps": [
+        "1. Criar ou acessar o aplicativo Business no portal developers.facebook.com e vincular o número oficial da oficina.",
+        "2. Cadastrar e aprovar o template 'veiculo_pronto_retirada' (ou cadastrar +554196522715 na lista de destinatários de teste do Sandbox da Meta).",
+        "3. Definir WHATSAPP_API_TOKEN e WHATSAPP_PHONE_NUMBER_ID no arquivo .env.local do Programa da Oficina (Porta 3001).",
+        "4. Configurar o endpoint de Webhook HTTPS público para receber os eventos de status ('sent' -> 'aceito pelo provedor', 'delivered' -> 'entregue')."
+      ]
+    }
+  }
+}

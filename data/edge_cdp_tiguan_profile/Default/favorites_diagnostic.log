@@ -1,0 +1,18 @@
+2026-11-08 23:29:12.172: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_tiguan_profile\Default
+2026-11-08 23:29:12.172: [INFO] Profiles total count: 1
+2026-11-08 23:29:12.172: [INFO] Profile: name=Perfil 1 path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_tiguan_profile\Default lastActive=null
+2026-11-08 23:29:12.172: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_tiguan_profile\Default
+2026-11-08 23:29:12.172: [INFO] VisibilityChanged: 0
+2026-11-08 23:29:12.200: [INFO] OnDoneLoading sync enabled: 0
+2026-11-08 23:29:12.200: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-08 23:29:12.200: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-08 23:29:12.200: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-08 23:29:12.341: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-08 23:29:14.598: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-08 23:29:14.602: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 23:29:14.609: [INFO] Primary account changed.
+2026-11-08 23:29:14.609: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-08 23:29:14.621: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 23:29:14.639: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 23:29:18.989: [INFO] BookmarkNodeAdded, ABU: 0
+2026-11-08 23:29:21.702: [INFO] Sync initialization duration: 6932ms

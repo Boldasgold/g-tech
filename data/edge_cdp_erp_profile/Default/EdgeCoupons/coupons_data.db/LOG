@@ -1,0 +1,5 @@
+2026/11/09-10:26:41.233 4d74 Creating DB C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_erp_profile\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/11/09-10:26:41.269 4d74 Reusing MANIFEST C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_erp_profile\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/09-10:26:42.803 49b8 Level-0 table #5: started
+2026/11/09-10:26:42.813 49b8 Level-0 table #5: 683284 bytes OK
+2026/11/09-10:26:42.825 49b8 Delete type=0 #3

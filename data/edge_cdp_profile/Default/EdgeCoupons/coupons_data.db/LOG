@@ -1,0 +1,6 @@
+2026/11/08-10:16:25.770 3558 Reusing MANIFEST C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/08-10:16:25.772 3558 Recovering log #4
+2026/11/08-10:16:25.773 3558 Reusing old log C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_profile\Default\EdgeCoupons/coupons_data.db/000004.log 
+2026/11/08-10:16:26.086 5534 Level-0 table #8: started
+2026/11/08-10:16:26.092 5534 Level-0 table #8: 683444 bytes OK
+2026/11/08-10:16:26.101 5534 Delete type=0 #4

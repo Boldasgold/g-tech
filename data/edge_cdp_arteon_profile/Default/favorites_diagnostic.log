@@ -1,0 +1,40 @@
+2026-11-08 17:31:29.481: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default
+2026-11-08 17:31:29.481: [INFO] Profiles total count: 1
+2026-11-08 17:31:29.481: [INFO] Profile: name=Perfil 1 path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default lastActive=null
+2026-11-08 17:31:29.481: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default
+2026-11-08 17:31:29.481: [INFO] VisibilityChanged: 0
+2026-11-08 17:31:29.548: [INFO] OnDoneLoading sync enabled: 0
+2026-11-08 17:31:29.548: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-08 17:31:29.548: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-08 17:31:29.548: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-08 17:31:29.677: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-08 17:31:30.717: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-08 17:31:30.721: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 17:31:30.726: [INFO] Primary account changed.
+2026-11-08 17:31:30.726: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-08 17:31:30.734: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 17:31:30.748: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-08 17:31:33.949: [INFO] BookmarkNodeAdded, ABU: 0
+2026-11-08 17:31:36.841: [INFO] Sync initialization duration: 5975ms
+2026-11-08 17:36:13.950: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default
+2026-11-08 17:36:13.950: [INFO] Profiles total count: 1
+2026-11-08 17:36:13.950: [INFO] Profile: name=Pessoal path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default lastActive=2026-11-08T17:31:29.492Z
+2026-11-08 17:36:13.950: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default
+2026-11-08 17:36:13.950: [INFO] MostRecentlyActiveProfile: name=Pessoal path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default lastActive=2026-11-08T17:31:29.492Z
+2026-11-08 17:36:13.950: [INFO] VisibilityChanged: 0
+2026-11-08 17:36:13.972: [INFO] OnDoneLoading sync enabled: 1
+2026-11-08 17:36:13.972: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-08 17:36:13.972: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-08 17:36:13.972: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-08 17:36:14.026: [INFO] Sync initialization duration: 54ms
+2026-11-08 17:40:35.764: [INFO] CurrentProfilePath: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default
+2026-11-08 17:40:35.764: [INFO] Profiles total count: 1
+2026-11-08 17:40:35.764: [INFO] Profile: name=Pessoal path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default lastActive=2026-11-08T17:36:13.961Z
+2026-11-08 17:40:35.764: [INFO] LastUsedProfileDir: C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default
+2026-11-08 17:40:35.764: [INFO] MostRecentlyActiveProfile: name=Pessoal path=C:\Users\tiujo\Desktop\g-tech\data\edge_cdp_arteon_profile\Default lastActive=2026-11-08T17:36:13.961Z
+2026-11-08 17:40:35.764: [INFO] VisibilityChanged: 0
+2026-11-08 17:40:35.797: [INFO] OnDoneLoading sync enabled: 1
+2026-11-08 17:40:35.797: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-08 17:40:35.797: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-08 17:40:35.797: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-08 17:40:35.867: [INFO] Sync initialization duration: 70ms

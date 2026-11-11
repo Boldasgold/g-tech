@@ -47,3 +47,4 @@ db.prepare(`
 console.log('Modelos 3D atualizados com sucesso no SQLite:');
 const rows = db.prepare('SELECT * FROM vehicle_3d_models').all();
 console.log(JSON.stringify(rows, null, 2));
+
